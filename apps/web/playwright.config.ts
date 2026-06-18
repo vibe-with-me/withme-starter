@@ -5,10 +5,8 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   timeout: 90_000,
-  // No in-run retries: a cold dev-server SSR stall sticks to the server
-  // process, so retrying against the same server can't recover. CI retries
-  // at the shell level instead, with a fresh dev server per attempt (see
-  // the "Web smoke" step in .github/workflows/ci.yml).
+  // No retries: the smoke is deterministic. (It used to abort on the
+  // router's defaultPendingComponent hydration mismatch; that's fixed.)
   retries: 0,
   reporter: [['list']],
   use: {

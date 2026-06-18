@@ -51,9 +51,14 @@ jobs:
       - name: Test
         run: bun run test
 
-      # NOTE: the Playwright web smoke is intentionally NOT in CI yet. It hangs
-      # deterministically on a cold dev server (the first non-redirecting
-      # /t/<claimed> SSR render stalls under `vite dev` + the Cloudflare plugin;
-      # see apps/web/playwright.config.ts). Reintroduce it once that dev-SSR
-      # stall is root-caused, ideally running against the production build
-      # rather than the dev server. Until then, run `bun run test:e2e` locally.
+      - name: Bootstrap env files (smoke)
+        run: |
+          cp apps/web/.env.example apps/web/.env
+          cp apps/api/.dev.vars.example apps/api/.dev.vars
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Web smoke (resolve -> claim -> connect)
+        run: bun run test:e2e
+        working-directory: apps/web

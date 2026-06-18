@@ -35,15 +35,3 @@ export function ErrorCard() {
     </main>
   );
 }
-
-/** The card arrives before its contents: an empty shell the settle fills. */
-export function PendingCard() {
-  return (
-    <main className="page" aria-busy="true">
-      <div className="card">
-        <div className="avatar" aria-hidden="true" />
-        <p className="hint">Loading…</p>
-      </div>
-    </main>
-  );
-}
