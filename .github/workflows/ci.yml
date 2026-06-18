@@ -56,8 +56,12 @@ jobs:
           cp apps/web/.env.example apps/web/.env
           cp apps/api/.dev.vars.example apps/api/.dev.vars
 
+      # Install from apps/web so the browser revision matches that workspace's
+      # pinned @playwright/test (a root-level bunx can fetch a newer Playwright
+      # whose browser build differs, then the test can't find its binary).
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
+        working-directory: apps/web
 
       - name: Web smoke (resolve -> claim -> connect)
         run: bun run test:e2e
