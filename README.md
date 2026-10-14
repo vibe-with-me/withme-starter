@@ -35,7 +35,7 @@ points at remains yours to change forever.
   schemas, including the typed destination union (`profile` and `gathering`
   today; `link | menu | vcard` can join without schema change). Two routers:
   `public` (resolve / claim / logScan — the SDK surface) and `app`
-  (profile and photo, connect, block, gatherings, my tags, account —
+  (profile, photo and links, connect, block, gatherings, my tags, account —
   session-scoped).
 - `apps/api` — the one backend every client talks to. Verifies Supabase JWTs
   (ES256 via JWKS), runs every query under the **caller's** RLS identity, and
@@ -73,6 +73,13 @@ points at remains yours to change forever.
   surface.
 - **Privacy-default scans.** `tag_scans` stores a user-agent string and a
   timestamp. No GPS, no IP, no fingerprinting — the columns don't exist.
+- **Links are for connections only.** The places you can be reached —
+  Instagram, WhatsApp, a website, a phone number, one per platform from a
+  fixed registry — live in `profile_links`, a sibling table whose select
+  policy admits you and your accepted connections, with no block in either
+  direction. They never ride the card: `resolve_tag` is untouched, and
+  nobody holding your tag learns a handle. The stored shape is a database
+  CHECK mirrored by the contract.
 - **Avatars are paths, not URLs.** A photo is uploaded through the API into
   the uploader's own folder of a public bucket no one else can list;
   profiles store only `<user>/<file>` and every client builds the URL from
@@ -88,7 +95,7 @@ points at remains yours to change forever.
   connections, requests, blocks, and the gatherings you host, resets
   claimed tags to unclaimed, and erases their scan history.
 
-All of the above is RLS + security-definer functions, covered by 72 policy
+All of the above is RLS + security-definer functions, covered by 88 policy
 tests (`packages/db/test`, Storage policies included) that run against
 Supabase local. The tests are the spec.
 
