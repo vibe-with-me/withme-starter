@@ -4,11 +4,19 @@ import {
   AvatarPathSchema,
   AvatarUploadInputSchema,
   avatarPublicUrl,
+  ConnectionSchema,
   ConnectRequestSchema,
   CreateGatheringInputSchema,
   DestinationSchema,
   GatheringSchema,
   GatheringSummarySchema,
+  LINK_PLATFORM_IDS,
+  LINK_PLATFORMS,
+  linkHref,
+  linkLabel,
+  normalizeLinkValue,
+  ProfileLinkSchema,
+  ProfileLinksInputSchema,
   PublicProfileSchema,
   ResolveOutputSchema,
   TagUidSchema,
@@ -318,5 +326,97 @@ describe('UpdateMyTagInputSchema', () => {
     expect(
       UpdateMyTagInputSchema.safeParse({ uid: '04A3B2C1D05E80', status: 'unclaimed' }).success,
     ).toBe(false);
+  });
+});
+
+describe('profile links', () => {
+  const card = {
+    id: '9b2c8f43-1b1a-4f7e-9d3c-2a6c1e5b8d90',
+    display_name: 'Ada',
+    avatar_path: null,
+    bio: null,
+  };
+
+  it('normalizes what was typed into the stored form, per kind', () => {
+    expect(normalizeLinkValue('instagram', ' @Ada.Lovelace ')).toBe('Ada.Lovelace');
+    expect(normalizeLinkValue('bluesky', '@ada.bsky.social')).toBe('ada.bsky.social');
+    expect(normalizeLinkValue('linkedin', 'ada-lovelace-1815')).toBe('ada-lovelace-1815');
+    expect(normalizeLinkValue('phone', '+1 (555) 123-4567')).toBe('+15551234567');
+    expect(normalizeLinkValue('whatsapp', '555.123.4567')).toBe('5551234567');
+    expect(normalizeLinkValue('email', ' Ada@Example.COM ')).toBe('ada@example.com');
+    expect(normalizeLinkValue('website', 'example.com/ada')).toBe('https://example.com/ada');
+    expect(normalizeLinkValue('website', 'http://example.com')).toBe('http://example.com');
+  });
+
+  it('refuses what has no stored form', () => {
+    expect(normalizeLinkValue('instagram', '')).toBeNull();
+    expect(normalizeLinkValue('instagram', '@')).toBeNull();
+    expect(normalizeLinkValue('instagram', 'ada lovelace')).toBeNull();
+    expect(normalizeLinkValue('instagram', 'x'.repeat(65))).toBeNull();
+    expect(normalizeLinkValue('phone', '123')).toBeNull();
+    expect(normalizeLinkValue('phone', 'call me')).toBeNull();
+    expect(normalizeLinkValue('email', 'ada@localhost')).toBeNull();
+    expect(normalizeLinkValue('website', 'not a url')).toBeNull();
+    expect(normalizeLinkValue('website', 'ftp://example.com')).toBeNull();
+    expect(normalizeLinkValue('website', `https://${'x'.repeat(200)}.com`)).toBeNull();
+  });
+
+  it('every platform in the registry normalizes its own placeholder', () => {
+    for (const platform of LINK_PLATFORM_IDS) {
+      const { placeholder } = LINK_PLATFORMS[platform];
+      expect(normalizeLinkValue(platform, placeholder)).not.toBeNull();
+    }
+  });
+
+  it('builds the public page from a stored value, and none where there is no page', () => {
+    expect(linkHref('instagram', 'ada')).toBe('https://instagram.com/ada');
+    expect(linkHref('tiktok', 'ada')).toBe('https://tiktok.com/@ada');
+    expect(linkHref('whatsapp', '+15551234567')).toBe('https://wa.me/15551234567');
+    expect(linkHref('phone', '+15551234567')).toBe('tel:+15551234567');
+    expect(linkHref('email', 'ada@example.com')).toBe('mailto:ada@example.com');
+    expect(linkHref('website', 'https://example.com')).toBe('https://example.com');
+    expect(linkHref('discord', 'ada')).toBeNull();
+    expect(linkHref('signal', '+15551234567')).toBeNull();
+  });
+
+  it('writes the @ only where the platform does', () => {
+    expect(linkLabel('instagram', 'ada')).toBe('@ada');
+    expect(linkLabel('x', 'ada')).toBe('@ada');
+    expect(linkLabel('facebook', 'ada')).toBe('ada');
+    expect(linkLabel('email', 'ada@example.com')).toBe('ada@example.com');
+  });
+
+  it('the wire accepts only stored forms', () => {
+    expect(ProfileLinkSchema.safeParse({ platform: 'instagram', value: 'ada' }).success).toBe(true);
+    expect(ProfileLinkSchema.safeParse({ platform: 'instagram', value: '@ada' }).success).toBe(false);
+    expect(ProfileLinkSchema.safeParse({ platform: 'phone', value: '555 1234' }).success).toBe(false);
+    expect(ProfileLinkSchema.safeParse({ platform: 'website', value: 'example.com' }).success).toBe(
+      false,
+    );
+    expect(ProfileLinkSchema.safeParse({ platform: 'myspace', value: 'ada' }).success).toBe(false);
+  });
+
+  it('the list holds one link per platform, and may be empty', () => {
+    const ada = { platform: 'instagram', value: 'ada' };
+    expect(ProfileLinksInputSchema.safeParse({ links: [] }).success).toBe(true);
+    expect(ProfileLinksInputSchema.safeParse({ links: [ada] }).success).toBe(true);
+    expect(ProfileLinksInputSchema.safeParse({ links: [ada, { ...ada, value: 'ada2' }] }).success).toBe(
+      false,
+    );
+  });
+
+  it('a connection always carries links, and the card never does', () => {
+    const connection = {
+      id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+      created_at: '2026-10-11T00:00:00Z',
+      profile: card,
+    };
+    expect(ConnectionSchema.safeParse(connection).success).toBe(false);
+    expect(ConnectionSchema.safeParse({ ...connection, links: [] }).success).toBe(true);
+    expect(Object.keys(PublicProfileSchema.shape)).not.toContain('links');
+    // and parsing strips a links key smuggled onto a card
+    expect(PublicProfileSchema.parse({ ...card, links: [{ platform: 'x', value: 'ada' }] })).toEqual(
+      card,
+    );
   });
 });
