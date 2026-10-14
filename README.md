@@ -2,216 +2,294 @@
 
 [![CI](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml)
 
-Open-source NFC tap-to-connect reference implementation: two strangers tap a
-tag and remain connected — and nothing more. No ranking, no recommendations,
-no aggregation, no monetization hooks. This repo is the handshake.
+**Tap a tag. Meet a person. Stay connected.**
 
-## The stack (opinionated by design)
+withme-starter is an open-source starter for apps where people meet in
+person around something they love. Someone taps an NFC tag (on a keychain,
+a bib, a table, a door) and a phone opens the other person's card. Two taps
+later, they are connected. A host can point a tag at a gathering so the tap
+is the invitation.
 
-This is the production stack of a shipped product, open-sourced as-is:
-**TanStack Start · Hono · ORPC · Cloudflare Workers · Supabase · Bun.**
-End-to-end type safety flows from one contract package through the API, the
-web app, and the SDK. The opinions are the point — framework-substitution
-requests (Next.js ports, Express adapters, alternate databases) are out of
-scope and will be closed. Fork freely; the opinions stay.
+It ships as a working product: a web app, a mobile app, an API, a database
+with its privacy rules already written, and a set of **skills** that walk an
+AI coding agent (or you) through turning it into *your* app. Golf club,
+run club, tailgate crew, climbing gym, dog park, book club, pickleball
+league: the handshake is the same, and the starter is built so that only
+the vocabulary and the look need to change.
 
-## How it works
+The stack is opinionated and we like it that way: TanStack Start, Hono,
+oRPC, Cloudflare Workers, Supabase, Bun. [Why those](docs/stack.md) is
+written down, and the choices are not up for substitution in this repo.
+Fork freely.
 
-```
-NTAG213 tag ──encodes──▶ https://<your-domain>/t/{UID}
-                              │
-                  apps/web (Workers) SSR's "the card"
-                              │ typed ORPC client
-                  apps/api (Workers) Hono + ORPC
-                              │ caller's JWT, never service-role
-                  Supabase (Postgres + RLS + Auth)
-```
+---
 
-The **UID is permanent; the destination is mutable server-side.** That
-indirection is the core pattern: you encode a tag once, lock it, and what it
-points at remains yours to change forever.
+## What you get on day one
 
-- `packages/contract` — the single source of truth: ORPC contracts + Zod
-  schemas, including the typed destination union (`profile` and `gathering`
-  today; `link | menu | vcard` can join without schema change). Two routers:
-  `public` (resolve / claim / logScan — the SDK surface) and `app`
-  (profile, photo and links, connect, block, gatherings, my tags, account —
-  session-scoped).
-- `apps/api` — the one backend every client talks to. Verifies Supabase JWTs
-  (ES256 via JWKS), runs every query under the **caller's** RLS identity, and
-  rate-limits per tag UID at the edge.
-- `apps/web` — a thin TanStack Start client. Loaders call the API through the
-  typed contract client; the web app owns no business logic and no data
-  access. `/t/$uid` is the product: SSR'd, fast, unbreakable.
-- `apps/mobile` — the Expo client: the same tabs (Events, Connections, Merch,
-  Profile) and resolver over the same contract; NFC reading in development
-  builds.
-- `packages/db` — Supabase client, generated types, query helpers, and the
-  RLS test suite (consumed by `apps/api` only).
-- `packages/nfc-sdk` — `@withme/nfc`, the standalone redirect SDK. Its
-  `client` entry (`resolve` / `claim` / `logScan`) wraps this API's typed
-  contract.
-- `supabase/` — migrations, RLS policies, seed.
+Everything below works in the demo you can run locally in about ten
+minutes ([Try it](#try-it-locally)).
 
-## Safety semantics (enforced in the database, not the UI)
+| Building block | What it does for your users |
+| --- | --- |
+| **Tags** | Each physical tag carries one permanent URL, `https://<your-domain>/t/{UID}`. What the tag points at lives in the database, so you can re-point a tag forever without touching the sticker. |
+| **The card** | A name, a photo, a short bio. The only thing a stranger sees after a tap. Reachable by tapping a tag or through an existing connection, never by browsing. |
+| **The handshake** | Tap → "Connect" → the other person accepts → you are connected. Requests expire after a week. Either side can remove a connection, quietly. |
+| **Gatherings** | A host creates one ("Rooftop listening session"), points a tag at it, and a tap on that tag is the invitation. Members see each other's cards through it. No browse surface, ever. |
+| **Blocks** | Absolute and invisible. A blocked person sees exactly what a stranger sees, and gets no signal that anything happened. |
+| **Profile & account** | Photo upload, "My tags" (re-point or turn off), account deletion that cascades through everything and releases your tags. |
+| **Links** | Where you can be reached: Instagram, WhatsApp, a website, a phone number, one per platform from a picker. Seen only by the people you have connected with, never on the card. |
+| **Web app** | The resolver page (`/t/{UID}`), sign in, claim a tag, and a four-tab shell: Events, Connections, Merch (optional), Profile. |
+| **Mobile app** | The same tabs and the same resolver over the same contract, in Expo. Reads NFC in a development build. |
+| **One API** | Every client talks to one Hono + oRPC API on Cloudflare Workers. It runs every query as the signed-in user, never as an admin. |
+| **The database** | Supabase (Postgres + Auth + Storage). Row-level security and a small set of security-definer functions enforce every rule above, with 70+ policy tests that *are* the spec. |
+| **A redirect SDK** | `@withme/nfc`: if all you want is "tag → URL" with scan logging, the SDK does that on its own. |
 
-- **Blocks are absolute and invisible.** A blocked user can't view the
-  blocker's profile, can't connect, and receives no signal — dropped requests
-  ack identically to delivered ones, and even the rate limiter accounts
-  attempts in a private ledger so it can't be used as an oracle.
-- **No enumeration.** Profiles are reachable only via a tag scan (knowing the
-  unguessable UID is the capability) or an existing connection. No browse, no
-  search, no directory, no sequential IDs.
-- **Mutual consent.** Connections exist only when a request is accepted.
-  Requests expire after 7 days; either party can remove a connection
-  unilaterally, without notification.
-- **Gatherings are membership-scoped.** The one feature beyond the
-  handshake: a host creates a gathering, points a tag at it, and a tap
-  hands out the invitation. Only members see a gathering or each other's
-  cards through it; a join refused by a block is indistinguishable from a
-  gathering that does not exist; blocking evicts. There is no browse
-  surface.
-- **Privacy-default scans.** `tag_scans` stores a user-agent string and a
-  timestamp. No GPS, no IP, no fingerprinting — the columns don't exist.
-- **Links are for connections only.** The places you can be reached —
-  Instagram, WhatsApp, a website, a phone number, one per platform from a
-  fixed registry — live in `profile_links`, a sibling table whose select
-  policy admits you and your accepted connections, with no block in either
-  direction. They never ride the card: `resolve_tag` is untouched, and
-  nobody holding your tag learns a handle. The stored shape is a database
-  CHECK mirrored by the contract.
-- **Avatars are paths, not URLs.** A photo is uploaded through the API into
-  the uploader's own folder of a public bucket no one else can list;
-  profiles store only `<user>/<file>` and every client builds the URL from
-  its own Supabase URL, so an avatar can never point off-origin. The real
-  boundary is the bucket's limits (JPEG or WebP, 1 MiB) plus the
-  `profiles_avatar_path_shape` CHECK. The API's byte sniffing is a first
-  gate that a direct Storage call with the user's own token can bypass,
-  which stays safe because the bucket only ever holds and serves images. A
-  photo's public URL works for anyone holding it until the photo changes
-  (caches may keep serving it for up to an hour after that).
-- **Deletion cascades.** Deleting an account (Profile → Account, which
-  clears your photo files and then calls `delete_my_account()`) removes
-  connections, requests, blocks, and the gatherings you host, resets
-  claimed tags to unclaimed, and erases their scan history.
+Each block is a real file you can open. [Building blocks](docs/building-blocks.md)
+is the tour; [the glossary](docs/glossary.md) defines the words.
 
-All of the above is RLS + security-definer functions, covered by 88 policy
-tests (`packages/db/test`, Storage policies included) that run against
-Supabase local. The tests are the spec.
+## What you could build with it
 
-## Quickstart
+The starter is the generic version of a product that already shipped
+(Vibe With Me, for live music). The first fork, Golf With Me, needed the
+same two moves every vertical needs: rename the gathering, add a couple of
+profile fields. The skills exist because those moves repeat.
 
-### Local, zero cloud accounts
+| Idea | The gathering becomes | Fields on the card | Fields only connections see | Where the tag lives |
+| --- | --- | --- | --- | --- |
+| Run With Me | a run (distance, pace group) | pace, home club | Strava handle, phone | bib, shoe tag, water bottle |
+| Golf With Me | a round (course, tee time) | handicap, home course | phone | bag tag, ball marker |
+| Tailgate With Me | a tailgate (lot, kickoff) | team, signature dish | phone | cooler, koozie |
+| Climb With Me | a session (wall, grade range) | grade, usual night | handle | chalk bag, membership card |
+| Walk With Me | a walk (park, time) | dog's name and breed | phone | collar tag |
+| Read With Me | a meeting (book, chapter) | currently reading | email | bookmark |
+| Trivia With Me | a team table | team name | handle | table tent at the bar |
 
-Prereqs: [Bun](https://bun.sh), [Supabase CLI](https://supabase.com/docs/guides/cli)
-2.118 or newer (older CLIs ship a PostgREST that sporadically rejects a fresh
-sign-in's token as "issued at future"), Docker.
+The pattern is the same every time: **a gathering with your nouns, a card
+with your fields, a tag where your people already are.** The
+[Run With Me walkthrough](#worked-example-run-with-me-skill-by-skill)
+below does one of these end to end.
+
+## Try it locally
+
+No cloud accounts needed. Prerequisites: [Bun](https://bun.sh),
+[Docker](https://www.docker.com/products/docker-desktop/), and the
+[Supabase CLI](https://supabase.com/docs/guides/cli) version 2.118 or
+newer.
 
 ```sh
 bun install
-bun run db:start        # Supabase local on ports 553xx (includes Storage)
+bun run db:start        # Supabase local on ports 553xx (Postgres, Auth, Storage)
 bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
 bun run dev             # api on :8786, web on :3000
 ```
 
-Then open `http://localhost:3000/t/04BBBBBBBBBBBB` (Ada's tag — her card,
-inviting you to the gathering she hosts), `/t/04AAAAAAAAAAAA` (the claim
-flow), or sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
-gathering and her pending request.
+Then play the demo:
 
-Tests: `bun run test` (unit + RLS), `bun run --cwd apps/web test:e2e`
-(Playwright smoke: resolve → claim → connect, the signed-in shell, tap →
-join a gathering, the Connections lists, and the profile: photo, my tags,
-account deletion),
-`bun run --cwd apps/api e2e` (API e2e against the local stack). The web
-smoke runs against the production build and needs Supabase up first;
-Playwright starts the API worker and the built web worker itself.
+- `http://localhost:3000/t/04BBBBBBBBBBBB` is Ada's tag. Her card invites
+  you to the gathering she hosts.
+- `http://localhost:3000/t/04AAAAAAAAAAAA` is an unclaimed tag. Sign up
+  and claim it.
+- Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
+  gathering, her pending request from Lin, and her tags.
 
-### Deploy (one platform: Cloudflare + Supabase)
+Mobile, tests, ports, and the fixes for the two or three things that go
+wrong on a fresh machine are in [Local development](docs/local-development.md).
 
-1. Fork, then create a [Supabase project](https://supabase.com) and link it:
-   `supabase link --project-ref <ref>` then `supabase db push`.
-2. In the Supabase dashboard: set your site URL and
-   `https://<your-web-domain>/auth/callback` as a redirect URL; enable the
-   Google provider if you want OAuth.
-3. API config — set as Worker **secrets** so deploys can never clobber them
-   (run in `apps/api`, after `wrangler login`):
+## Worked example: Run With Me, skill by skill
 
-   ```sh
-   wrangler secret put SUPABASE_URL              # https://<ref>.supabase.co
-   wrangler secret put SUPABASE_PUBLISHABLE_KEY  # sb_publishable_…
-   wrangler secret put CORS_ORIGIN               # your web origin
-   ```
+Say you run a Saturday morning run club and want an app where a tap on
+someone's bib connects you, and a tap on the sign at the start line joins
+you to today's run. Here is how you get there with the skills in
+[`.agents/skills/`](.agents/skills/). Each skill is a Markdown runbook an
+agent such as Claude Code can execute, with a checkpoint at the end of
+every step; you can also read them and do the steps yourself.
 
-4. Web build config — create `apps/web/.env.production` (gitignored) with the
-   `VITE_*` values from `.env.example` pointed at your deployed API and
-   Supabase project. Vite bakes these in at build time.
-5. `bun run deploy` — both Workers deploy via wrangler to one Cloudflare
-   account, free tier friendly. The API deploys first (the web Worker's
-   loaders reach it through a [service binding](apps/web/wrangler.jsonc);
-   turborepo enforces the order). Single-platform deploy is a feature: there
-   is exactly one place to look when something breaks.
-6. Encode a tag (below), tap it, claim it. Target: under 30 minutes.
+The full version, with the agent prompts, every file that changes, and the
+checks at each step, is [docs/run-with-me.md](docs/run-with-me.md).
 
-Note: `vite preview` of the production build needs the API worker running
-locally for the service binding to connect; for local work use `bun run dev`,
-which talks to the API over plain localhost fetch instead.
+**0. Fork and run the demo.** Everything above. You now have `withme`,
+working, on your machine.
+
+**1. `design-direction` (optional): a look for the domain.**
+"A neighborhood run club. Mood: dawn, asphalt, Saturday." The skill runs
+Claude's `/design` on the starter's own three screens and reduces the
+result to a sheet, `docs/brand-direction.md`, with the colors, fonts, and
+copy that the next skill asks for. Skip it if you already have a brand.
+
+**2. `make-it-yours`: the rebrand.** Wordmark `runwithme`, display name
+"Run With Me", one accent color, two fonts, the app's bundle id and
+deep-link scheme, the worker names. This is a token swap, not a redesign:
+every brand-bearing value sits behind a seam the skill walks. No feature
+code changes.
+
+**3. `customize-gathering`: a gathering becomes a run.** The tab says
+"Runs", the URL is `/runs`, and a run gains a `distance` field ("5K",
+"10 mi") that shows on the card a tapper sees before joining. The skill
+walks the change through the contract, a migration, the tests, the API,
+web, mobile, and the end-to-end suite, in that order. Internal names stay
+`gathering`; only what users read changes.
+
+**4. `extend-profile`: your fields, in two tiers.** A card-tier `pace`
+("easy, 10:00/mi") that anyone who taps your bib can see, and a
+connections-tier `strava_handle` that only people you accepted can read.
+The second tier is the part forks get wrong alone, so it was built for
+real, tests first, before it was written down. Optionally, require `pace`
+before the app opens.
+
+**5. `add-destination-type` (optional): a tag that points at a route.**
+Grow the destination union with `{ type: 'link', url }` so the tag on the
+start-line sign can send people to today's route map. The skill's worked
+example is exactly this type.
+
+**6. `provision-tags`: tags for the first Saturday.** Twenty-five random
+UIDs, an encode list of `https://runwithme.example/t/{UID}` URLs, and a
+printable sheet. Encode with any NFC writer app, lock the tags, hand them
+out. First tap claims.
+
+**7. `go-live`: ship it.** Hosted Supabase, the API worker, the web
+worker, an EAS update for mobile. Every pothole in the runbook was hit on
+a real deploy.
+
+At the end you have Run With Me: a run club app with your brand, your
+nouns, your fields, and the same privacy promises as the starter, because
+none of the steps above moved a boundary. The verification gate
+(`bun run lint && bun run typecheck && bun run test`) is green after every
+skill.
+
+## How it fits together
+
+```
+NTAG213 tag ──encodes──▶ https://<your-domain>/t/{UID}
+                              │
+                  apps/web (Workers) renders "the card" server-side
+                              │ typed oRPC client
+                  apps/api (Workers) Hono + oRPC
+                              │ the caller's JWT, never a service key
+                  Supabase (Postgres + RLS + Auth + Storage)
+```
+
+The idea that makes it work: **the UID on the tag is permanent; what it
+points at is a row in the database.** Encode once, lock the tag, and
+re-point it from the app for as long as the domain exists.
+
+| Where | What lives there |
+| --- | --- |
+| [`packages/contract`](packages/contract) | The single source of truth: oRPC contracts and Zod schemas. Two routers, `public` (resolve, claim, log a scan) and `app` (everything signed in). Every other package derives its types from here. |
+| [`apps/api`](apps/api) | The one backend. Verifies Supabase JWTs, runs every query under the caller's identity, rate-limits anonymous taps at the edge. |
+| [`apps/web`](apps/web) | TanStack Start on Workers. Loaders call the API through the typed client; the web app owns no data access. `/t/$uid` is the product. |
+| [`apps/mobile`](apps/mobile) | Expo + Expo Router. Same tabs, same resolver, same contract. |
+| [`packages/db`](packages/db) | Supabase client, generated types, query helpers, and the RLS test suite. |
+| [`packages/nfc-sdk`](packages/nfc-sdk) | `@withme/nfc`, the standalone redirect SDK; its `client` entry wraps this API's public contract. |
+| [`supabase/`](supabase) | Migrations, policies, the seed, and the tag-provisioning script. |
+
+Every change enters the codebase as one vertical slice in a fixed order:
+contract → migration + RLS → RLS tests → API → web → mobile → e2e.
+[docs/the-slice.md](docs/the-slice.md) is that map, with the real file
+playing each role today. The skills are the slice applied to one concern.
+
+## The promises your users get for free
+
+These hold in every fork that extends through the skills, because they
+are enforced in the database and re-stated by a test, not promised by UI
+code. [docs/safety-model.md](docs/safety-model.md) explains each one and
+points at the test that proves it.
+
+- **Nobody can list your users.** A card is reachable only by tapping a
+  tag or through a connection. There is no search, no directory, no
+  sequential id, and no error message that leaks whether a row exists.
+- **Blocks are absolute and invisible.** A blocked person gets the same
+  response as a stranger, down to the rate limiter.
+- **Connections are mutual.** They exist only when a request is accepted,
+  and either side can end one without notifying the other.
+- **Gatherings are invitation-only.** Holding a member's tag, or a link a
+  member shared, is the invitation. A gathering you may not see looks
+  like a gathering that does not exist.
+- **Scans are privacy-default.** A tap stores a user-agent string and a
+  timestamp. No GPS, no IP, no fingerprinting: those columns do not exist.
+- **Photos cannot point off-site.** A profile stores a path inside your
+  own Storage bucket, never a URL.
+- **Deleting an account deletes everything.** Connections, requests,
+  blocks, hosted gatherings, photos, and scan history go, and your tags
+  return to unclaimed.
 
 ## Encoding NFC tags
 
-Tags encode one **permanent URL**: `https://<your-domain>/t/{UID}`, where
-`{UID}` is 14 uppercase hex chars naming a row in `public.tags`. By default
-it is random (`04` and 12 more), generated by `bun run db:provision` rather
-than read from the chip, because an unclaimed tag belongs to whoever
-presents its UID first. The [`provision-tags`](.agents/skills/provision-tags/SKILL.md)
-skill is the runbook: it creates the rows and the encode list, and its §5
-covers using the chip's own 7-byte NTAG213 UID instead, and what that
-costs. Use any NFC writer app (e.g. NXP TagWriter) to write the URL as an
-NDEF URI record, then **lock the tag to read-only**. The heavy lookup happens in the API Worker —
-the tag itself is just a pointer that never changes. Destinations stay
-mutable server-side: claim, re-point, or turn off without touching the
-physical tag again. Deleting an account releases its tags to unclaimed.
+A tag carries one URL, `https://<your-domain>/t/{UID}`, written as an
+NDEF URI record and then locked read-only. The UID is random by default
+(`bun run db:provision` generates it) because an unclaimed tag belongs to
+whoever presents its UID first. Any NFC writer app works (NXP TagWriter is
+the usual one). The [`provision-tags`](.agents/skills/provision-tags/SKILL.md)
+skill is the runbook; [docs/nfc-tags.md](docs/nfc-tags.md) explains the
+chip, the URL, random versus chip UIDs, and why the domain you encode is
+forever.
 
-## Extending a fork
+## Deploying
 
-Growth beyond the handshake ships as agent-executable skills in
-`.agents/skills/`, each built for real before it was written down and
-bound by the slice and safety discipline in
-[`docs/the-slice.md`](docs/the-slice.md):
+One platform: Cloudflare for both workers, Supabase for the database. The
+[`go-live`](.agents/skills/go-live/SKILL.md) skill is the step-by-step
+runbook; the short version is:
 
-- `design-direction` — a vertical but no brand yet: Claude's `/design` on the starter's own screens, reduced to make-it-yours' inputs with the contrast verified.
-- `make-it-yours` — rebrand: tokens, fonts, wordmark, app identity, store URL.
-- `customize-gathering` — the gathering's nouns and fields.
-- `extend-profile` — vertical profile fields, card or connections-only, and completion gating.
-- `add-destination-type` — grow what a tag can point at.
-- `provision-tags` — batch tags, the encode list, a printable sheet.
-- `go-live` — Supabase, Cloudflare Workers, EAS Update.
+1. Create a Supabase project, `supabase link`, `supabase db push`.
+2. In the Supabase dashboard, set your site URL and
+   `https://<your-web-domain>/auth/callback` as a redirect URL.
+3. Put the API's config in as Worker **secrets** (`SUPABASE_URL`,
+   `SUPABASE_PUBLISHABLE_KEY`, `CORS_ORIGIN`), so a deploy can never
+   clobber them.
+4. Write `apps/web/.env.production` with the `VITE_*` values from
+   `.env.example` pointed at your deployed API and project.
+5. `bun run deploy`. The API worker deploys first; the web worker reaches
+   it through a service binding, and Turborepo enforces the order.
+6. Encode a tag, tap it, claim it.
 
-## Principled non-goals
+Free tiers cover a demo. [docs/stack.md](docs/stack.md) covers what each
+platform costs once it is real.
 
-Matching, discovery, recommendation, feeds, and event aggregation are
-excluded **as off-thesis, not as withheld features**. Software that decides
-who you should meet is a different product with different incentives. This
-repo's entire job is to make the moment after a physical tap work — the
-handshake — and to stay out of the way after that.
+## The stack, briefly
 
-## Commercial boundary
+| Choice | What it buys you |
+| --- | --- |
+| **Bun** workspaces + Turborepo | One install, one lockfile, one `bun run dev`. |
+| **TypeScript + Zod + oRPC** | Change a schema in `packages/contract` and every client fails to compile until it agrees. |
+| **Hono on Cloudflare Workers** | The API and the web app deploy to one account, start cold in milliseconds, and the free tier is generous. |
+| **TanStack Start** | Server-rendered resolver page (the tap must be fast and unbreakable) with typed file routes. |
+| **Expo + Expo Router** | The mobile app mirrors the web routes file for file, and ships updates over the air. |
+| **Supabase** | Postgres with row-level security, auth, and storage, and a local stack in Docker so tests run against the real thing. |
 
-Stated plainly, on day one: **the handshake layer is free and open,
-permanently.** Tag fulfillment (printed, encoded, locked hardware) and
-managed hosting are commercial, permanently. The boundary will not creep.
+The longer version, including the constraints each choice brings (Workers
+need Workers-compatible dependencies; LogTape, not Pino) is in
+[docs/stack.md](docs/stack.md). Framework ports (Next.js, Express,
+another database) are out of scope for this repo; forks are welcome to
+make different choices, but the skills assume these.
 
-## Contributing notes
+## What this is not
+
+The starter's job is the moment after a physical tap. It deliberately has
+no matching, discovery, recommendations, feeds, or event aggregation.
+Software that decides who you should meet is a different product with
+different incentives, and the no-enumeration promise above depends on not
+building one. Extensions that rank, recommend, aggregate, or monetize are
+off-thesis for this repo; a fork can build them, but the skills will not.
+
+The commercial line, stated on day one: **the handshake layer is free and
+open, permanently.** Tag fulfillment (printed, encoded, locked hardware)
+and managed hosting are what Vibe With Me sells. The Merch tab in the app
+is a pointer to a store URL you configure, never a cart.
+[docs/merch.md](docs/merch.md) shows a fork running its own: accessories
+for the vertical (ball markers, bib clips, collar tags), tags encoded by
+GoToTags from the starter's encode list, a Shopify store behind the tab.
+
+## Contributing
 
 - Issues and PRs welcome; maintained on a best-effort basis, no support SLA.
-- v0.x — breaking changes expected.
-- `apps/api` runs on Cloudflare Workers: **Workers-compatible dependencies
-  only**. Logging is [LogTape](https://logtape.org) — if you're arriving from
-  Node/Express, note that Pino depends on Node streams and will not run here.
-- Lint is `oxlint --deny-warnings`; CI runs lint, typecheck, build, and the
-  RLS suite against Supabase local.
+- v0.x: breaking changes expected.
+- `apps/api` runs on Cloudflare Workers: Workers-compatible dependencies
+  only.
+- Lint is `oxlint --deny-warnings`; CI runs lint, typecheck, build, the
+  RLS suite against Supabase local, and the Playwright smoke.
+- [docs/skills-roadmap.md](docs/skills-roadmap.md) records which skills
+  exist, which were deliberately skipped, and why.
 
 ## License
 

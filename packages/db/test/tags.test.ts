@@ -32,7 +32,10 @@ describe('claiming', () => {
   it('anon cannot claim', async () => {
     const uid = await provisionTag();
     const { error } = await anonClient().rpc('claim_tag', { p_uid: uid });
-    expect(error?.message).toContain('authentication required');
+    // No EXECUTE: refused before the definer body runs (its own check is a backstop).
+    expect(error?.message).toContain('permission denied for function claim_tag');
+    const { data } = await admin.from('tags').select('status').eq('uid', uid).single();
+    expect(data?.status).toBe('unclaimed');
   });
 
   it('rows carry the default tenant seam', async () => {

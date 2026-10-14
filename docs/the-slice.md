@@ -37,8 +37,11 @@ unknown variants must fail to parse.
   columns stay immutable even through RLS-passing rows;
 - helpers live in the `private` schema; anything `security definer` also
   sets `search_path = ''`;
-- function grants are explicit: `revoke execute ... from public`, then
-  grant to exactly `anon` / `authenticated` as intended;
+- function grants are explicit: `revoke execute ... from public, anon`
+  (Supabase grants anon EXECUTE on new `public` functions directly, so
+  revoking from `public` alone leaves it), then grant to exactly `anon` /
+  `authenticated` as intended. `grants.test.ts` pins what anon can execute;
+  a new anon-facing function joins its list on purpose;
 - storage follows the same rules (`20261011120000_avatars.sql`): per-user
   folder policies on `storage.objects`, a CHECK-shaped path column instead
   of a URL, no select policy for anyone but the owner (a listable bucket is

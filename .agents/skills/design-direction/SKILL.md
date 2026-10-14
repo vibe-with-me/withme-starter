@@ -165,9 +165,10 @@ the resolver card, and a list of token values per mode.
 Write `docs/brand-direction.md` in the fork from this template. Every
 value is a literal make-it-yours will copy; nothing is "about". The
 Colors table is what `contrast.ts` parses: keep the `## Colors` heading,
-its three columns and the eight token names exactly, one row each. The
-script reads only that section, so the other tables are free to use any
-headers.
+its three columns and the eight token names exactly, one row each, and
+write every value as `#rgb`, `#rrggbb` or `rgba(r, g, b, a)`. The script
+reads only that section (a sheet without the heading is an error), so the
+other tables are free to use any headers.
 
 ````markdown
 # Brand direction — <wordmark> (<Display name>)

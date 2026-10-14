@@ -151,7 +151,7 @@ $$;
 
 -- Supabase's default privileges grant anon EXECUTE on new public functions.
 revoke execute on function public.set_my_links(jsonb) from public, anon;
-grant execute on function public.set_my_links(jsonb) to authenticated;
+grant execute on function public.set_my_links(jsonb) to authenticated, service_role;
 
 -- ================================================================== accept ==
 

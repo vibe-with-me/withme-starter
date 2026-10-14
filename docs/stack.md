@@ -1,0 +1,129 @@
+# The stack, and why
+
+The starter is the production stack of a shipped product, open-sourced as
+it is. Every choice below was made for that product and kept because it
+earned its place. The choices are opinionated and fixed for this repo:
+ports to other frameworks or databases are out of scope here, because the
+skills, the tests, and the deploy runbook all assume them. A fork can do
+what it likes.
+
+This page explains what each choice buys you, what it costs, and the
+constraints it brings so none of them surprise you.
+
+## Bun workspaces + Turborepo
+
+**What it buys.** One `bun install`, one lockfile, one `bun run dev` that
+starts the API and the web app together. Turborepo runs tasks in
+dependency order (the contract builds before anything that imports it;
+the API deploys before the web worker).
+
+**Constraints.** Metro (the mobile bundler) relies on Bun's hoisting; a
+single copy of each `expo-*` package is required, so the root
+`package.json` pins `expo`, `react`, and `react-dom` in `overrides`. Bump
+those and the mobile package's pins together. Bun's isolated linker can
+resolve some `@types` packages through `node_modules/.bun`, so a worktree
+needs its own install.
+
+## TypeScript + Zod + oRPC
+
+**What it buys.** The contract package is the single source of truth.
+Zod schemas validate at runtime and infer types at compile time; oRPC
+turns them into typed routes that the API implements and the clients
+call. Change a schema and `bun run typecheck` names every client that has
+to change. This is the mechanism the skills rely on when a step says "the
+typecheck fails until you do this".
+
+**Constraints.** Validation in Zod is not a security boundary: owners can
+write some tables directly through PostgREST with their own token. Every
+rule that matters is also a SQL CHECK constraint or a policy.
+
+## Hono on Cloudflare Workers (the API)
+
+**What it buys.** A small, fast server that starts cold in milliseconds
+and deploys to one Cloudflare account alongside the web app. The free
+tier covers a demo and a small club; paid plans are inexpensive. One
+platform means one place to look when something breaks.
+
+**Constraints.** Workers are not Node. Dependencies must be
+Workers-compatible: no Node streams, no filesystem, no native modules.
+The practical consequence most people hit first is logging: the starter
+uses [LogTape](https://logtape.org) because Pino depends on Node streams
+and will not run here. JWT verification uses `jose` for the same reason.
+
+## TanStack Start (the web app)
+
+**What it buys.** Server-rendered pages with typed file routes, deployed
+as a Worker. The resolver page (`/t/$uid`) is the product, and it has to
+be fast and unbreakable on a phone that just tapped a sticker: SSR gets
+the card on screen before the JavaScript arrives. Loaders call the API
+through the typed client, so the web app owns no business logic and no
+data access.
+
+**Constraints.** In production the web Worker reaches the API through a
+service binding, so the API must deploy first (Turborepo enforces it). A
+`vite preview` of the production build also needs the API Worker running
+locally; `bun run dev` uses plain `fetch` to localhost instead.
+
+## Expo + Expo Router (the mobile app)
+
+**What it buys.** The mobile app mirrors the web routes file for file,
+on the same contract. EAS Update publishes a shareable build by QR code
+without an app-store round trip, which is how a fork demos to a club
+before it ships. NFC reading uses `react-native-nfc-manager` in a
+development build.
+
+**Constraints.** NFC is a native module, so Expo Go cannot read tags;
+the scan screen falls back to manual entry there. The committed
+`app.json` belongs to the upstream Expo project; a fork runs `eas init`
+once to own its own (`make-it-yours` step 5). Before distributing
+development builds with native modules, switch `runtimeVersion` to the
+fingerprint policy (`apps/mobile/README.md` explains why).
+
+## Supabase (Postgres + Auth + Storage)
+
+**What it buys.** Postgres with row-level security, so the privacy
+promises live in the database and hold no matter which client is
+talking. Auth with email and OAuth providers. Storage for photos, with
+bucket-level limits. And a local stack in Docker, so the RLS suite and
+the e2e harnesses run against the real database on your machine and in
+CI.
+
+**Constraints.**
+
+- The Supabase CLI must be 2.118 or newer. Older CLIs ship a PostgREST
+  that sporadically rejects a fresh sign-in's token as "issued in the
+  future"; it looks like clock skew and is not.
+- The local stack is several Docker images. Stale images from old CLI
+  versions fill the Docker VM over time; prune them when `db:start` fails
+  with disk errors.
+- Free-plan hosted projects pause after about a week idle. Fine for a
+  demo, wrong for production; a paid org is roughly $10 a month and
+  always on.
+- Hosted signups require email confirmation, and the default SMTP only
+  delivers to org members. Configure SMTP or seed demo credentials.
+
+## What it costs to run
+
+For a club-sized fork:
+
+| Service | Free tier | When you pay |
+| --- | --- | --- |
+| Cloudflare Workers (API + web) | 100k requests/day | Beyond that, a few dollars a month. |
+| Supabase | Two projects per free org, paused after ~1 week idle | ~$10/month for an always-on project. |
+| Expo EAS | Updates and a limited number of builds | Builds beyond the free allotment. |
+| A domain | — | Required. The domain you encode on tags is forever. |
+
+`go-live` has the exact commands and the potholes for each.
+
+## What is deliberately not in the stack
+
+- **No analytics or telemetry.** The no-telemetry stance is part of the
+  starter's identity. PostHog and friends ship their own instrumentation
+  skills if a fork wants them.
+- **No push notifications.** A real handshake need, but infra-heavy. If
+  added, transactional only (request received, request accepted), never
+  engagement.
+- **No commerce.** The Merch tab is a pointer to a store URL. No cart,
+  no products, no Shopify API.
+- **No background jobs.** Request expiry is a timestamp comparison, not a
+  cron.

@@ -6,7 +6,7 @@ description: Use when a withme-starter fork needs vertical profile fields — a 
 # extend-profile — vertical fields, in two visibility tiers
 
 Every derivation extends the profile (golf-with-me: handicap and home club;
-tailgate-with-me `92d2aeb`: team and signature dish). Those forks put every
+a tailgate vertical wants team and signature dish). Those forks put every
 field on the card. Most verticals also want a second kind of field — a
 phone number, a handle — that only people you accepted may read. That
 second tier is the part a fork gets wrong alone, so it was built for real,

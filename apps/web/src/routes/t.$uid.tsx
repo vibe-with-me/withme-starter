@@ -162,12 +162,16 @@ function ConnectAction({ profileId, uid }: { profileId: string; uid: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    getSessionUserId().then((userId) => {
-      if (cancelled) return;
-      if (!userId) setViewer('anon');
-      else if (userId === profileId) setViewer('self');
-      else setViewer('other');
-    });
+    getSessionUserId()
+      // A failed session read (blocked storage, missing env) reads as signed
+      // out: Connect goes through login, never a card with no way forward.
+      .catch(() => null)
+      .then((userId) => {
+        if (cancelled) return;
+        if (!userId) setViewer('anon');
+        else if (userId === profileId) setViewer('self');
+        else setViewer('other');
+      });
     return () => {
       cancelled = true;
     };

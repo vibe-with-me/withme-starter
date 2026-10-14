@@ -146,9 +146,9 @@ describe('gathering membership and visibility', () => {
       p_title: 'X',
       p_starts_at: new Date().toISOString(),
     });
-    expect(createError?.message).toContain('authentication required');
+    expect(createError?.message).toContain('permission denied for function create_gathering');
     const { error: joinError } = await anon.rpc('join_gathering', { p_gathering_id: id });
-    expect(joinError?.message).toContain('authentication required');
+    expect(joinError?.message).toContain('permission denied for function join_gathering');
   });
 
   it('only the host can edit or delete the gathering', async () => {

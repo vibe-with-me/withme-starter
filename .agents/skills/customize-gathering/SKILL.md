@@ -7,9 +7,9 @@ description: Use when a withme-starter fork wants its gathering to speak the ver
 
 The gathering ships in the starter: a host creates one, points a tag at it,
 and a tap on that tag is the invitation. It was the one feature every
-derivation built by hand (golf-with-me "rounds", tailgate-with-me
-"tailgates" — the same entity each time), so it is core code now and this
-skill customizes it instead of building it.
+derivation built by hand (golf-with-me "rounds" first; every vertical
+since wants the same entity), so it is core code now and this skill
+customizes it instead of building it.
 
 Two kinds of change are yours: **nouns** (what users read, and the URLs they
 see) and **fields** (what a gathering records). Internal identifiers — table
@@ -106,7 +106,7 @@ In slice order:
    Insert the column, add it to the `jsonb_build_object` the function
    returns (the API validates that object against `GatheringSchema`), and
    re-issue the grants for the new signature:
-   `revoke execute on function public.create_gathering(text, timestamptz, text, text) from public;`
+   `revoke execute on function public.create_gathering(text, timestamptz, text, text) from public, anon;`
    `grant execute on function public.create_gathering(text, timestamptz, text, text) to authenticated;`.
    If the summary carries the field, also
    `create or replace function public.resolve_tag(p_uid text) returns jsonb`
