@@ -31,6 +31,8 @@ export function throwFromDbError(error: DbError, logger: Logger): never {
       throw new ORPCError('CONFLICT', { message: 'Already exists' });
     case '23514':
       throw new ORPCError('BAD_REQUEST', { message: 'Invalid request' });
+    case '22023':
+      throw new ORPCError('BAD_REQUEST', { message: 'Invalid request' });
     case 'PGRST116':
       throw new ORPCError('NOT_FOUND', { message: 'Not found' });
     default:
