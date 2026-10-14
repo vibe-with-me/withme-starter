@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { AccountSection } from '../components/AccountSection.tsx';
 import { AvatarField } from '../components/AvatarField.tsx';
 import { shellStates } from '../components/CalmStates.tsx';
+import { LinksEditor } from '../components/Links.tsx';
 import { MyTags } from '../components/MyTags.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { safeReturnTo } from '../lib/auth-guard.ts';
 import { settled } from '../lib/loaded.ts';
 
-/** Profile: identity (photo, name, bio), My tags, Account. */
+/** Profile: identity (photo, name, bio), Links, My tags, Account. */
 export const Route = createFileRoute('/_app/profile')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Your profile — withme' }] }),
@@ -20,13 +21,14 @@ export const Route = createFileRoute('/_app/profile')({
   },
   loader: async () => {
     // Each settles alone: a failed gatherings list only loses the labels.
-    const [tags, gatherings] = await asSignedInAccount(() =>
+    const [links, tags, gatherings] = await asSignedInAccount(() =>
       Promise.all([
+        settled(api.app.links.listMine().then(({ links: list }) => list)),
         settled(api.app.tags.listMine().then(({ tags: list }) => list)),
         settled(api.app.gatherings.listMine().then(({ gatherings: list }) => list)),
       ]),
     );
-    return { tags, gatherings };
+    return { links, tags, gatherings };
   },
   component: ProfilePage,
 });
@@ -34,10 +36,12 @@ export const Route = createFileRoute('/_app/profile')({
 function ProfilePage() {
   // Fetched once by the layout; invalidated after a save or a photo change.
   const { profile } = useLoaderData({ from: '/_app' });
-  const { tags, gatherings } = Route.useLoaderData();
+  const { links, tags, gatherings } = Route.useLoaderData();
   return (
     <div className="stack">
       <IdentityForm profile={profile} />
+      {/* Links hang off the profile row: it needs the row to exist first. */}
+      {profile ? <LinksEditor links={links} /> : null}
       {profile ? <MyTags tags={tags} gatherings={gatherings} /> : null}
       {/* For every visitor: a session without a profile can still sign out or delete. */}
       <AccountSection />
