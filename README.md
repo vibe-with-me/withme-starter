@@ -118,7 +118,9 @@ The full version, with the agent prompts, every file that changes, and the
 checks at each step, is [docs/run-with-me.md](docs/run-with-me.md).
 
 **0. Fork and run the demo.** Everything above. You now have `withme`,
-working, on your machine.
+working, on your machine. Add the starter as an `upstream` remote now;
+its later fixes reach your fork as an ordinary `git merge`
+([Staying current](docs/staying-current.md)).
 
 **1. `design-direction` (optional): a look for the domain.**
 "A neighborhood run club. Mood: dawn, asphalt, Saturday." The skill runs

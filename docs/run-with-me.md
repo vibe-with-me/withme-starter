@@ -62,6 +62,15 @@ Fork the repo, clone it, and follow the README's
 gathering. You now have `withme` running, and the verification gate is
 green before you change anything.
 
+While you are here, add the starter as a second remote, so its later
+fixes reach your fork with a plain `git merge`:
+
+```sh
+git remote add upstream https://github.com/vibe-with-me/withme-starter.git
+```
+
+[Staying current](staying-current.md) is the routine for taking an update.
+
 ## Step 1: `design-direction` (optional)
 
 **What you want.** A look for a run club. You have a vertical and a mood

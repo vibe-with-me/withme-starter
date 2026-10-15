@@ -31,6 +31,9 @@ longer version of something it mentions.
 - [The slice](the-slice.md): the fixed order every change moves through
   (contract → migration + RLS → tests → API → web → mobile → e2e), with the
   real file that plays each role today. The skills assume you have read it.
+- [Staying current](staying-current.md): keep the starter as a git
+  remote and merge its updates, with where the conflicts come from, how
+  migrations from both sides interleave, and how to keep merges cheap.
 - [The skills](../.agents/skills/): `design-direction`, `make-it-yours`,
   `customize-gathering`, `extend-profile`, `add-destination-type`,
   `provision-tags`, `go-live`. Each is a runbook with a checkpoint per step.
