@@ -33,7 +33,11 @@ verified. Run it first, then fill this list from the sheet.
   used wherever the brand renders as a mark (headings, page titles,
   slugs, user-agent strings) — and the **display name** (e.g. `Acme`) —
   used in prose sentences (the app's display name, permission strings,
-  README prose).
+  README prose). Check it against `TRADEMARKS.md` first: "Vibe With Me,"
+  "VWM," and "Vibe Tags" are reserved, and a "[Something] With Me" name
+  is allowed only with the non-affiliation disclaimer that file gives.
+  If the user keeps the pattern, put that disclaimer in the README in
+  step 3, and remind them it belongs on store listings too.
 - Accent color for light and dark mode, each with an on-accent ink color.
   Required contrast (WCAG AA): accent vs. accent-ink ≥ 4.5:1 in both
   modes — verify with any WCAG contrast checker before editing. If the

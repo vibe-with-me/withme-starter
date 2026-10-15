@@ -308,4 +308,6 @@ GoToTags from the starter's encode list, a Shopify store behind the tab.
 
 ## License
 
-MIT
+MIT for the code. The Vibe With Me name and marks are not covered by
+the license: [TRADEMARKS.md](TRADEMARKS.md) says what forks may call
+themselves, including the "[Something] With Me" pattern.
