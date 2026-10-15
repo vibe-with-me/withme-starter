@@ -84,8 +84,8 @@ has the rest.
 ### The service-role key
 
 The RLS suite, both e2e harnesses, and the seed set up fixtures with the
-local stack's service-role key, which bypasses RLS. The repo holds no copy
-of it, so a secret scanner has nothing to flag; the suites read it from
+local stack's service-role key, which bypasses RLS. The test helpers have
+no fallback copy of it in source: they read it from
 `SUPABASE_SERVICE_ROLE_KEY` and stop with an error naming this section
 when it is missing. `bun run db:start` prints it (the Secret key), and
 the CLI hands it over on demand. Once per shell, from the repo root with
