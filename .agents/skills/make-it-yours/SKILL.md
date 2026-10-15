@@ -425,6 +425,12 @@ delete it:
   `vibe-with-me/withme-starter` (its `if:`), so a fork never publishes it
   by accident. Leave it, or delete the file; a fork that publishes the SDK
   under its own name changes the `if:` to its own repository.
+- `.github/workflows/demo-migrate.yml` pushes new migrations to the
+  starter's hosted demo and runs only in `vibe-with-me/withme-starter`
+  (its `if:`). Delete it, or migrate your own hosted project with it:
+  change the `if:` to your repository and create a `demo` environment
+  with a required reviewer and the three secrets it names (`go-live`,
+  Redeploys).
 
 Then run the full verification gate from `docs/the-slice.md`:
 
@@ -445,6 +451,7 @@ grep -rniE --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
   README.md SECURITY.md CONTRIBUTING.md \
   | grep -v '@withme/' \
   | grep -v "^\.github/workflows/release\.yml:[0-9]*:.*github\.repository == 'vibe-with-me/withme-starter'" \
+  | grep -v "^\.github/workflows/demo-migrate\.yml:[0-9]*:.*github\.repository == 'vibe-with-me/withme-starter'" \
   | grep -v '^supabase/migrations/' \
   | grep -v '^packages/nfc-sdk/' \
   | grep -viE '<wordmark>|<display name>' \
@@ -462,6 +469,8 @@ drop, and why a fork leaves it:
 - `release.yml`'s `if:` line — the guard that keeps a fork from
   publishing `@withme/nfc` (Contact points, above). It names the
   upstream on purpose.
+- `demo-migrate.yml`'s `if:` line — the same guard, keeping a fork from
+  trying to migrate the starter's demo (Contact points, above).
 - `packages/nfc-sdk/` — the SDK (`@withme/nfc`) names the upstream in
   its `package.json` `repository.url` and in doc comments. A fork that
   does not publish the SDK leaves them. If you publish it under your
