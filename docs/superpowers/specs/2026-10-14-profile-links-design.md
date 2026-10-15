@@ -52,9 +52,11 @@ A fork that wants the teaser can add a card-tier count later.
   `sort_order` = position. The RPC is `security invoker`, so the table's
   owner-only policies are the boundary; the RPC only supplies the
   transaction. No per-row endpoints, no ids over the wire.
-- **Order is insertion order.** No drag-to-reorder in the starter; removing
-  and re-adding moves a link to the end. A fork can add Move up/down
-  against the same `sort_order`.
+- **Order is the list's order.** A new link goes to the end; each row's
+  quiet Up / Down ("Move Instagram up") swaps it with its neighbour in the
+  draft, and Save links stores it through the same `sort_order`. Focus
+  stays on the moved row's control and the new position is announced. No
+  drag-to-reorder.
 - **A connection carries links.** `ConnectionSchema` gains
   `links: ProfileLink[]` (always present, `[]` when the other person has
   none). `app.connections.list` embeds them through RLS, and
@@ -90,5 +92,5 @@ A fork that wants the teaser can add a card-tier count later.
 
 ## Out of scope
 
-Reordering, multiple rows per platform, locked teasers on the card,
+Drag-to-reorder, multiple rows per platform, locked teasers on the card,
 music platforms, OAuth-prefilled handles.

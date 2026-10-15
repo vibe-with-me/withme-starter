@@ -249,19 +249,19 @@ a {
 /* A row of the editor: the field and its Remove side by side, Remove on the baseline. */
 .link-row {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
+  flex-direction: column;
   width: 100%;
 }
 
-.link-row .field {
-  flex: 1;
-  min-width: 0;
+/* Up, Down, Remove under the field: three beside it would squeeze it at phone width. */
+.link-row__actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
-/* Lines up with the input below the label (label line + gap). */
-.link-row .btn--quiet {
-  margin-top: calc(var(--text-sm) * 1.5 + var(--space-2));
+.link-row__actions .btn--quiet {
+  min-width: var(--tap-target);
+  padding: 0 var(--space-3);
 }
 
 /* The picker: one quiet-sized button per platform not yet added. */

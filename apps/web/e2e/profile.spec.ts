@@ -133,6 +133,21 @@ test('Links: added on the profile, shown to a connection, never on the card', as
   await expect(editor.getByRole('textbox', { name: 'Instagram' })).toHaveValue('smoke.ada');
   await expect(editor.getByRole('textbox', { name: 'Website' })).toHaveValue('https://ada.example');
 
+  // --- She moves Website up: the first row has no "up", the last no "down" -
+  await expect(editor.getByRole('button', { name: 'Move Instagram up' })).toHaveCount(0);
+  await expect(editor.getByRole('button', { name: 'Move Website down' })).toHaveCount(0);
+  await editor.getByRole('button', { name: 'Move Website up' }).click();
+  await expect(editor.getByRole('status')).toHaveText('Website moved to 1 of 2.');
+  // Now first, Website has no "up": focus stays on the row, on its "down"
+  await expect(editor.getByRole('button', { name: 'Move Website down' })).toBeFocused();
+  await expect(editor.getByRole('textbox').nth(0)).toHaveAccessibleName('Website');
+  await expect(editor.getByRole('textbox').nth(1)).toHaveAccessibleName('Instagram');
+  await editor.getByRole('button', { name: 'Save links' }).click();
+  await expect(editor.getByRole('status')).toHaveText('Links saved.');
+  await ada.reload();
+  await expect(editor.getByRole('textbox').nth(0)).toHaveAccessibleName('Website');
+  await expect(editor.getByRole('textbox').nth(1)).toHaveAccessibleName('Instagram');
+
   // --- Bob taps the tag: the card, and not a handle on it ------------------
   const bob = await (await browser.newContext()).newPage();
   await bob.goto(`/t/${uid}`);
@@ -171,6 +186,9 @@ test('Links: added on the profile, shown to a connection, never on the card', as
     'href',
     'https://ada.example',
   );
+  // in the order she put them
+  await expect(chips.getByRole('link').nth(0)).toHaveAccessibleName('Website https://ada.example');
+  await expect(chips.getByRole('link').nth(1)).toHaveAccessibleName('Instagram @smoke.ada');
   // Bob added none: Ada's row for him has no list.
   await ada.goto('/connections');
   await expect(ada.getByText('Smoke Links Bob')).toBeVisible();
