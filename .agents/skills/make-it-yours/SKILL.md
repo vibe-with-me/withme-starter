@@ -109,9 +109,9 @@ design system. Keep the WCAG notes in `tokens.css` honest: accent/accent-ink
 cite four ratios in the comments: the accent pair (accent vs. accent-ink)
 in each theme, and the input border against the surface in each theme.
 Don't leave stale numbers. The
-starter's shipped light `--color-border-input` measures 2.97:1 (ENG-753):
-until that is fixed upstream, raise it in both files, e.g. opacity
-0.46 → 0.47 (3.06:1).
+starter's shipped light `--color-border-input` measures 2.97:1, just
+under the 3:1 minimum: until that is fixed upstream, raise it in both
+files, e.g. opacity 0.46 → 0.47 (3.06:1).
 
 **Checkpoint:**
 
