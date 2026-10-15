@@ -229,7 +229,7 @@ names no brand, so there only the title and badge change):
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
 - `LICENSE` — line 3 names the starter's copyright holder,
-  `Vibe With Me`. MIT requires you to keep that notice for the code you
+  `Vibe With Me LLC`. MIT requires you to keep that notice for the code you
   inherited; add your own line under it for your changes
   (`Copyright (c) <year> <your name or org>`) rather than replacing it.
 
