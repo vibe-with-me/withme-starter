@@ -2,8 +2,16 @@ import type { Page } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321';
-const SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz';
+// No default in source; see packages/db/src/test-utils for why.
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_KEY) {
+  throw new Error(
+    'SUPABASE_SERVICE_ROLE_KEY is not set. For the local stack, take it from ' +
+      'the `bun run db:start` output (the Secret key) or `supabase status -o env`:\n' +
+      '  eval "export $(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep ^SUPABASE_SERVICE_ROLE_KEY=)"\n' +
+      'docs/local-development.md has the details.',
+  );
+}
 
 /** Service-role client: test setup only (provisioning tags), never the path under test. */
 export const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });

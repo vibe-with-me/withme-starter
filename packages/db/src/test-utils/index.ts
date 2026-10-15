@@ -5,10 +5,36 @@ import type { Db } from '../index.ts';
 // Local-stack shared defaults (supabase start prints these; they are the same
 // on every machine). Override via env for any other target.
 export const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321';
+
+// These helpers create confirmed users with a fixed password and write rows
+// with the service role. Against a hosted project that is a production write
+// (and a known-password account), so a non-local URL is refused unless the
+// caller opts in the same way the seed and provision scripts do. Keep
+// SEED_ALLOW_REMOTE out of your shell: set it inline on the one command.
+const target = new URL(SUPABASE_URL);
+if (
+  !['127.0.0.1', 'localhost'].includes(target.hostname) &&
+  process.env.SEED_ALLOW_REMOTE !== '1'
+) {
+  throw new Error(
+    `Refusing to use non-local Supabase at ${target.origin} from @withme/db/test-utils ` +
+      '(RLS tests, seed, provisioning). Unset SUPABASE_URL to use the local stack, or set ' +
+      'SEED_ALLOW_REMOTE=1 on a single seed or provision command.',
+  );
+}
 export const ANON_KEY =
   process.env.SUPABASE_ANON_KEY ?? 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
-const SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz';
+// The service-role key has no default in source: it bypasses RLS, and a
+// literal one here reads as a leaked secret to every scanner.
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_KEY) {
+  throw new Error(
+    'SUPABASE_SERVICE_ROLE_KEY is not set. For the local stack, take it from ' +
+      'the `bun run db:start` output (the Secret key) or `supabase status -o env`:\n' +
+      '  eval "export $(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep ^SUPABASE_SERVICE_ROLE_KEY=)"\n' +
+      'docs/local-development.md has the details.',
+  );
+}
 
 /** Service-role client: bypasses RLS. Test fixtures and assertions only. */
 export const admin: Db = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {

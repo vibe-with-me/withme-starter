@@ -41,6 +41,10 @@ export const DestinationSchema = z.discriminatedUnion('type', [
 ]);
 ```
 
+Also update the file's header comment: it says the starter ships
+`profile` and `gathering` and lists `link` among the future types. Name
+your type as shipped and drop it from the future list.
+
 Then `packages/contract/test/schemas.test.ts`. **Trap:** the existing
 "rejects unknown destination types" test uses `{ type: 'link', url: … }`
 as its unknown-type specimen — once you add your type, make sure that
@@ -98,7 +102,7 @@ Two idioms here are load-bearing:
   equivalent of zod's strict object.
 
 **Checkpoint:** `bun run db:reset` ends with `Finished supabase db
-reset`, then `bun run db:seed`. Run `bun run db:types` and check
+reset` (some CLI versions add ` on branch …`), then `bun run db:seed`. Run `bun run db:types` and check
 `git diff packages/db/src/types/supabase.ts` is empty — a
 constraint-only migration produces no type drift (if you also added
 columns, commit the regenerated types instead).
@@ -250,6 +254,11 @@ if (result.destination.type === 'link') {
 }
 ```
 
+The fallback card is deliberately minimal (no avatar or card line, unlike
+the other branches) and only the typecheck covers it here. Check the
+hand-off (the tap opens the URL in the browser) and the fallback card
+(coming back shows "Open link") in the fork's simulator pass.
+
 ## 9. E2E + the gate
 
 Extend `apps/api/e2e/handshake.e2e.ts` with a round-trip through the
@@ -269,18 +278,61 @@ assert(
 ```
 
 **Checkpoint:** with the stack up: `cd apps/api && bun run dev`
-(separate shell), then `bun run e2e` — ends `handshake e2e: all checks
+(separate shell; it listens on `localhost:8786`), then `bun run e2e` — ends `handshake e2e: all checks
 passed`, including your new assertion. For a redirect-type, also prove
 the web behavior at runtime: claim a tag with your destination, boot the
-web app, and
+web app (`cd apps/web && bun run dev`), and curl it.
+
+The claim UI only claims profiles, so claim through a script. Provision
+two local tags per provision-tags §1 (its `REPO`/`OUT` subshell: output
+outside the repo, `umask 077`, `--count 2`). `bun run db:provision` only
+resolves from the repo root, so from the output directory call the script
+file directly, as §1 does. Then sign in as a seeded user with the db
+package's local client and claim the first tag as a link, the second as a
+profile (the SDK's `authed.claim(uid, { type: 'link', url })`, as in the
+e2e above, works too). Set `DEMO_EMAIL` and `DEMO_PASSWORD` to your seed
+identity: a seeded user's email and the seed's `DEMO_PASSWORD`, both in
+`supabase/seed/index.ts` (`db:seed` prints them; a rebranded fork's are
+under its own name), in the shell before this block. The script reads
+them from the environment, so no password is written into a file:
 
 ```sh
-curl -s -o /dev/null -w 'status=%{http_code} location=%{redirect_url}\n' \
-  http://localhost:3000/t/<UID>
+cat > "$OUT/claim.ts" <<'EOF'
+const { anonClient } = await import(`${process.env.REPO}/packages/db/src/test-utils/index.ts`);
+const csv = await Bun.file(`${import.meta.dir}/provisioned-tags.csv`).text();
+const [link, profile] = csv.trim().split('\n').slice(1).map((l) => l.split(',')[0]);
+const { DEMO_EMAIL: email, DEMO_PASSWORD: password } = process.env;
+if (!email || !password) throw new Error('set DEMO_EMAIL and DEMO_PASSWORD to your seed identity');
+const db = anonClient();
+const { error: e } = await db.auth.signInWithPassword({ email, password });
+if (e) throw e;
+const a = await db.rpc('claim_tag', { p_uid: link, p_destination: { type: 'link', url: 'https://example.com/menu' } });
+const b = await db.rpc('claim_tag', { p_uid: profile });
+console.log('link claim:', a.error?.message ?? 'ok', '| profile claim:', b.error?.message ?? 'ok');
+EOF
+REPO="$REPO" DEMO_EMAIL="$DEMO_EMAIL" DEMO_PASSWORD="$DEMO_PASSWORD" bun run "$OUT/claim.ts"
+LINK_UID=$(sed -n 2p "$OUT/provisioned-tags.csv" | cut -d, -f1)
+PROFILE_UID=$(sed -n 3p "$OUT/provisioned-tags.csv" | cut -d, -f1)
+for u in "$LINK_UID" "$PROFILE_UID"; do
+  curl -s -m 60 -o /dev/null -w 'status=%{http_code} location=%{redirect_url}\n' \
+    "http://localhost:3000/t/$u"
+done
 ```
 
-expect `status=307 location=<your url>`, and a normal profile tag still
-returns 200. Finish with the full verification gate from
+Expect `status=307 location=<your url>` for the link tag (the loader
+branch from §7 throws that redirect), and a normal
+profile tag still returns 200 (if it hangs under `vite dev`, restart the
+web dev server as provision-tags §1 describes, ENG-751). Link taps are
+logged as scans like any tap. The variables keep UIDs out of shared
+output; never print them. Afterwards `rm -rf "$OUT"`; the next
+`db:reset` clears the tags.
+
+Never paste provisioning commands into an unquoted heredoc or a log
+append (`cat >> log <<EOF`, `echo "…"`): backticks and `$(…)` execute
+there. A run provisioned 20 tags into the repo root that way. Quote the
+delimiter (`<<'EOF'`).
+
+Finish with the full verification gate from
 `docs/the-slice.md`.
 
 ## Scope notes

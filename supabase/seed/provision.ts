@@ -6,6 +6,7 @@
 // prints one encode line per tag and writes a CSV + printable HTML sheet to
 // ./provisioned-tags.{csv,html}. Same remote-safety gate as the seed: refuses
 // a non-local SUPABASE_URL unless SEED_ALLOW_REMOTE=1.
+import './local-env.ts';
 import { admin } from '@withme/db/test-utils';
 
 const target = new URL(process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321');

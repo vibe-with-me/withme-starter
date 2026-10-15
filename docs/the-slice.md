@@ -127,8 +127,9 @@ Worker into Supabase (including the silent-drop and blocked-viewer
 assertions), and the Playwright smoke in `apps/web/e2e/` runs against the
 production build (`vite build && vite preview`): `handshake.spec.ts` (two
 strangers tap one tag and end up connected), `shell.spec.ts` (the
-signed-in shell), `gatherings.spec.ts` (tap the host's tag, join, both
-see the member list), `connections.spec.ts` (the list ladder), and
+signed-in shell), `gatherings.spec.ts` (tap the host's tag, join, see the
+headcount and not the host, connect, see the host), `connections.spec.ts`
+(the list ladder), and
 `profile.spec.ts` (photo, my tags, account deletion), all sharing `e2e/helpers.ts`. Extend whichever
 one your slice touches; a slice nobody can walk end-to-end is not done.
 
@@ -148,12 +149,17 @@ test, not promised by UI code.
   anon select policy on `profiles` exists, deliberately. New features must
   not create a browse/search/list-strangers surface — that includes
   indirect oracles (FK errors, distinguishable error codes, rate-limit
-  responses that reveal whether a row exists). A gathering is never listed
-  or searchable (`gatherings` has no policy that could power a browse); its
-  id is the invitation — a tap on a member's tag hands it out, and a member
-  can share the link. A host's block is what refuses someone:
+  responses that reveal whether a row exists). Gatherings are the one
+  deliberate list: every signed-in user of the tenant reads every
+  gathering (`gatherings_select`), because a scene needs to know where it
+  is congregating — but `gathering_members_select` admits only the
+  viewer's own row and their accepted connections' rows, the headcount is
+  a definer function that re-states the gathering's visibility, and
+  co-membership never reveals a card. A listed gathering does expose its
+  `host_id`; that id is not a card, and what it allows is one consent-gated
+  connect request. A host's block is what refuses someone:
   `join_gathering` answers `'gathering not found'`, as it does for an id
-  that does not exist.
+  that does not exist, and the feed shows a blocked viewer nothing.
 - **Block-respecting visibility.** Blocks are absolute and invisible:
   checked via `private.is_blocked()` inside policies and RPCs, never in UI.
   A blocked viewer gets the same response shape as "nothing there" (a
@@ -165,8 +171,8 @@ test, not promised by UI code.
   every viewer `profiles_select` admits — or connections tier: a sibling
   table whose select policy admits the owner and accepted connections
   only, with no block in either direction. Never put a connections-tier
-  field on `profiles`: RLS is per row, so the pending-request recipient,
-  the gathering co-member, and the blocker would read it.
+  field on `profiles`: RLS is per row, so the pending-request recipient
+  and the blocker would read it.
   `.agents/skills/extend-profile/` is the recipe; `public.profile_links`
   (`20261014190000_profile_links.sql`, Profile → Links) is the shipped
   example of the connections tier.

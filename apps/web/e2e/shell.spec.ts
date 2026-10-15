@@ -224,5 +224,8 @@ test('signing in without a destination lands on Events, the first tab', async ({
   await expect(nav.getByRole('link').first()).toHaveText('Events');
   await expect(nav.getByRole('link', { name: 'Events' })).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('heading', { name: 'Create a gathering' })).toBeVisible();
-  await expect(page.getByText("Tap a host's tag to join one, or create your own.")).toBeVisible();
+  // A new account has nothing of its own; Happening may already list the domain's gatherings.
+  await expect(
+    page.getByRole('region', { name: 'Yours' }).getByText('Join one above, or create your own.'),
+  ).toBeVisible();
 });

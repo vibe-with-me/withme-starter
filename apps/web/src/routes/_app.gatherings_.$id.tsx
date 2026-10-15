@@ -6,11 +6,14 @@ import { Avatar } from '../components/ProfileCard.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { formatStartsAt, toDateTimeLocal, whenAndWhere } from '../lib/format-time.ts';
+import { goingLine } from '../lib/going.ts';
 
 type LoaderResult =
-  | { kind: 'detail'; gathering: Gathering; members: GatheringMember[] }
-  // Non-member, blocked, or missing — all the same NOT_FOUND, so the page
-  // offers a calm join instead of an error.
+  | { kind: 'detail'; gathering: Gathering; members: GatheringMember[]; memberCount: number }
+  // Blocked either way with the host, or missing — the same NOT_FOUND, so
+  // the page offers a calm join (which answers "not available": a hidden
+  // gathering cannot be joined) instead of an error. A stranger who found
+  // the gathering in the feed gets the detail, with Join on it.
   | { kind: 'not_found' };
 
 /** Display-only hints carried from the tag resolver, shown before joining. Never data. */
@@ -34,10 +37,10 @@ export const Route = createFileRoute('/_app/gatherings_/$id')({
   },
   loader: async ({ params }): Promise<LoaderResult> => {
     try {
-      const { gathering, members } = await asSignedInAccount(() =>
+      const { gathering, members, member_count } = await asSignedInAccount(() =>
         api.app.gatherings.get({ id: params.id }),
       );
-      return { kind: 'detail', gathering, members };
+      return { kind: 'detail', gathering, members, memberCount: member_count };
     } catch (error) {
       if ((error as { code?: string }).code === 'NOT_FOUND') return { kind: 'not_found' };
       throw error;
@@ -55,12 +58,13 @@ function GatheringPage() {
     <GatheringDetail
       gathering={result.gathering}
       members={result.members}
+      memberCount={result.memberCount}
       viewerId={profile?.id ?? null}
     />
   );
 }
 
-/** Not a member (yet): the tag was the invitation, so offer to join. */
+/** The gathering is hidden (blocked, or gone): offer the join the tag promised; it answers "not available". */
 function JoinCard() {
   const { id } = Route.useParams();
   const { title, starts_at } = Route.useSearch();
@@ -109,10 +113,12 @@ interface GatheringPatch {
 function GatheringDetail({
   gathering,
   members,
+  memberCount,
   viewerId,
 }: {
   gathering: Gathering;
   members: GatheringMember[];
+  memberCount: number;
   viewerId: string | null;
 }) {
   const navigate = useNavigate();
@@ -122,7 +128,26 @@ function GatheringDetail({
   const [actionError, setActionError] = useState<string | null>(null);
 
   const isHost = viewerId === gathering.host_id;
+  // The member list is the viewer's view, so the viewer's own row is in it iff they joined.
   const isMember = viewerId !== null && members.some((member) => member.profile.id === viewerId);
+
+  async function join() {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await api.app.gatherings.join({ id: gathering.id });
+      // Wait for the re-fetch (sync) so Join never lingers over a joined gathering.
+      await router.invalidate({ sync: true });
+    } catch (error) {
+      setActionError(
+        (error as { code?: string }).code === 'NOT_FOUND'
+          ? "This gathering isn't available."
+          : 'That didn’t go through. Try again.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function save(patch: GatheringPatch) {
     setBusy(true);
     setActionError(null);
@@ -156,7 +181,8 @@ function GatheringDetail({
     setActionError(null);
     try {
       await api.app.gatherings.leave({ id: gathering.id });
-      // Replace, so Back does not land on a gathering the viewer can no longer see.
+      // Back to the list (replace, so Back does not return here): the
+      // gathering is still visible, but the tab is where it is listed.
       navigate({ to: '/gatherings', replace: true });
     } catch {
       setActionError('That didn’t go through. Try again.');
@@ -178,13 +204,18 @@ function GatheringDetail({
           <>
             <h1>{gathering.title}</h1>
             <p className="hint">{whenAndWhere(gathering)}</p>
+            <p className="hint">{goingLine(memberCount)}</p>
           </>
         )}
-        {/* Outside the ternary so it stays mounted across Edit/Cancel and does
-            not refetch the viewer's tags; hidden, not unmounted, while editing. */}
-        <div hidden={mode === 'edit'}>
-          <TagPointer gatheringId={gathering.id} />
-        </div>
+        {/* Members only: a tag whose owner is not a member degrades to the
+            profile card. Outside the ternary so it stays mounted across
+            Edit/Cancel and does not refetch the viewer's tags; hidden, not
+            unmounted, while editing. */}
+        {isMember ? (
+          <div hidden={mode === 'edit'}>
+            <TagPointer gatheringId={gathering.id} />
+          </div>
+        ) : null}
         {actionError ? (
           <p className="form-error" role="alert">
             {actionError}
@@ -236,9 +267,20 @@ function GatheringDetail({
             {busy ? 'Leaving…' : 'Leave gathering'}
           </button>
         ) : null}
+        {/* Joining is the consent moment: the accent's job, as on the resolver. */}
+        {mode === 'view' && !isMember ? (
+          <button type="button" className="btn btn--connect" disabled={busy} onClick={join}>
+            {busy ? 'Joining…' : 'Join'}
+          </button>
+        ) : null}
       </div>
 
-      <h2 className="section-title">Who's coming</h2>
+      <h2 className="section-title">Who's going</h2>
+      <p className="hint">
+        {members.length === 0
+          ? "You'll see the people you're connected with here."
+          : "The people you're connected with. Everyone else, you meet there."}
+      </p>
       {members.map((member) => (
         <div className="row" key={member.profile.id}>
           <Avatar profile={member.profile} size="row" />

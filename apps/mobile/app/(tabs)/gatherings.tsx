@@ -1,4 +1,4 @@
-import type { Gathering } from '@withme/contract';
+import type { GatheringListItem } from '@withme/contract';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -14,16 +14,22 @@ import {
 import { Button, Card, ErrorText, Field, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { parseLocalDateTime, tomorrowEvening, whenAndWhere } from '../../lib/format-time';
+import { goingLine, withLine } from '../../lib/going';
+import { supabase } from '../../lib/supabase';
 import { fonts, radius, space, useTokens } from '../../lib/tokens';
 
 /**
- * The Events tab: gatherings you host or have joined, and a form to create
- * one. No browse surface: someone else's gathering is reached through its
- * invitation, which a tap on a member's tag hands out.
+ * The Events tab: what is happening in the domain, and your own calendar.
+ * "Happening" is every upcoming gathering the viewer may see — a bulletin
+ * board, not a directory: a row carries the headcount and names only the
+ * viewer's connections among the members. The tap is still how people
+ * meet; the list is how they find out where.
  */
 export default function GatheringsScreen() {
   const t = useTokens();
-  const [gatherings, setGatherings] = useState<Gathering[]>([]);
+  const [happening, setHappening] = useState<GatheringListItem[]>([]);
+  const [gatherings, setGatherings] = useState<GatheringListItem[]>([]);
+  const [viewerId, setViewerId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [title, setTitle] = useState('');
@@ -37,8 +43,14 @@ export default function GatheringsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const { gatherings: mine } = await api.app.gatherings.listMine();
+      const [{ gatherings: feed }, { gatherings: mine }, { data }] = await Promise.all([
+        api.app.gatherings.list(),
+        api.app.gatherings.listMine(),
+        supabase.auth.getSession(),
+      ]);
+      setHappening(feed);
       setGatherings(mine);
+      setViewerId(data.session?.user.id ?? null);
       setLoadError(false);
     } catch {
       setLoadError(true);
@@ -86,25 +98,42 @@ export default function GatheringsScreen() {
   // most recent first
   const past = gatherings.filter((g) => Date.parse(g.starts_at) < now).toReversed();
 
-  const row = (gathering: Gathering) => (
-    <Pressable
-      key={gathering.id}
-      accessibilityRole="button"
-      onPress={() => router.push({ pathname: '/gathering/[id]', params: { id: gathering.id } })}
-      style={({ pressed }) => [
-        styles.row,
-        { backgroundColor: t.surface, borderColor: t.border },
-        pressed && { opacity: 0.6 },
-      ]}
-    >
-      <View style={styles.rowBody}>
-        <Text style={[styles.rowName, { color: t.ink }]}>{gathering.title}</Text>
-        <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
-          {whenAndWhere(gathering)}
-        </Text>
-      </View>
-    </Pressable>
-  );
+  const row = (gathering: GatheringListItem) => {
+    const mark =
+      viewerId !== null && gathering.host_id === viewerId
+        ? 'Hosting'
+        : gathering.is_member
+          ? 'Going'
+          : null;
+    const line = [mark, whenAndWhere(gathering), goingLine(gathering.member_count)]
+      .filter(Boolean)
+      .join(' · ');
+    const names = withLine(gathering.members, viewerId);
+    return (
+      <Pressable
+        key={gathering.id}
+        accessibilityRole="button"
+        onPress={() => router.push({ pathname: '/gathering/[id]', params: { id: gathering.id } })}
+        style={({ pressed }) => [
+          styles.row,
+          { backgroundColor: t.surface, borderColor: t.border },
+          pressed && { opacity: 0.6 },
+        ]}
+      >
+        <View style={styles.rowBody}>
+          <Text style={[styles.rowName, { color: t.ink }]}>{gathering.title}</Text>
+          <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
+            {line}
+          </Text>
+          {names ? (
+            <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
+              {names}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -165,11 +194,18 @@ export default function GatheringsScreen() {
           />
         </Card>
 
-        <Text style={[styles.sectionTitle, { color: t.ink }]}>Your gatherings</Text>
+        <Text style={[styles.sectionTitle, { color: t.ink }]}>Happening</Text>
         {!loaded ? null : loadError ? (
-          <ErrorText>Could not load your gatherings. Pull to retry.</ErrorText>
-        ) : gatherings.length === 0 ? (
-          <Muted>Tap a host's tag to join one, or create your own.</Muted>
+          <ErrorText>Could not load gatherings. Pull to retry.</ErrorText>
+        ) : happening.length === 0 ? (
+          <Muted>Nothing happening yet. Create the first one.</Muted>
+        ) : (
+          happening.map(row)
+        )}
+
+        <Text style={[styles.sectionTitle, { color: t.ink }]}>Yours</Text>
+        {!loaded || loadError ? null : gatherings.length === 0 ? (
+          <Muted>Join one above, or create your own.</Muted>
         ) : upcoming.length === 0 ? (
           <Muted>Nothing coming up.</Muted>
         ) : (

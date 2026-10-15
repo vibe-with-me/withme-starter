@@ -1,4 +1,5 @@
--- Signed-in-only functions stop being executable by anon (ENG-754).
+-- Signed-in-only functions stop being executable by anon: the grant, not
+-- the function body, becomes the first gate.
 --
 -- Postgres grants EXECUTE to PUBLIC on every new function, and Supabase's
 -- default privileges grant it to anon (and authenticated, service_role)

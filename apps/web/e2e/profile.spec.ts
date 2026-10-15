@@ -82,7 +82,8 @@ test('My tags: a claimed tag turns off and on, and re-points at a gathering', as
   await owner.goto('/gatherings');
   await owner.getByLabel('Title').fill('Smoke Tag Night');
   await owner.getByRole('button', { name: 'Create gathering' }).click();
-  await expect(owner.getByText('Smoke Tag Night')).toBeVisible();
+  // Listed under Happening and under Yours: the first is enough.
+  await expect(owner.getByText('Smoke Tag Night').first()).toBeVisible();
   await owner.goto('/profile');
   // exact: the Save button's name ("Save where … points") contains the label.
   const destination = owner.getByLabel(`Where ${uid} points`, { exact: true });
@@ -196,8 +197,9 @@ test('deleting the account signs out and releases the tag', async ({ page }) => 
 });
 
 // "Create your profile" offers Sign out and Delete account before anything is
-// saved. Leaving the shell from there must land on / (ENG-759: the profile
-// gate used to hijack the navigation out, and bounce /login <-> /profile forever).
+// saved. Leaving the shell from there must land on / (a fixed regression: the
+// profile gate used to hijack the navigation out, and bounce /login <-> /profile
+// forever).
 test('a session without a profile can delete its account', async ({ page }) => {
   const email = `smoke-noprofile-delete-${Date.now()}@rls.test`;
   await signUpWithoutProfile(page, email);

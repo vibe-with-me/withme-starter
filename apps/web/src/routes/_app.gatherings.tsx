@@ -1,29 +1,36 @@
-import type { Gathering } from '@withme/contract';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import type { GatheringListItem } from '@withme/contract';
+import { createFileRoute, Link, useLoaderData, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { tomorrowEvening, whenAndWhere } from '../lib/format-time.ts';
+import { goingLine, withLine } from '../lib/going.ts';
 
 /**
- * The Events tab: the gatherings you host or have joined, and a form to
- * create one. There is deliberately no browse surface: someone else's
- * gathering is reached through its invitation, which a tap on a member's tag
- * hands out (docs/the-slice.md).
+ * The Events tab: what is happening in the domain, and your own calendar.
+ * "Happening" is every upcoming gathering the viewer may see — a bulletin
+ * board, not a directory: a row carries the headcount and names only the
+ * viewer's connections among the members (docs/the-slice.md). The tap is
+ * still how people meet; the list is how they find out where.
  */
 export const Route = createFileRoute('/_app/gatherings')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Events — withme' }] }),
   loader: async () => {
-    const { gatherings } = await asSignedInAccount(() => api.app.gatherings.listMine());
-    return { gatherings };
+    const [{ gatherings: happening }, { gatherings: mine }] = await asSignedInAccount(() =>
+      Promise.all([api.app.gatherings.list(), api.app.gatherings.listMine()]),
+    );
+    return { happening, mine };
   },
   component: GatheringsPage,
 });
 
 function GatheringsPage() {
-  const { gatherings } = Route.useLoaderData();
+  const { happening, mine } = Route.useLoaderData();
+  // The layout fetched the viewer's profile once; every _app child may read it.
+  const { profile } = useLoaderData({ from: '/_app' });
+  const viewerId = profile?.id ?? null;
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [startsAt, setStartsAt] = useState(tomorrowEvening);
@@ -32,9 +39,9 @@ function GatheringsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const now = Date.now();
-  const upcoming = gatherings.filter((g) => Date.parse(g.starts_at) >= now);
+  const upcoming = mine.filter((g) => Date.parse(g.starts_at) >= now);
   // most recent first
-  const past = gatherings.filter((g) => Date.parse(g.starts_at) < now).toReversed();
+  const past = mine.filter((g) => Date.parse(g.starts_at) < now).toReversed();
 
   async function create(event: React.FormEvent) {
     event.preventDefault();
@@ -103,30 +110,64 @@ function GatheringsPage() {
         </button>
       </form>
 
-      <h2 className="section-title">Your gatherings</h2>
-      {gatherings.length === 0 ? (
-        <p className="empty">Tap a host's tag to join one, or create your own.</p>
-      ) : upcoming.length === 0 ? (
-        <p className="empty">Nothing coming up.</p>
-      ) : (
-        upcoming.map((g) => <GatheringRow key={g.id} gathering={g} />)
-      )}
-      {past.length > 0 ? (
-        <>
-          <h2 className="section-title">Past</h2>
-          {past.map((g) => <GatheringRow key={g.id} gathering={g} />)}
-        </>
-      ) : null}
+      <section aria-labelledby="happening">
+        <h2 className="section-title" id="happening">
+          Happening
+        </h2>
+        {happening.length === 0 ? (
+          <p className="empty">Nothing happening yet. Create the first one.</p>
+        ) : (
+          happening.map((g) => <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />)
+        )}
+      </section>
+
+      <section aria-labelledby="yours">
+        <h2 className="section-title" id="yours">
+          Yours
+        </h2>
+        {mine.length === 0 ? (
+          <p className="empty">Join one above, or create your own.</p>
+        ) : upcoming.length === 0 ? (
+          <p className="empty">Nothing coming up.</p>
+        ) : (
+          upcoming.map((g) => <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />)
+        )}
+        {past.length > 0 ? (
+          <>
+            <h2 className="section-title">Past</h2>
+            {past.map((g) => (
+              <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />
+            ))}
+          </>
+        ) : null}
+      </section>
     </div>
   );
 }
 
-function GatheringRow({ gathering }: { gathering: Gathering }) {
+function GatheringRow({
+  gathering,
+  viewerId,
+}: {
+  gathering: GatheringListItem;
+  viewerId: string | null;
+}) {
+  const mark =
+    viewerId !== null && gathering.host_id === viewerId
+      ? 'Hosting'
+      : gathering.is_member
+        ? 'Going'
+        : null;
+  const line = [mark, whenAndWhere(gathering), goingLine(gathering.member_count)]
+    .filter(Boolean)
+    .join(' · ');
+  const names = withLine(gathering.members, viewerId);
   return (
     <div className="row">
       <div className="row-body">
         <span className="name">{gathering.title}</span>
-        <span className="sub">{whenAndWhere(gathering)}</span>
+        <span className="sub">{line}</span>
+        {names ? <span className="sub">{names}</span> : null}
       </div>
       <div className="row-actions">
         <Link className="btn btn--quiet" to="/gatherings/$id" params={{ id: gathering.id }}>

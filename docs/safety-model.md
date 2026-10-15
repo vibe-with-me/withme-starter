@@ -7,7 +7,7 @@ in the database (row-level security and security-definer functions), not
 in the apps, so a fork cannot break one by changing a screen.
 
 If you only remember one thing: **the tests are the spec.** When a skill
-says "the seventeen existing tests pass untouched; if one does not, you
+says "the twenty-one existing tests pass untouched; if one does not, you
 moved a safety mechanism", this is what it means.
 
 ## Nobody can list your users
@@ -49,6 +49,13 @@ stored; it is simply never written. `join_gathering` raises the same
 `'gathering not found'` for a blocked joiner as for an id that does not
 exist. Creating a block evicts the pair from gatherings they share.
 
+Blocking is not a way to see someone. The blocker keeps the blocked card
+in their block list only when the block row's `reveals_card` is true, and
+the `blocks_insert` policy allows that only if the blocker could already
+see the card at that moment (`private.sees_card`, the same rule
+`profiles_select` uses). Blocking a stranger, such as a gathering host
+whose id the feed lists, blocks them and reveals nothing.
+
 **The test.** `packages/db/test/blocks.test.ts`, plus the blocked-viewer
 assertions in `apps/api/e2e/handshake.e2e.ts`.
 
@@ -69,30 +76,35 @@ are a single row per pair.
 
 **The test.** `packages/db/test/requests.test.ts`.
 
-## Gatherings are invitation-only
+## Gatherings are listed; who's going is connections-only
 
-**The promise.** A gathering has no listing anywhere. Its id is the
-invitation: a tap on a member's tag that points at it, or a link a member
-shares. Only members see the gathering or each other's cards through it.
-A gathering you are not allowed to see looks like one that does not
-exist.
+**The promise.** Everyone signed in to your domain sees every gathering —
+title, time, place, a headcount — so people know where their scene is
+congregating. Who is going is another matter: you see yourself and the
+people you have connected with, and nobody else. Joining tells the people
+you already know; it shows a stranger nothing, not even the host's name.
+A gathering hidden by a block looks like one that does not exist, with no
+headcount either.
 
-**How.** `gatherings` has no policy that could power a browse.
-Membership is read through `private.is_gathering_member`, a definer
-function (inlining a `gathering_members` subquery into a
-`gathering_members` policy would recurse forever). The only bridge
-between members' cards is one `shares_gathering` clause in
-`profiles_select`; every other clause of that policy is byte-identical to
-the initial schema. A host cannot leave their own gathering; deleting it
-is how they leave.
+**How.** `gatherings_select` admits every signed-in user of the tenant,
+minus a block in either direction with the host. `gathering_members_select`
+admits the viewer's own row and their accepted connections' rows, on a
+gathering the viewer can see — the host gets the same view as everyone.
+The headcount is `public.gathering_member_counts`, a security-definer
+function whose `where` restates the gathering's visibility. There is no
+card bridge: `profiles_select` admits only you, your connections, the
+sender of a live request to you, and cards you could already see when you
+blocked them, so co-membership never reveals a card. A listed gathering does expose its
+host's id; that id is not a card, and what it allows is one consent-gated
+connect request. A host cannot leave their own gathering; deleting it is
+how they leave.
 
-**The test.** `packages/db/test/gatherings.test.ts` (seventeen cases).
+**The test.** `packages/db/test/gatherings.test.ts` (twenty-one cases).
 
-**One edge, kept on purpose.** `join_gathering` refuses a joiner the host
-has blocked, not a joiner who has blocked the host: a block protects the
-blocker, who may still attend. The host never sees that member's card.
-`customize-gathering` §3 shows how to refuse both directions if your
-vertical wants that.
+**Both directions.** `join_gathering` refuses a joiner the host has
+blocked and a joiner who has blocked the host, with the same "gathering
+not found" as for a missing id: a gathering you cannot see is one you
+cannot join, in either direction.
 
 ## Two tiers of profile data
 
@@ -104,8 +116,8 @@ blocked.
 **How.** RLS decides rows, not columns, so every viewer the
 `profiles_select` policy admits reads every column of the row. That is
 why a connections-tier field is never a column on `profiles`: the
-recipient of your pending request, a gathering co-member, and someone who
-blocked you would all read it. Instead it lives in a sibling table with
+recipient of your pending request and someone who blocked you would both
+read it. Instead it lives in a sibling table with
 its own narrower policy. The starter ships one: `profile_links` (Profile →
 Links, the places you can be reached), readable by you and your accepted
 connections with no block in either direction. `extend-profile` builds a

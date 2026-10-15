@@ -47,6 +47,18 @@ line, where `-p` would show it to `ps`.
 **Checkpoint:** `db push` lists every migration and ends `Finished
 supabase db push`.
 
+Reusing an existing project with an older schema: `db push` refuses when
+the remote migration history differs from the local one. Only for a
+project with no data worth keeping (a demo or throwaway being reset on
+purpose), the owner resets it (owner-run, never Claude):
+`supabase link --project-ref <ref> && supabase db reset --linked`. That
+drops everything in the project's database, data included, then applies
+every local migration itself, so skip `db push`; verify with
+`supabase migration list --linked` (every local migration shows a remote
+match). A project whose data matters is never reset: reconcile its history
+with `supabase migration repair` and move its schema with a reviewed
+migration instead.
+
 The migrations also create the public `avatars` bucket and its policies
 (Storage is on by default in hosted projects). Confirm it under Storage →
 Buckets: public, 1 MiB, `image/jpeg, image/webp`.
@@ -55,16 +67,47 @@ Fetch keys into a gitignored env file — never put the service key on a
 command line (it lands in shell history and transcripts):
 
 ```sh
+( umask 077
 supabase projects api-keys --project-ref <ref> -o json | python3 -c "
-import json, sys
+import json, secrets, sys
 keys = {k['name']: k['api_key'] for k in json.load(sys.stdin)}
 anon = next((v for v in keys.values() if str(v).startswith('sb_publishable_')), keys.get('anon', ''))
 with open('.env.demo-seed', 'w') as f:
     f.write('SUPABASE_URL=https://<ref>.supabase.co\n')
     f.write(f\"SUPABASE_SERVICE_ROLE_KEY={keys['service_role']}\n\")
     f.write(f'SUPABASE_ANON_KEY={anon}\n')
-" && chmod 600 .env.demo-seed
+    f.write(f'SEED_DEMO_PASSWORD={secrets.token_urlsafe(18)}\n')
+" ) && chmod 600 .env.demo-seed   # umask: never world-readable; chmod: an existing file
 ```
+
+Older projects expose legacy keys only (`anon`, `service_role`, and one
+named `default`), no `sb_publishable_…`; the fallback to `anon` is correct
+there. The API verifies JWTs against the project's JWKS and accepts only
+`ES256` and `RS256` (`apps/api/src/middleware/jwt.ts`), so the project must
+*sign* with an asymmetric key. Pre-check:
+`curl -s https://<ref>.supabase.co/auth/v1/.well-known/jwks.json` shows a
+key with `"alg":"ES256"`; an empty `keys` list means the project still signs
+with the legacy shared secret. A listed key is not proof, since a standby
+key shows there too: the real check is the authed check in section 3, a
+freshly issued token verifying through the API. If the project still issues
+HS256 tokens (empty list, or that check 401s), rotate to an asymmetric
+signing key in the dashboard (look under Project Settings → JWT Keys)
+before go-live.
+
+Decide with the owner which deploy this is, because the seed creates two
+demo logins (`ada@` and `lin@demo.withme.local`):
+
+- **A public demo** (nobody signs up for real): the seed stays, and the
+  landing page may show a demo login (`VITE_DEMO_CREDENTIALS`, section 3).
+- **An app for real users**: the seed is only for the checks in sections
+  2 and 3, and section 5 removes it before anyone is told about the app.
+  Never publish a demo login next to real users. Whoever holds it can sign
+  in as Ada, see the cards of everyone who sends Ada a request, accept
+  them, and read their links (phone, email).
+
+On a hosted project the seed refuses to run without its own
+`SEED_DEMO_PASSWORD` (the keys file above has one), so no fork ships the
+local default password that every copy of this repo prints.
 
 Seed (a production write — owner's OK first):
 
@@ -83,14 +126,17 @@ Seed (a production write — owner's OK first):
 Every block that sources the keys file does it in a subshell like this one,
 so the keys never stay exported in your shell: the db package's test utils
 read `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, and a later
-`cd packages/db && bun test` would run the RLS suite against production
-with the service role (a code guard is tracked as ENG-752). One command per
+`cd packages/db && bun test` would otherwise run the RLS suite against
+production with the service role. `@withme/db/test-utils` now refuses a
+non-local `SUPABASE_URL` unless `SEED_ALLOW_REMOTE=1` is set, which is why
+that variable only ever appears inline on a single command. One command per
 line: under `set -e`, zsh does not stop partway through an `&&` chain.
 
 Auth note: hosted signups hit email confirmation, and the default
-Supabase SMTP only delivers to org members — seeded demo credentials are
-the path for anyone else unless you configure SMTP or flip confirmations
-off in the dashboard.
+Supabase SMTP only delivers to org members. For real users, the owner sets
+up custom SMTP (Authentication → Emails → SMTP Settings) before launch.
+Keep email confirmation on: without it anyone can sign up as someone
+else's address. A public demo can lean on the seeded login instead.
 
 Phone sign-in is off on a new hosted project until you turn it on. Ask
 the owner for their Twilio Account SID, Verify Service SID (`VA…`) and
@@ -101,13 +147,34 @@ texts verified numbers only.
 
 ## 2. API worker (first — the web worker's service binding needs it)
 
+If `wrangler whoami` lists more than one account, pin the intended one
+BEFORE the first deploy: add `"account_id": "<account id>"` to both
+`apps/api/wrangler.jsonc` and `apps/web/wrangler.jsonc`. An unpinned
+deploy can land on another account, where same-named legacy workers may
+live. While in those configs, set `"workers_dev": true` and
+`"preview_urls": false` explicitly (recommended): wrangler enables both
+when absent and warns, and Preview URLs publish every uploaded version
+publicly.
+
 ```sh
 cd apps/api && bunx wrangler deploy
 ```
 
 Cloudflare's API intermittently returns 502/504/524; retry up to 4 times
 with ~30s backoff — the failure is theirs, not your config. Success
-prints the workers.dev URL. Then config goes in as SECRETS via stdin
+prints the workers.dev URL; check its subdomain is the intended account's
+(`<name>.<subdomain>.workers.dev`), not another account's.
+
+If the deploy fails with "register a workers.dev subdomain", its link
+(`/workers/onboarding`) is retired and 404s, and it can fire even when the
+account shows an auto-generated subdomain. The owner sets one in the
+dashboard: Workers & Pages → account details (right column) → Subdomain →
+Change / Set up (`dash.cloudflare.com/<account_id>/workers/subdomain`).
+The code upload survives, so the redeploy after registering takes seconds.
+A new or renamed subdomain takes ~2 minutes to answer (`curl` prints
+`000` until then): wait before calling the checkpoint a failure.
+
+Then config goes in as SECRETS via stdin
 (vars in wrangler.jsonc would be clobbered on every deploy):
 
 ```sh
@@ -137,7 +204,8 @@ Write `apps/web/.env.production` (gitignored; nothing here is secret):
 VITE_API_URL=https://<api-worker>.workers.dev
 VITE_SUPABASE_URL=https://<ref>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
-VITE_DEMO_CREDENTIALS=<demo email> / <demo password>
+# Public demo only (section 1); leave unset for an app with real users:
+# VITE_DEMO_CREDENTIALS=<demo email> / <demo password>
 # VITE_STORE_URL=https://<your-store>   # optional: the Merch tab
 ```
 
@@ -145,13 +213,60 @@ VITE_DEMO_CREDENTIALS=<demo email> / <demo password>
 cd apps/web && bun run build && bunx wrangler deploy   # same retry rule
 ```
 
-**Checkpoint** (verify bodies with python, not grep chained after curl):
+**Checkpoint** (verify bodies with python, not grep chained after curl;
+send a browser `User-Agent`, since Cloudflare 403s urllib's default:
+`urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'})`,
+ASCII only: Python encodes header values as Latin-1):
 the landing page 200s with the wordmark; `/t/<seeded-uid>` 200s with the
 seeded card — this one proves the worker-to-worker service binding,
 which only exists if `services[0].service` in `apps/web/wrangler.jsonc`
-matches the api worker name exactly. Also verify the authed path once
-(sign in as the demo user via supabase-js, call the app router) — it
-exercises the JWKS leg, the classic silent failure. Then confirm
+matches the api worker name exactly. An unknown UID (`/t/banana`) returns
+404 with the calm card, not a 500; the 404 is correct.
+
+Auth URLs (the owner, in the Supabase dashboard: Authentication → URL
+Configuration): Site URL `https://<web-worker>.workers.dev`, Redirect URLs
+`https://<web-worker>.workers.dev/**`. Without them, confirmation and
+reset links point at `localhost:3000`. Do this before the sign-up below.
+
+Verify the authed path once — it exercises the JWKS leg, the classic
+silent failure. The owner runs it (production credentials); it prints
+field names only. Save as `apps/web/authed-check.ts` (so the deps
+resolve; never commit it):
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+import { createORPCClient } from '@orpc/client';
+import { RPCLink } from '@orpc/client/fetch';
+
+const env = process.env;
+const email = 'ada@demo.withme.local';
+const password = env.SEED_DEMO_PASSWORD ?? '';
+const apiUrl = env.VITE_API_URL ?? '';
+if (!password || /localhost|127\.0\.0\.1/.test(apiUrl + env.VITE_SUPABASE_URL)) {
+  throw new Error('needs apps/web/.env.production (production URLs) and .env.demo-seed');
+}
+const supabase = createClient(env.VITE_SUPABASE_URL!, env.VITE_SUPABASE_PUBLISHABLE_KEY!, {
+  auth: { persistSession: false },
+});
+const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+if (error || !data.session) throw new Error(`sign-in failed: ${error?.message}`);
+const token = data.session.access_token;
+const api: any = createORPCClient(
+  new RPCLink({ url: `${apiUrl}/rpc`, headers: () => ({ authorization: `Bearer ${token}` }) }),
+);
+const { profile } = await api.app.profile.get();
+console.log(`profile.get via ${new URL(apiUrl).host}: ok; fields: ${Object.keys(profile ?? {}).join(', ')}`);
+```
+
+```sh
+cd apps/web && ( trap 'rm -f authed-check.ts' EXIT; bun --env-file=.env.production --env-file=../../.env.demo-seed authed-check.ts )
+```
+
+The trap deletes the file however the check ends, and the subshell exits
+with the check's status, so a failed check still fails the command.
+
+A sign-in that works followed by a 401 from `profile.get` is the JWKS leg
+(see the JWKS check in section 1). Then confirm
 `delete_my_account()` works on the hosted project: sign up a throwaway
 account on the live web app (an address that can confirm — see the Auth
 note in section 1) and delete it (Profile → Account → Delete
@@ -165,6 +280,13 @@ stop and tell the owner — never work around it with the service role.
    init, or the project lands under the wrong owner:
    `bunx eas-cli init --non-interactive --force`, then
    `bunx eas-cli update:configure --non-interactive`.
+   A fork reusing an existing EAS project links it instead of creating
+   one: remove `extra.eas.projectId` and `updates.url` from `app.json`,
+   then `eas-cli init --id <projectId> --non-interactive` and
+   `eas-cli update:configure --non-interactive` (init also sets the
+   project icon on expo.dev). If `bunx eas-cli` fails with `Cannot find
+   module 'yallist'`, the bunx cache is broken: use `npx -y eas-cli@24.13.0 …`
+   (the version this runbook was last verified with; pin, never `@latest`).
 2. Write `apps/mobile/.env.production` with the `EXPO_PUBLIC_*` mirrors
    of step 3's values.
 3. Publish — `--environment` is REQUIRED in non-interactive mode:
@@ -187,10 +309,32 @@ NODE_ENV=production bunx expo export --platform ios --no-bytecode \
 `.env.production` beats `.env` in production exports (verified), so a
 local `.env` sitting next to it is harmless.
 
+## 5. Before real users
+
+Skip this for a public demo. For an app with real users, after every check
+above passes and before the app is announced (a production write, the
+owner's OK first):
+
+```sh
+(
+  set -e
+  set -a
+  source .env.demo-seed
+  set +a
+  SEED_ALLOW_REMOTE=1 bun run db:unseed
+)
+```
+
+**Checkpoint:** it prints `Removed 2 demo user(s) and the demo tags.`;
+signing in as `ada@demo.withme.local` fails; `apps/web/.env.production`
+has no `VITE_DEMO_CREDENTIALS` and the live landing page shows no login.
+Email confirmation is on and custom SMTP delivers to an outside address
+(section 1's Auth note).
+
 ## Redeploys
 
 DB: new migrations via `supabase db push`; reseed only with the owner's
-OK. Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
+OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
 
 ## Gotcha index
@@ -199,8 +343,16 @@ OK. Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 |---|---|
 | MCP Supabase tools can't see the new org | MCP tokens are org-scoped; use the CLI |
 | `wrangler deploy` 502/504/524 | Cloudflare API blip — retry with backoff |
+| Printed workers.dev URL is on another account's subdomain | Several accounts and no `account_id` pinned — pin it in both wrangler configs |
+| Deploy says "register a workers.dev subdomain", link 404s | Retired onboarding URL — Workers & Pages → account details → Subdomain; redeploy |
+| New workers.dev URL: `curl` prints `000` | The subdomain is still propagating — wait ~2 minutes |
+| Python body check gets 403 | Cloudflare blocks urllib's default User-Agent — send a browser one |
+| `db push` refuses: migration history differs | Reused project with an older schema — owner runs `supabase db reset --linked` |
+| Authed calls 401 after a good sign-in | Project JWKS has no asymmetric key — enable JWT signing keys |
+| `bunx eas-cli`: `Cannot find module 'yallist'` | Broken bunx cache — `npx -y eas-cli@24.13.0 …` (the version last verified) |
 | Web resolver errors only in production SSR | Service binding name ≠ api worker name |
-| Signups never confirm | Default SMTP delivers to org members only |
+| Signups never confirm | Default SMTP delivers to org members only — set up custom SMTP; never turn confirmation off for real users |
+| Seed: "Refusing to seed a hosted project without SEED_DEMO_PASSWORD" | Keys file predates this runbook — append `SEED_DEMO_PASSWORD=` plus a random 24+ character value |
 | Phone sign-in: "Unsupported phone provider" | The Phone provider is off in the dashboard |
 | Phone sign-in texts some numbers only | Twilio trial account: verify the number or upgrade |
 | `eas update` fails non-interactively | Missing `--environment` |

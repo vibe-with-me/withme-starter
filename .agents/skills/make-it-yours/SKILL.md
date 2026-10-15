@@ -86,6 +86,12 @@ and dark background values or the native splash will flash the old brand:
   (light bg) and the `expo-splash-screen` plugin entry's
   `backgroundColor` (light bg) + `dark.backgroundColor` (dark bg).
 
+And one place copies the light `--color-surface`:
+
+- `apps/web/src/lib/avatar.ts` → `PHOTO_FILL`, the fill baked under a
+  transparent photo when an avatar is cropped. Set it to the new light
+  surface value (light only: every viewer sees the same file).
+
 **The one-accent rule.** The palette is near-monochrome with exactly one
 vivid accent, and the accent appears only on the primary action of a
 screen: Connect, Accept, Claim tag, and Join (the resolver's "Join this
@@ -95,8 +101,13 @@ Do not introduce a second accent, and keep the accent off links, chrome,
 and any border outside that primary-action button — restraint is the
 design system. Keep the WCAG notes in `tokens.css` honest: accent/accent-ink
 ≥ 4.5:1, `--color-border-input` ≥ 3:1 against `--color-surface` (WCAG
-1.4.11), in both light and dark — recompute the ratios cited in the
-comments with a contrast checker; don't leave stale numbers.
+1.4.11), in both light and dark — measure with a contrast checker and
+cite four ratios in the comments: the accent pair (accent vs. accent-ink)
+in each theme, and the input border against the surface in each theme.
+Don't leave stale numbers. The
+starter's shipped light `--color-border-input` measures 2.97:1 (ENG-753):
+until that is fixed upstream, raise it in both files, e.g. opacity
+0.46 → 0.47 (3.06:1).
 
 **Checkpoint:**
 
@@ -108,7 +119,9 @@ grep -rn --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
 returns nothing (old accent fully evicted from both files; the
 exclusions matter — stale build output under `dist/` still contains the
 old values and would false-fail this). Repeat for each old neutral you
-replaced. Then `bun run lint && bun run typecheck` — both green.
+replaced, over the same `apps/` tree so it reaches `app.json` and
+`avatar.ts` too (the starter's light surface `#fffdf9` is also
+`PHOTO_FILL`). Then `bun run lint && bun run typecheck` — both green.
 If you changed the header height,
 `grep -n 'shell-nav-height:' apps/web/src/styles/tokens.css` and
 `grep -n 'headerHeight' apps/mobile/lib/tokens.ts` show the same number.
@@ -120,16 +133,28 @@ local files; keep it that way (no `<link>` to font CDNs).
 
 Web (`apps/web`):
 1. Obtain latin variable woff2 files for your fonts. Easiest source:
-   `cd apps/web && bun add -d @fontsource-variable/<font>` then copy
-   `node_modules/@fontsource-variable/<font>/files/<font>-latin-wght-normal.woff2`
-   into `apps/web/src/fonts/` (then `bun remove` the package — only the
-   file ships). Delete the old `space-grotesk-var-latin.woff2` /
-   `inter-var-latin.woff2` once unreferenced.
+   `cd apps/web && bun add -d @fontsource-variable/<font>`, then copy
+   the `wght` file under the shipped files' naming pattern,
+   `<font>-var-latin.woff2` (still in `apps/web`):
+
+   ```sh
+   cp node_modules/@fontsource-variable/<font>/files/<font>-latin-wght-normal.woff2 \
+     src/fonts/<font>-var-latin.woff2
+   ```
+
+   (then `bun remove` the package — only the file ships). If the
+   package also ships files for other axes (Archivo has `wdth` and
+   `standard` files too), copy only the `wght` one: the app varies
+   weight and nothing else. Delete the old
+   `space-grotesk-var-latin.woff2` / `inter-var-latin.woff2` once
+   unreferenced.
 2. Update the two `@font-face` blocks at the top of
-   `apps/web/src/styles/app.css`: family name, `src` filename, and the
-   `font-weight` range your variable file actually covers (read it from
-   the `@font-face` in `node_modules/@fontsource-variable/<font>/index.css`
-   before removing the package).
+   `apps/web/src/styles/app.css`: family name,
+   `src: url('../fonts/<font>-var-latin.woff2') format('woff2')` (keep
+   the existing `format('woff2')` hint), and the `font-weight` range
+   your variable file actually covers (read it from the `@font-face` in
+   `node_modules/@fontsource-variable/<font>/index.css` before removing
+   the package).
 3. Update `--font-display` and `--font-body` stacks in
    `apps/web/src/styles/tokens.css` to the new family names (keep
    system-font fallbacks).
@@ -149,13 +174,15 @@ Mobile (`apps/mobile`):
 plain strings tsc can NOT validate — compare its values against the
 `useFonts` keys by eye, a typo there silently falls back at runtime).
 `ls apps/web/src/fonts/` lists exactly the files referenced by
-`app.css`.
+`app.css`, every one named `<font>-var-latin.woff2`.
 
 ## 3. Wordmark and copy
 
 The brand renders in these places. Use the **wordmark** in the first
-eight (they render it as a mark) and the **display name** inside prose
-sentences (the `nfcPermission` string, README prose):
+eight (they render it as a mark) and in the README title, and the
+**display name** inside prose sentences (the `nfcPermission` string, and
+any README sentence that names the product — the starter's README prose
+names no brand, so there only the title and badge change):
 
 - `apps/web/src/routes/index.tsx` — the `<h1 className="wordmark">`.
 - `apps/web/src/components/AppShell.tsx` — the header wordmark link.
@@ -167,8 +194,8 @@ sentences (the `nfcPermission` string, README prose):
   mark a stranger who tapped a tag sees.
 - Page titles: `apps/web/src/routes/__root.tsx`, `login.tsx`,
   `claim.$uid.tsx`, `_app.connections.tsx`, `_app.gatherings.tsx`,
-  `_app.gatherings_.$id.tsx`, `_app.profile.tsx`, `_app.merch.tsx` (each
-  route's `head()`).
+  `_app.gatherings_.$id.tsx` (or your renamed route files),
+  `_app.profile.tsx`, `_app.merch.tsx` (each route's `head()`).
 - `apps/mobile/components/Header.tsx` — the wordmark `<Text>`.
 - `apps/mobile/app/t/[uid].tsx` — the `user_agent` prefix
   (`withme-mobile/…`).
@@ -178,20 +205,50 @@ sentences (the `nfcPermission` string, README prose):
   `photosPermission` string ("Choose a photo for your profile."), the
   iOS prompt before the photo library opens. It carries no brand;
   rewrite it only for voice.
-- The demo seed identity: `supabase/seed/index.ts` hardcodes the demo
-  emails (`*@demo.withme.local`) and password (`withme-demo-1`), which
-  surface in the seed's console output, the README, and the
-  `VITE_DEMO_CREDENTIALS` landing-page hint. Rebrand them or keep them —
+- `apps/web/src/routes/index.tsx` — the landing card's hint, "This is
+  the starter app — tags resolve at `/t/<uid>`." It names no brand, so
+  no sweep catches it, but your fork is no longer the starter app:
+  rewrite it in your voice, or delete the `<p className="hint">`.
+- The demo seed identity: `supabase/seed/demo.ts` holds the demo emails
+  (`*@demo.withme.local`) and `supabase/seed/index.ts` the local-only
+  password (`withme-demo-1`; a hosted project needs its own
+  `SEED_DEMO_PASSWORD`, see go-live), which surface in the seed's console
+  output, the README, and the `VITE_DEMO_CREDENTIALS` landing-page hint.
+  Rebrand them or keep them —
   but whatever the seed creates is what the README and
-  `VITE_DEMO_CREDENTIALS` must say (that hint has an example line in
-  `apps/web/.env.example` too — the step 8 sweep greps it).
+  `VITE_DEMO_CREDENTIALS` must say. That hint has a commented example
+  line in `apps/web/.env.example` AND in the `apps/web/.env` you copied
+  from it up front: edit the line in both files (the step 8 sweep greps
+  both).
 - `README.md` and `apps/mobile/README.md`, if you keep them — but not by
   blind substitution: the root README's `withme` occurrences include the
-  title, the upstream repo URL in the CI badge (needs your **fork's
+  title (`# withme-starter` becomes the wordmark, `# acme`), the
+  upstream repo URL in the CI badge (needs your **fork's
   URL**), `@withme/*` package names which stay, and the demo-credentials
   line which must match the seed (previous bullet).
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
+
+**Wordmark treatment.** Set the weight and tracking from the sheet's
+Wordmark row, the same on web and mobile. Case is the wordmark string
+itself (above); add no `text-transform`. Web: the `.wordmark` rule in
+`apps/web/src/styles/app.css` (the AppShell header link, the landing
+`<h1 className="wordmark">`, and the resolver footer;
+`.shell-header .wordmark` sets only size).
+The landing h1 also matches `.card h1` (weight 600), which outranks
+`.wordmark`: write the selector as `.wordmark, .card h1.wordmark`.
+The resolver footer (`WordmarkFooter` in `apps/web/src/routes/t.$uid.tsx`)
+ships without the class, so it renders in body type: give its link
+`className="wordmark"` (`<Link to="/" className="wordmark">`). It keeps
+its own size and takes the sheet's face, weight and tracking.
+Mobile: `styles.wordmark` in `apps/mobile/components/Header.tsx`, the
+only mobile wordmark. Mobile fonts are static weights: add a
+`wordmark` key to the `fonts` map in `apps/mobile/lib/tokens.ts` naming
+the nearest weight the package exports (a half step rounds down: 750 →
+`Archivo_700Bold`), load it in `_layout.tsx`'s `useFonts` (step 2), and
+set `letterSpacing` to the tracking in em times the `fontSize`
+(-0.035em at 20 → -0.7). The other marks (the login hint and the
+CalmStates links) render in body type; leave them.
 
 **Caution:** if you also rewrite *action* copy (button labels like
 "Connect", "Claim tag", "Accept", the "Name" field label), the Playwright
@@ -203,16 +260,22 @@ steps in `apps/web/e2e/helpers.ts` included, or e2e will fail.
 
 ```sh
 grep -rni withme apps/web/src apps/mobile/app apps/mobile/components \
-  supabase/seed README.md apps/mobile/README.md | grep -v '@withme/'
+  supabase/seed apps/web/.env.example apps/web/.env \
+  README.md apps/mobile/README.md | grep -v '@withme/' \
+  | sed -E 's/^([^:]*\.env[^:]*:[0-9]+):.*/\1/'
 ```
 
 returns nothing (if you deliberately kept the seed identity or an
-upstream attribution link, those are the only acceptable matches), and
+upstream attribution link, those are the only acceptable matches; the
+last line prints a `.env*` match as `file:line` only, so a secret value
+never reaches the output), and
 `grep -n nfcPermission apps/mobile/app.json` shows your new copy.
 If your new brand itself contains the string `withme` (e.g.
 `golfwithme`), this and every later brand sweep needs an extra filter
-for your own strings — `| grep -viE 'golfwithme|golf with me'` — the
-checkpoints are about OLD-brand residue, not the substring.
+for your own strings — `| grep -viE '<wordmark>|<display name>'`, e.g.
+`| grep -viE 'golfwithme|golf with me'`, inserted before the `sed` line
+(after it, a `.env` match no longer carries the text to filter) — the checkpoints are about
+OLD-brand residue, not the substring.
 `app.json` is deliberately NOT in the bulk grep here — its remaining
 `withme` values (name/slug/scheme/bundle ids) are step 4's job; the
 final sweep in step 8 catches everything.
@@ -225,8 +288,18 @@ In `apps/mobile/app.json`, set: `expo.name` (display name), `expo.slug`,
 `expo.android.package` (reverse-domain, immutable after store
 submission — choose carefully).
 
+`expo.slug` is the wordmark, lowercase, with any space or other
+character outside `a-z0-9` turned into a hyphen (`acme` → `acme`;
+a wordmark `run club` → `run-club`). It names the EAS project step 5
+creates.
+
+Until step 5 runs, `expo.owner`, `expo.extra.eas.projectId` and
+`expo.updates.url` still point at the upstream project, which does not
+match your new slug: run no `eas` command between this step and step 5.
+
 **Checkpoint:** `cd apps/mobile && bunx expo config --type public`
-prints the new name/slug/scheme without schema errors.
+prints the new name/slug/scheme without schema errors (it still prints
+the upstream `owner` and `projectId`; step 5 replaces them).
 
 ## 5. EAS re-ownership (requires the fork owner's Expo account)
 
@@ -241,6 +314,9 @@ its own:
 3. `bunx eas update:configure` — restores `updates.url` pointing at the
    new project.
 
+A fork reusing an EAS project it already has links it instead of
+creating one: see go-live §4, step 1.
+
 **Checkpoint:** `app.json` carries the fork owner's `owner` and a
 `projectId` ≠ `cf56d2f1-eaec-406b-be9c-972519a6be84`, and `updates.url`
 ends with that new projectId.
@@ -253,12 +329,21 @@ ends with that new projectId.
   this binding; a mismatch deploys a web app that cannot resolve tags
   server-side.
 - `supabase/config.toml` → `project_id` (optional; names the local
-  Docker stack — if changed, `bun run db:stop && bun run db:start`).
+  Docker stack). Pick an id no other checkout uses:
+  `docker ps -a --format '{{.Names}}' | grep -c "^supabase_db_<new id>$"`
+  must print 0 (otherwise the reset below lands on that checkout's stack).
+  If you rename it, stop the running stack first, while
+  `config.toml` still names it: `bun run db:stop`. Then rename. Then
+  `bun run db:start`, then `bun run db:reset && bun run db:seed`: the
+  renamed project starts on new, empty volumes. A fresh fork's
+  `project_id` is still `withme-starter`, so that stop also stops any
+  other checkout of the starter on this machine.
 - The `.env` files you created up front are *stack* config, not brand:
-  local values stay as the `.example` files ship them. Production
-  URLs/keys are deploy-time secrets. `VITE_DEMO_CREDENTIALS` (web)
-  renders the landing-page demo hint — unset it or keep it in sync with
-  your seed identity (step 3).
+  local values stay as the `.example` files ship them (after step 3,
+  `apps/web/.env` still matches `apps/web/.env.example` line for line).
+  Production URLs/keys are deploy-time secrets. `VITE_DEMO_CREDENTIALS`
+  (web) renders the landing-page demo hint — unset it or keep it in sync
+  with your seed identity (step 3).
 
 **Checkpoint:** `grep -n 'withme' apps/api/wrangler.jsonc apps/web/wrangler.jsonc`
 returns nothing, and the web `services` entry matches the api `name`.
@@ -315,14 +400,56 @@ bun run lint && bun run typecheck && bun run test
 ```
 
 all green, plus the final brand sweep — with the identity steps done,
-this now covers everything step 3's checkpoint deferred:
+this now covers everything step 3's checkpoint deferred. It also looks
+for the upstream org, `vibe-with-me` (hyphenated, so `withme` alone
+misses it), and reads your `.env` files under `apps/` (printed as
+`file:line` only, as in step 3):
 
 ```sh
-grep -rni --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
-  withme apps/ supabase/seed README.md | grep -v '@withme/'
+grep -rniE --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
+  'withme|vibe-with-me' apps/ packages/ supabase/ README.md \
+  | grep -v '@withme/' \
+  | grep -v '^supabase/migrations/' \
+  | grep -v '^packages/nfc-sdk/' \
+  | grep -viE '<wordmark>|<display name>' \
+  | sed -E 's/^([^:]*\.env[^:]*:[0-9]+):.*/\1/'
 ```
 
-returns nothing (same acceptable-matches caveat as step 3).
+returns nothing. Fill in the `<wordmark>` line when your wordmark or display
+name contains `withme` (e.g. `'golfwithme|golf with me'`): without it
+every line of your own brand prints, because `withme` matches inside it.
+If neither contains `withme`, delete that line. What the other filters
+drop, and why a fork leaves it:
+
+- `supabase/migrations/` — the first migration's header comment names
+  `withme-starter`. Migrations are history: never edit an applied one.
+- `packages/nfc-sdk/` — the SDK (`@withme/nfc`) names the upstream in
+  its `package.json` `repository.url` and in doc comments. A fork that
+  does not publish the SDK leaves them. If you publish it under your
+  own name, drop that filter and fix what it then prints.
+
+The only other acceptable matches, each one a choice you made
+deliberately: the seed identity if you kept it (step 3, and then the
+README demo line and the `.env` example lines with it), an upstream
+attribution link in the README, and `supabase/config.toml`'s
+`project_id` if you kept it (step 6 makes the rename optional).
+
+Not acceptable: `"owner": "vibe-with-me"` in `apps/mobile/app.json`
+while `extra.eas.projectId` is still `cf56d2f1-…`. It means step 5 is
+undone, so the app still points at the upstream EAS project; the sweep
+stays red until step 5 runs.
+
+A fork in the same GitHub org as the starter (`vibe-with-me/<your-repo>`)
+has two more correct matches: the README CI badge naming the fork's own
+repo (step 3), and `"owner": "vibe-with-me"` once step 5 has given
+`app.json` the fork's own `projectId`. Append this to the sweep, with
+`<your-repo>` filled in; it drops the owner line only after step 5:
+
+```sh
+  | grep -v '^README.md:[0-9]*:.*github\.com/vibe-with-me/<your-repo>/' \
+  | if grep -q cf56d2f1-eaec-406b-be9c-972519a6be84 apps/mobile/app.json; \
+    then cat; else grep -v '^apps/mobile/app.json:[0-9]*: *"owner": "vibe-with-me",$'; fi
+```
 
 Finally the visual check, which needs BOTH dev servers: in one shell
 `cd apps/api && bun run dev` (the web loaders call the API Worker on

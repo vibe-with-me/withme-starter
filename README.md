@@ -42,7 +42,7 @@ minutes ([Try it](#try-it-locally)).
 | **Tags** | Each physical tag carries one permanent URL, `https://<your-domain>/t/{UID}`. What the tag points at lives in the database, so you can re-point a tag forever without touching the sticker. |
 | **The card** | A name, a photo, a short bio. The only thing a stranger sees after a tap. Reachable by tapping a tag or through an existing connection, never by browsing. |
 | **The handshake** | Tap → "Connect" → the other person accepts → you are connected. Requests expire after a week. Either side can remove a connection, quietly. |
-| **Gatherings** | A host creates one ("Rooftop listening session"), points a tag at it, and a tap on that tag is the invitation. Members see each other's cards through it. No browse surface, ever. |
+| **Gatherings** | A host creates one ("Rooftop listening session") and everyone in the domain sees it in the Events tab: title, time, place, a headcount. Who's going shows only the people you have connected with. A tap on a member's tag is still the invitation. No browse surface for people, ever. |
 | **Blocks** | Absolute and invisible. A blocked person sees exactly what a stranger sees, and gets no signal that anything happened. |
 | **Profile & account** | Photo upload, "My tags" (re-point or turn off), account deletion that cascades through everything and releases your tags. |
 | **Links** | Where you can be reached: Instagram, WhatsApp, a website, a phone number, one per platform from a picker. Seen only by the people you have connected with, never on the card. |
@@ -211,9 +211,11 @@ points at the test that proves it.
   response as a stranger, down to the rate limiter.
 - **Connections are mutual.** They exist only when a request is accepted,
   and either side can end one without notifying the other.
-- **Gatherings are invitation-only.** Holding a member's tag, or a link a
-  member shared, is the invitation. A gathering you may not see looks
-  like a gathering that does not exist.
+- **Gatherings are listed; who's going is not.** Everyone signed in to
+  the domain sees every gathering and its headcount. The member list
+  shows you only yourself and your accepted connections; joining never
+  reveals your card to a stranger. A gathering hidden by a block looks
+  like one that does not exist.
 - **Scans are privacy-default.** A tap stores a user-agent string and a
   timestamp. No GPS, no IP, no fingerprinting: those columns do not exist.
 - **Photos cannot point off-site.** A profile stores a path inside your
@@ -276,10 +278,11 @@ make different choices, but the skills assume these.
 ## What this is not
 
 The starter's job is the moment after a physical tap. It deliberately has
-no matching, discovery, recommendations, feeds, or event aggregation.
-Software that decides who you should meet is a different product with
-different incentives, and the no-enumeration promise above depends on not
-building one. Extensions that rank, recommend, aggregate, or monetize are
+no matching, recommendations, people feeds, or aggregation of events from
+elsewhere; the Events tab is a time-ordered list of your own domain's
+gatherings, a bulletin board, not a recommendation. Software that decides
+who you should meet is a different product with different incentives, and
+the no-enumeration promise above depends on not building one. Extensions that rank, recommend, aggregate, or monetize are
 off-thesis for this repo; a fork can build them, but the skills will not.
 
 The commercial line, stated on day one: **the handshake layer is free and

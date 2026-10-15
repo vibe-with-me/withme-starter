@@ -122,10 +122,11 @@ function GatheringInvite({ gathering, ownerId }: { gathering: GatheringSummary; 
       if (userId === null) return 'other';
       // The tag's owner: a member by construction, not necessarily the host.
       if (userId === ownerId) return 'member';
-      // Already in it? A member's get succeeds; anyone else's is NOT_FOUND,
-      // the same answer as a gathering that does not exist.
+      // Already in it? The member list is the viewer's view, so their own
+      // row is in it iff they joined. A hidden gathering (NOT_FOUND) reads
+      // as not a member: the detail then says it isn't available.
       return api.app.gatherings.get({ id: gathering.id }).then(
-        () => 'member' as const,
+        ({ members }) => (members.some((m) => m.profile.id === userId) ? 'member' : 'other'),
         () => 'other' as const,
       );
     })()

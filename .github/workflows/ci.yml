@@ -16,7 +16,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -41,12 +41,21 @@ jobs:
           bunx publint packages/nfc-sdk
           bunx @arethetypeswrong/cli --pack packages/nfc-sdk --profile node16
 
-      - uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: 2.120.0
 
       - name: Start Supabase (for RLS tests)
         run: supabase start -x studio,mailpit
+
+      # The test helpers have no service-role key in source; hand them the
+      # local stack's own, as docs/local-development.md does.
+      - name: Export the local service-role key
+        run: |
+          key="$(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | sed -n 's/^SUPABASE_SERVICE_ROLE_KEY="\(.*\)"$/\1/p')"
+          test -n "$key"
+          echo "::add-mask::$key"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Test
         run: bun run test
@@ -62,7 +71,7 @@ jobs:
 
       - name: Upload Playwright traces on failure
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-test-results
           path: apps/web/test-results

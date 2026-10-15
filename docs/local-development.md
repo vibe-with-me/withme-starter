@@ -90,6 +90,24 @@ has the rest.
 | `bun run --cwd apps/api e2e` | The SDK through the API Worker into Supabase | The stack, and `cd apps/api && bun run dev` in another shell |
 | `bun run --cwd apps/web test:e2e` | Playwright smoke against the production build: resolve → claim → connect, the shell, gatherings, connections, profile | The stack. Playwright starts the API Worker and the built web Worker itself. |
 
+### The service-role key
+
+The RLS suite, both e2e harnesses, and the seed set up fixtures with the
+local stack's service-role key, which bypasses RLS. The test helpers have
+no fallback copy of it in source: they read it from
+`SUPABASE_SERVICE_ROLE_KEY` and stop with an error naming this section
+when it is missing. `bun run db:start` prints it (the Secret key), and
+the CLI hands it over on demand. Once per shell, from the repo root with
+the stack up:
+
+```sh
+eval "export $(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep ^SUPABASE_SERVICE_ROLE_KEY=)"
+```
+
+`bun run db:seed` and `bun run db:provision` do this themselves when the
+variable is unset and the target is the local stack. CI exports it the
+same way after `supabase start`.
+
 `bun run lint && bun run typecheck && bun run test` is the verification
 gate every skill ends with. CI runs the same plus the build, the SDK
 publish checks, and the Playwright smoke.

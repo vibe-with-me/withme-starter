@@ -25,6 +25,8 @@ one universal feature can't be added by prose after the fact.
 - **The gathering moves into core.** This revises the 2026-06-11 roadmap
   ("growth ships as skills"). The V1 invariant still holds: nothing ranks,
   recommends, aggregates, or monetizes, and there is no browse surface.
+  (Revised 2026-10-14: gatherings are listed to the domain; who's going is
+  connections-only. See `2026-10-14-gatherings-domain-wide.md`.)
   `build-gathering` becomes `customize-gathering` (rename user-facing nouns,
   add fields). Internal identifiers stay `gathering` in a fork, the same
   rule make-it-yours applies to `@withme/*` packages.
@@ -228,6 +230,12 @@ Five PRs, in order, each passing the gate:
 5. **Proof.** Fresh clone → make-it-yours → customize-gathering →
    extend-profile → go-live, as a fake derivation, timed. This is the
    acceptance test for "derivations are no longer barebones."
+   *Done 2026-10-14: see `../reports/2026-10-14-proof-run.md`. Covered
+   by two runs, not one: Run Club, a fresh clone through the skills
+   locally, timed, no go-live; and Golf with Me, a fork rebuilt on a fresh
+   starter tree through the skills and a real go-live. No single run was a
+   fresh clone through go-live. Deferred: the tailgate
+   rebuild (ENG-756), physical tags, an EAS build.*
 
 **Precondition.** The Playwright web smoke is out of CI (dev-SSR stall,
 `ci.yml` note). PR 1 rewrites every web route. Spend a bounded hour on the

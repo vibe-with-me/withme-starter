@@ -1,11 +1,13 @@
-// Gatherings: membership-scoped visibility, block-respecting joins, and the
-// tap-to-join destination. The negative space is the spec: strangers and
-// blocked users must see nothing — not even a different error message.
+// Gatherings: listed to the domain, who's going connections-only,
+// block-respecting joins, and the tap-to-join destination. The negative
+// space is the spec: a stranger sees the gathering and the headcount and no
+// member row; a blocked viewer sees nothing — not even a different error.
 import { beforeAll, describe, expect, it } from 'bun:test';
 import {
   admin,
   anonClient,
   assertStackRunning,
+  connectUsers,
   createTestUser,
   provisionTag,
 } from '../src/test-utils/index.ts';
@@ -31,6 +33,24 @@ async function createGathering(
 function expectEmpty(result: { data: unknown[] | null; error: unknown }): void {
   expect(result.error).toBeNull();
   expect(result.data).toEqual([]);
+}
+
+/** The member rows this client may read, as profile ids. */
+async function visibleMembers(client: Client, gatheringId: string): Promise<string[]> {
+  const { data, error } = await client
+    .from('gathering_members')
+    .select('profile_id')
+    .eq('gathering_id', gatheringId);
+  expect(error).toBeNull();
+  return (data ?? []).map((m) => m.profile_id).toSorted();
+}
+
+/** The headcount this client gets, or null when the gathering is hidden from it. */
+async function headcount(client: Client, gatheringId: string): Promise<number | null> {
+  const { data, error } = await client.rpc('gathering_member_counts', { p_ids: [gatheringId] });
+  expect(error).toBeNull();
+  const row = (data ?? []).find((r) => r.gathering_id === gatheringId);
+  return row ? Number(row.member_count) : null;
 }
 
 describe('gathering membership and visibility', () => {
@@ -62,41 +82,60 @@ describe('gathering membership and visibility', () => {
     expect(membership?.tenant_id).toBe(gathering?.tenant_id);
   });
 
-  it('a stranger sees neither the gathering nor its members', async () => {
+  it('a stranger sees the gathering and its headcount, and no member row', async () => {
     const alice = await createTestUser('Alice');
     const mallory = await createTestUser('Mallory');
     const id = await createGathering(alice.client);
 
-    expectEmpty(await mallory.client.from('gatherings').select('*').eq('id', id));
-    expectEmpty(await mallory.client.from('gathering_members').select('*').eq('gathering_id', id));
+    // the feed: every signed-in user of the domain reads the entity
+    const { data: feed, error } = await mallory.client.from('gatherings').select('*').eq('id', id);
+    expect(error).toBeNull();
+    expect(feed?.map((g) => g.title)).toEqual(['Rooftop listening session']);
+    expect(await headcount(mallory.client, id)).toBe(1);
+
+    // who's going: not a single row, and the host's card stays hidden
+    expect(await visibleMembers(mallory.client, id)).toEqual([]);
+    expectEmpty(await mallory.client.from('profiles').select('id').eq('id', alice.id));
   });
 
-  it('joining admits the user, and co-members can now read each other cards', async () => {
+  it("joining reveals your own row; co-members' cards stay hidden until they connect", async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
     const id = await createGathering(alice.client);
 
-    // before joining, alice is invisible to bob (no enumeration)
-    expectEmpty(await bob.client.from('profiles').select('id').eq('id', alice.id));
-
     const { error } = await bob.client.rpc('join_gathering', { p_gathering_id: id });
     expect(error).toBeNull();
 
-    const { data: members } = await bob.client
-      .from('gathering_members')
-      .select('profile_id')
-      .eq('gathering_id', id);
-    expect(members).toHaveLength(2);
+    // both are members; each sees only themself, and neither card crosses
+    expect(await headcount(bob.client, id)).toBe(2);
+    expect(await visibleMembers(bob.client, id)).toEqual([bob.id]);
+    expect(await visibleMembers(alice.client, id)).toEqual([alice.id]);
+    expectEmpty(await bob.client.from('profiles').select('id').eq('id', alice.id));
+    expectEmpty(await alice.client.from('profiles').select('id').eq('id', bob.id));
 
-    // the gathering is the introduction context: the host's card is now visible
-    const { data: hostCard } = await bob.client
-      .from('profiles')
-      .select('id, display_name')
-      .eq('id', alice.id);
-    expect(hostCard).toHaveLength(1);
+    // the connection, not the gathering, is what shows who is going
+    await connectUsers(alice, bob);
+    expect(await visibleMembers(bob.client, id)).toEqual([alice.id, bob.id].toSorted());
+    expect(await visibleMembers(alice.client, id)).toEqual([alice.id, bob.id].toSorted());
   });
 
-  it('leaving removes gathering visibility and the card bridge', async () => {
+  it('the headcount counts members the viewer cannot see', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    const carol = await createTestUser('Carol');
+    const id = await createGathering(alice.client);
+    await bob.client.rpc('join_gathering', { p_gathering_id: id });
+    await carol.client.rpc('join_gathering', { p_gathering_id: id });
+    await connectUsers(bob, carol);
+
+    expect(await headcount(bob.client, id)).toBe(3);
+    expect(await visibleMembers(bob.client, id)).toEqual([bob.id, carol.id].toSorted());
+    // the host sees the same shape as everyone: their connections, plus the count
+    expect(await headcount(alice.client, id)).toBe(3);
+    expect(await visibleMembers(alice.client, id)).toEqual([alice.id]);
+  });
+
+  it('leaving removes the membership; the gathering stays listed', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
     const id = await createGathering(alice.client);
@@ -109,7 +148,9 @@ describe('gathering membership and visibility', () => {
       .eq('profile_id', bob.id);
     expect(error).toBeNull();
 
-    expectEmpty(await bob.client.from('gatherings').select('*').eq('id', id));
+    expect(await visibleMembers(bob.client, id)).toEqual([]);
+    expect(await headcount(bob.client, id)).toBe(1);
+    expect((await bob.client.from('gatherings').select('id').eq('id', id)).data).toHaveLength(1);
     expectEmpty(await bob.client.from('profiles').select('id').eq('id', alice.id));
   });
 
@@ -149,6 +190,9 @@ describe('gathering membership and visibility', () => {
     expect(createError?.message).toContain('permission denied for function create_gathering');
     const { error: joinError } = await anon.rpc('join_gathering', { p_gathering_id: id });
     expect(joinError?.message).toContain('permission denied for function join_gathering');
+    const { error: countError } = await anon.rpc('gathering_member_counts', { p_ids: [id] });
+    expect(countError?.message).toContain('permission denied for function gathering_member_counts');
+    expectEmpty(await anon.from('gatherings').select('*').eq('id', id));
   });
 
   it('only the host can edit or delete the gathering', async () => {
@@ -209,19 +253,69 @@ describe('gathering membership and visibility', () => {
 });
 
 describe('gatherings respect blocks', () => {
-  it('a blocked join is indistinguishable from a missing gathering', async () => {
+  it("a viewer the host blocked sees neither the host's gathering nor its headcount", async () => {
+    const alice = await createTestUser('Alice');
+    const mallory = await createTestUser('Mallory');
+    const id = await createGathering(alice.client);
+    await admin.from('blocks').insert({ blocker_id: alice.id, blocked_id: mallory.id });
+
+    expectEmpty(await mallory.client.from('gatherings').select('*').eq('id', id));
+    expect(await headcount(mallory.client, id)).toBeNull();
+    expect(await visibleMembers(mallory.client, id)).toEqual([]);
+  });
+
+  it("a viewer who blocked the host sees neither the host's gathering nor its headcount", async () => {
+    const alice = await createTestUser('Alice');
+    const mallory = await createTestUser('Mallory');
+    const id = await createGathering(alice.client);
+    await mallory.client.from('blocks').insert({ blocker_id: mallory.id, blocked_id: alice.id });
+
+    expectEmpty(await mallory.client.from('gatherings').select('*').eq('id', id));
+    expect(await headcount(mallory.client, id)).toBeNull();
+    expect(await visibleMembers(mallory.client, id)).toEqual([]);
+  });
+
+  it("a hidden gathering hides a connection's membership in it too", async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
+    const carol = await createTestUser('Carol');
     const id = await createGathering(alice.client);
+    await carol.client.rpc('join_gathering', { p_gathering_id: id });
+    await connectUsers(bob, carol);
+    // positive control: a visible gathering shows the connection's row
+    expect(await visibleMembers(bob.client, id)).toEqual([carol.id]);
+
     await admin.from('blocks').insert({ blocker_id: alice.id, blocked_id: bob.id });
 
+    // the member policy is not an oracle for gatherings the viewer cannot see
+    expect(await visibleMembers(bob.client, id)).toEqual([]);
+    expectEmpty(await bob.client.from('gatherings').select('*').eq('id', id));
+  });
+
+  it('a blocked join is indistinguishable from a missing gathering, in both directions', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    const carol = await createTestUser('Carol');
+    const id = await createGathering(alice.client);
+    await admin.from('blocks').insert({ blocker_id: alice.id, blocked_id: bob.id });
+    // carol blocked the host: she reads the gathering as nonexistent, so she cannot join it
+    await carol.client.from('blocks').insert({ blocker_id: carol.id, blocked_id: alice.id });
+
     const { error: blocked } = await bob.client.rpc('join_gathering', { p_gathering_id: id });
+    const { error: blocker } = await carol.client.rpc('join_gathering', { p_gathering_id: id });
     const { error: missing } = await bob.client.rpc('join_gathering', {
       p_gathering_id: crypto.randomUUID(),
     });
     expect(blocked?.message).toContain('gathering not found');
+    expect(blocker?.message).toContain('gathering not found');
     expect(missing?.message).toContain('gathering not found');
     expect(blocked?.message).toBe(missing!.message);
+    expect(blocker?.message).toBe(missing!.message);
+    const { data: raw } = await admin
+      .from('gathering_members')
+      .select('profile_id')
+      .eq('gathering_id', id);
+    expect(raw?.map((m) => m.profile_id)).toEqual([alice.id]);
   });
 
   it('blocking evicts the blocked member from the pair-hosted gathering', async () => {
@@ -262,20 +356,22 @@ describe('gatherings respect blocks', () => {
     expectEmpty(await dave.client.from('gatherings').select('*').eq('id', id));
   });
 
-  it('a block between co-members hides their cards; the third-party gathering is untouched', async () => {
+  it('a block between connected co-members hides their rows from each other; the third-party gathering is untouched', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
     const carol = await createTestUser('Carol');
     const id = await createGathering(alice.client);
     await bob.client.rpc('join_gathering', { p_gathering_id: id });
     await carol.client.rpc('join_gathering', { p_gathering_id: id });
+    await connectUsers(bob, carol);
+    expect(await visibleMembers(bob.client, id)).toEqual([bob.id, carol.id].toSorted());
 
     const { error } = await carol.client
       .from('blocks')
-      .insert({ blocker_id: carol.id, blocked_id: bob.id });
+      .insert({ blocker_id: carol.id, blocked_id: bob.id, reveals_card: true });
     expect(error).toBeNull();
 
-    // both stay members of alice's gathering
+    // both stay members of alice's gathering, which both still see
     const { data: raw } = await admin
       .from('gathering_members')
       .select('profile_id')
@@ -284,9 +380,14 @@ describe('gatherings respect blocks', () => {
       [alice.id, bob.id, carol.id].toSorted(),
     );
     expect((await bob.client.from('gatherings').select('id').eq('id', id)).data).toHaveLength(1);
+    expect((await carol.client.from('gatherings').select('id').eq('id', id)).data).toHaveLength(1);
+    expect(await headcount(bob.client, id)).toBe(3);
 
-    // the blocked member cannot see the blocker's card through the gathering;
-    // the blocker still sees whom they blocked (their own list UI)
+    // the block ended the connection, so each sees only their own row again;
+    // the blocked member cannot see the blocker's card, while the blocker
+    // still sees whom they blocked (their own list UI)
+    expect(await visibleMembers(bob.client, id)).toEqual([bob.id]);
+    expect(await visibleMembers(carol.client, id)).toEqual([carol.id]);
     expectEmpty(await bob.client.from('profiles').select('id').eq('id', carol.id));
     expect((await carol.client.from('profiles').select('id').eq('id', bob.id)).data).toHaveLength(
       1,

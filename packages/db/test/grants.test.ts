@@ -43,19 +43,22 @@ const SIGNED_IN_RPCS = [
   'public.create_gathering',
   'public.decline_connect_request',
   'public.delete_my_account',
+  'public.gathering_member_counts',
   'public.join_gathering',
   'public.send_connect_request',
   'public.set_my_links',
 ];
 
-// Called by the policies that apply to authenticated.
+// Called by the policies that apply to authenticated, plus the resolver's
+// membership helper (resolve_tag is a definer, but the grant is kept so a
+// fork's policy may call it).
 const POLICY_HELPERS = [
   'private.current_tenant_id',
   'private.is_avatar_path',
   'private.is_blocked',
   'private.is_gathering_member',
   'private.is_link_value',
-  'private.shares_gathering',
+  'private.sees_card',
 ];
 
 describe('function grants', () => {

@@ -134,12 +134,15 @@ export async function removeConnection(db: Db, connectionId: string): Promise<vo
 /**
  * Idempotent and oracle-free: re-blocking succeeds silently, and so does
  * blocking an unknown id (an FK error would let callers probe which UUIDs
- * exist).
+ * exist). The block keeps the card in the block list only if the blocker
+ * can see it now; RLS refuses reveals_card for anyone else (42501), and the
+ * retry blocks without it.
  */
 export async function blockUser(db: Db, blockerId: string, blockedId: string): Promise<void> {
-  const { error } = await db
-    .from('blocks')
-    .insert({ blocker_id: blockerId, blocked_id: blockedId });
+  const insert = (reveals_card: boolean) =>
+    db.from('blocks').insert({ blocker_id: blockerId, blocked_id: blockedId, reveals_card });
+  let { error } = await insert(true);
+  if (error?.code === '42501') ({ error } = await insert(false));
   if (error && error.code !== '23505' && error.code !== '23503') throw error;
 }
 
@@ -152,6 +155,9 @@ export async function unblockUser(db: Db, blockerId: string, blockedId: string):
   if (error) throw error;
 }
 
+/** Stands in for a card the block does not reveal. */
+export const BLOCKED_USER_NAME = 'Blocked user';
+
 export interface BlockRow {
   created_at: string;
   user: ProfileCard;
@@ -160,10 +166,18 @@ export interface BlockRow {
 export async function listBlocks(db: Db): Promise<BlockRow[]> {
   const { data, error } = await db
     .from('blocks')
-    .select(`created_at, user:profiles!blocks_blocked_id_fkey(${CARD_COLUMNS})`)
+    .select(`blocked_id, created_at, user:profiles!blocks_blocked_id_fkey(${CARD_COLUMNS})`)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).flatMap((row) =>
-    row.user ? [{ created_at: row.created_at, user: row.user }] : [],
-  );
+  // A block that does not reveal its card (reveals_card false: the blocker
+  // could not see it when they blocked) still lists, so it can be undone.
+  return (data ?? []).map((row) => ({
+    created_at: row.created_at,
+    user: row.user ?? {
+      id: row.blocked_id,
+      display_name: BLOCKED_USER_NAME,
+      avatar_path: null,
+      bio: null,
+    },
+  }));
 }

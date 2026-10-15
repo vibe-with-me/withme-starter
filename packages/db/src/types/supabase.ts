@@ -40,6 +40,7 @@ export type Database = {
           blocker_id: string
           created_at: string
           id: string
+          reveals_card: boolean
           tenant_id: string
         }
         ComputedFields: never
@@ -48,6 +49,7 @@ export type Database = {
           blocker_id: string
           created_at?: string
           id?: string
+          reveals_card?: boolean
           tenant_id?: string
         }
         Update: {
@@ -55,6 +57,7 @@ export type Database = {
           blocker_id?: string
           created_at?: string
           id?: string
+          reveals_card?: boolean
           tenant_id?: string
         }
         Relationships: [
@@ -399,6 +402,13 @@ export type Database = {
       delete_my_account: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      gathering_member_counts: {
+        Args: { p_ids: string[] }
+        Returns: {
+          gathering_id: string
+          member_count: number
+        }[]
       }
       join_gathering: { Args: { p_gathering_id: string }; Returns: undefined }
       log_scan: {

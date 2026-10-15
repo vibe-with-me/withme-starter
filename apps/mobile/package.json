@@ -14,9 +14,9 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
-    "@orpc/client": "^1.13.6",
+    "@orpc/client": "^1.15.5",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@supabase/supabase-js": "^2.103.0",
+    "@supabase/supabase-js": "^2.117.3",
     "@withme/contract": "workspace:*",
     "aes-js": "^3.1.2",
     "expo": "56.0.9",
@@ -41,10 +41,10 @@
     "react-native-screens": "4.25.2"
   },
   "devDependencies": {
-    "@orpc/contract": "^1.13.6",
+    "@orpc/contract": "^1.15.5",
     "@types/aes-js": "^3.1.4",
     "@types/react": "~19.2.2",
-    "agent-device": "0.17.2",
+    "agent-device": "0.21.25",
     "typescript": "~6.0.3"
   }
 }

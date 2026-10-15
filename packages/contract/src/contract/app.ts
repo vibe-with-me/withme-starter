@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ConnectRequestSchema, ConnectionSchema } from '../schemas/connection.ts';
 import {
   CreateGatheringInputSchema,
+  GatheringListItemSchema,
   GatheringMemberSchema,
   GatheringSchema,
   UpdateGatheringInputSchema,
@@ -118,9 +119,17 @@ const createGathering = oc
 const getGathering = oc
   .route({ method: 'GET', path: '/gatherings/{id}', tags: ['Gatherings'] })
   .input(z.object({ id: z.uuid() }))
-  // Not-found and blocked-by-host are the same NOT_FOUND error — a gathering
-  // you may not see is a gathering that does not exist.
-  .output(z.object({ gathering: GatheringSchema, members: z.array(GatheringMemberSchema) }));
+  // Every signed-in user of the domain may read a gathering. Blocked by the
+  // host (either way) and nonexistent are the same NOT_FOUND. `members` is
+  // the viewer's view (themself and their connections); `member_count` is
+  // everyone.
+  .output(
+    z.object({
+      gathering: GatheringSchema,
+      members: z.array(GatheringMemberSchema),
+      member_count: z.number().int().nonnegative(),
+    }),
+  );
 
 const joinGathering = oc
   .route({ method: 'POST', path: '/gatherings/{id}/join', tags: ['Gatherings'] })
@@ -132,11 +141,18 @@ const leaveGathering = oc
   .input(z.object({ id: z.uuid() }))
   .output(z.object({ ok: z.literal(true) }));
 
-const listMyGatherings = oc
+const listGatherings = oc
   .route({ method: 'GET', path: '/gatherings', tags: ['Gatherings'] })
-  // Bare RLS-scoped list of the caller's own gatherings. This is NOT a browse
-  // surface and must never grow into one.
-  .output(z.object({ gatherings: z.array(GatheringSchema) }));
+  // What is happening in the domain: every upcoming gathering the caller may
+  // see (RLS: the tenant, minus a block either way with the host), in
+  // start-time order. A bulletin board, not a directory: nothing ranks or
+  // filters, and no row reveals a stranger's card.
+  .output(z.object({ gatherings: z.array(GatheringListItemSchema) }));
+
+const listMyGatherings = oc
+  .route({ method: 'GET', path: '/me/gatherings', tags: ['Gatherings'] })
+  // The caller's own calendar: hosting or joined, past included.
+  .output(z.object({ gatherings: z.array(GatheringListItemSchema) }));
 
 const updateGathering = oc
   .route({ method: 'PATCH', path: '/gatherings/{id}', tags: ['Gatherings'] })
@@ -183,6 +199,7 @@ export const appContract = {
     get: getGathering,
     join: joinGathering,
     leave: leaveGathering,
+    list: listGatherings,
     listMine: listMyGatherings,
     update: updateGathering,
     remove: removeGathering,

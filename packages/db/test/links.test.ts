@@ -1,9 +1,10 @@
 // Profile links: connections tier. The owner writes the whole list through
 // set_my_links; accepted connections read it both ways. The negative space
 // is the spec: every viewer profiles_select admits beyond a connection (the
-// pending-request recipient, a gathering co-member, a blocker), a stranger
-// and anon read nothing — empty and error-free — and resolve_tag never
-// carries a link. Shape is checked at the database boundary.
+// pending-request recipient, a blocker), a gathering co-member (who is not
+// even admitted to the card), a stranger and anon read nothing — empty and
+// error-free — and resolve_tag never carries a link. Shape is checked at
+// the database boundary.
 import { beforeAll, describe, expect, it } from 'bun:test';
 import {
   ANON_KEY,
@@ -137,7 +138,7 @@ describe('visibility', () => {
     expect(await linksSeenBy(bob, alice)).toEqual([]);
   });
 
-  it('a gathering co-member sees the card, not the links, even through an embed', async () => {
+  it('a gathering co-member sees neither the card nor the links; a card viewer gets no links through an embed', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
     await setLinks(alice, ADA);
@@ -151,8 +152,14 @@ describe('visibility', () => {
     });
     expect(joinError).toBeNull();
 
-    expect(await seesCard(bob, alice)).toBe(true);
+    // co-membership is not a card bridge (gatherings_domain_wide (c))
+    expect(await seesCard(bob, alice)).toBe(false);
     expect(await linksSeenBy(bob, alice)).toEqual([]);
+
+    // a viewer who does see the card (here: a pending-request recipient)
+    // still cannot pull the links through an embed
+    await alice.client.rpc('send_connect_request', { p_recipient: bob.id });
+    expect(await seesCard(bob, alice)).toBe(true);
     const { data: embedded, error: embedError } = await bob.client
       .from('profiles')
       .select('id, links:profile_links(platform)')
@@ -169,7 +176,7 @@ describe('visibility', () => {
     await connectUsers(alice, bob);
     const { error } = await bob.client
       .from('blocks')
-      .insert({ blocker_id: bob.id, blocked_id: alice.id });
+      .insert({ blocker_id: bob.id, blocked_id: alice.id, reveals_card: true });
     expect(error).toBeNull();
 
     // the blocker still sees the blocked card (their block list) ...

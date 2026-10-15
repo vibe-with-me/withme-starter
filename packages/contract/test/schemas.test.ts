@@ -8,6 +8,7 @@ import {
   ConnectRequestSchema,
   CreateGatheringInputSchema,
   DestinationSchema,
+  GatheringListItemSchema,
   GatheringSchema,
   GatheringSummarySchema,
   LINK_PLATFORM_IDS,
@@ -221,6 +222,34 @@ describe('gathering schemas', () => {
       'starts_at',
       'title',
     ]);
+  });
+
+  it('a list item carries the headcount and only the members the viewer may see', () => {
+    const item = GatheringListItemSchema.parse({
+      ...gathering,
+      member_count: 3,
+      is_member: true,
+      members: [
+        {
+          joined_at: '2026-10-02T00:00:00Z',
+          profile: {
+            id: gathering.host_id,
+            display_name: 'Ada',
+            avatar_path: null,
+            bio: null,
+          },
+        },
+      ],
+    });
+    // the count is everyone; the list is the viewer's view, so it may be shorter
+    expect(item.member_count).toBe(3);
+    expect(item.members).toHaveLength(1);
+    expect(
+      GatheringListItemSchema.safeParse({ ...item, member_count: -1 }).success,
+    ).toBe(false);
+    expect(
+      GatheringListItemSchema.safeParse({ ...item, member_count: 1.5 }).success,
+    ).toBe(false);
   });
 
   it('rejects an empty or oversized title and a non-ISO start', () => {

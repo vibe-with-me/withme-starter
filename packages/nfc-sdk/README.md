@@ -59,7 +59,21 @@ UIDs are normalized to uppercase by the SDK before they reach the adapter, so ad
 
 ## Schema
 
-The Supabase adapter expects the schema in [`sql/0001_initial.sql`](sql/0001_initial.sql) (`tags` and `scans` tables). Apply it with your migration tool of choice. The adapter takes an already-constructed `SupabaseClient`; the SDK never manages keys or auth.
+The Supabase adapter expects the schema in [`sql/`](sql/): apply [`0001_initial.sql`](sql/0001_initial.sql) (`tags` and `scans` tables) and then [`0002_lock_down.sql`](sql/0002_lock_down.sql) with your migration tool of choice. If you applied `0001` from an earlier release, apply `0002` now.
+
+`0002` turns on row-level security with no policies and revokes the `anon` and `authenticated` roles, so the tables are server-only. Without it, anyone holding your publishable key can change any tag's destination or read the scan log through the Supabase Data API. Construct the adapter's `SupabaseClient` on the server with the secret (service-role) key, and never ship that client to a browser or app. The SDK never manages keys or auth.
+
+If your project already has a `tags` table (the withme starter does), keep the SDK's tables apart from it in one of two ways. Either way, both files must target the same tables: `0001` fails on an existing `tags`, and an unchanged `0002` would lock down your own `tags` while leaving the SDK's tables exposed.
+
+- **Other names.** Rename `tags` and `scans` the same way in both `0001_initial.sql` and `0002_lock_down.sql`, then pass those names as `tagsTable` / `scansTable`.
+- **Another schema.** Run both files with that schema first on the `search_path` (for example, `create schema nfc; set search_path = nfc;` before each file). Add the schema to the project's exposed schemas (Data API settings), which is safe because `0002` leaves the client roles no access. Then select the schema on the client and keep the default table names:
+
+  ```ts
+  const supabase = createClient(url, secretKey, { db: { schema: 'nfc' } });
+  const storage = new SupabaseStorageAdapter(supabase);
+  ```
+
+`tagsTable` and `scansTable` are relation names; they do not select a schema.
 
 ## Status
 

@@ -4,3 +4,36 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+  # Bun's text lockfile (bun.lock, Bun >= 1.1.39) is supported; the root
+  # covers every workspace. Minor and patch bumps arrive as one grouped PR.
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # The Expo SDK pins its own packages and React / React Native to exact
+      # versions. Bump these together with `bunx expo install --fix` during an
+      # SDK upgrade, never one at a time.
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-safe-area-context"
+      - dependency-name: "react-native-screens"
+      - dependency-name: "@types/react"
+      - dependency-name: "@types/react-dom"
+      # Tracks the Node 22 runtime used in CI and release.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 (the native compiler) breaks tsup's declaration build.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]

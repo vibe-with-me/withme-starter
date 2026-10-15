@@ -8,6 +8,7 @@ import {
   createTestUser,
   provisionTag,
 } from '../src/test-utils/index.ts';
+import { BLOCKED_USER_NAME, blockUser, listBlocks, unblockUser } from '../src/queries/handshake.ts';
 
 beforeAll(assertStackRunning);
 
@@ -103,10 +104,20 @@ describe('block invisibility', () => {
     expect(bobView).toHaveLength(1);
   });
 
-  it('the blocker still sees the blocked profile under a mutual block (block-list UI)', async () => {
+  it('the blocker still sees a card they could see when they blocked, even under a mutual block', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
-    await bob.client.from('blocks').insert({ blocker_id: bob.id, blocked_id: alice.id });
+    await connectUsers(alice, bob);
+    // Bob blocks from his connections list: the card was visible, so the
+    // block row may keep it visible for his block-list UI.
+    await bob.client
+      .from('blocks')
+      .insert({ blocker_id: bob.id, blocked_id: alice.id, reveals_card: true });
+    // Alice can no longer see Bob, so her block cannot reveal his card.
+    const { error } = await alice.client
+      .from('blocks')
+      .insert({ blocker_id: alice.id, blocked_id: bob.id, reveals_card: true });
+    expect(error).not.toBeNull();
     await alice.client.from('blocks').insert({ blocker_id: alice.id, blocked_id: bob.id });
 
     const { data: bobSees } = await bob.client
@@ -114,11 +125,74 @@ describe('block invisibility', () => {
       .select('display_name')
       .eq('id', alice.id);
     expect(bobSees?.[0]?.display_name).toBe('Alice');
-    const { data: aliceSees } = await alice.client
-      .from('profiles')
-      .select('display_name')
-      .eq('id', bob.id);
-    expect(aliceSees?.[0]?.display_name).toBe('Bob');
+    const { data: aliceSees } = await alice.client.from('profiles').select('*').eq('id', bob.id);
+    expect(aliceSees ?? []).toEqual([]);
+  });
+
+  it('blocking a stranger never reveals their card', async () => {
+    const mallory = await createTestUser('Mallory');
+    const host = await createTestUser('Host');
+
+    // A plain block row reveals nothing.
+    await mallory.client.from('blocks').insert({ blocker_id: mallory.id, blocked_id: host.id });
+    const { data } = await mallory.client.from('profiles').select('*').eq('id', host.id);
+    expect(data ?? []).toEqual([]);
+
+    // Asking for the card outright is refused by RLS.
+    await mallory.client.from('blocks').delete().eq('blocked_id', host.id);
+    const { error } = await mallory.client
+      .from('blocks')
+      .insert({ blocker_id: mallory.id, blocked_id: host.id, reveals_card: true });
+    expect(error).not.toBeNull();
+    const { data: after } = await mallory.client.from('profiles').select('*').eq('id', host.id);
+    expect(after ?? []).toEqual([]);
+  });
+
+  it('a gathering host id cannot be turned into a card by blocking the host', async () => {
+    const mallory = await createTestUser('Mallory');
+    const host = await createTestUser('Host');
+    const { error: createError } = await host.client.rpc('create_gathering', {
+      p_title: 'Open house',
+      p_starts_at: new Date(Date.now() + 86_400_000).toISOString(),
+      p_location: 'Downtown',
+    });
+    expect(createError).toBeNull();
+
+    const { data: feed } = await mallory.client.from('gatherings').select('host_id');
+    expect(feed?.map((g) => g.host_id)).toContain(host.id);
+
+    await blockUser(mallory.client, mallory.id, host.id);
+    const { data } = await mallory.client.from('profiles').select('*').eq('id', host.id);
+    expect(data ?? []).toEqual([]);
+
+    // The block still lists, without the card, so it can be undone.
+    expect(await listBlocks(mallory.client)).toEqual([
+      {
+        created_at: expect.any(String),
+        user: { id: host.id, display_name: BLOCKED_USER_NAME, avatar_path: null, bio: null },
+      },
+    ]);
+    await unblockUser(mallory.client, mallory.id, host.id);
+    expect(await listBlocks(mallory.client)).toEqual([]);
+  });
+
+  it('blockUser keeps the card in the block list when it was visible', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    await connectUsers(alice, bob);
+
+    await blockUser(bob.client, bob.id, alice.id);
+    const blocks = await listBlocks(bob.client);
+    expect(blocks.map((b) => b.user.display_name)).toEqual(['Alice']);
+  });
+
+  it('existing block rows cannot be flipped to reveal a card', async () => {
+    const mallory = await createTestUser('Mallory');
+    const host = await createTestUser('Host');
+    await mallory.client.from('blocks').insert({ blocker_id: mallory.id, blocked_id: host.id });
+    await mallory.client.from('blocks').update({ reveals_card: true }).eq('blocked_id', host.id);
+    const { data } = await mallory.client.from('profiles').select('*').eq('id', host.id);
+    expect(data ?? []).toEqual([]);
   });
 
   it('a request cannot be accepted once a block lands, with no distinct signal', async () => {

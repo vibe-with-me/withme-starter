@@ -160,22 +160,43 @@ assert(
   'a profile tag carries gathering: null',
 );
 
-// 13. bob joins; the member list carries cards both ways
+// 13. the gathering is listed to the domain before bob joins; after joining,
+// who's going is connections-only, so each sees their own row until the
+// pair connects
+const feed = await bobApp.gatherings.list();
+const listed = feed.gatherings.find((g) => g.id === created.gathering.id);
+assert(listed !== undefined, 'a stranger sees the gathering in the feed');
+assert(listed.member_count === 1 && !listed.is_member, 'the feed carries the headcount');
+assert(listed.members.length === 0, 'the feed reveals no stranger (not even the host)');
+const strangerDetail = await bobApp.gatherings.get({ id: created.gathering.id });
+assert(strangerDetail.members.length === 0, 'a stranger reads the detail with no member rows');
+
 await bobApp.gatherings.join({ id: created.gathering.id });
 const detail = await bobApp.gatherings.get({ id: created.gathering.id });
-assert(detail.members.length === 2, 'join lands in the member list');
+assert(detail.member_count === 2, 'join raises the headcount');
 assert(
-  detail.members.some((m) => m.profile.display_name === 'E2E Alice'),
-  'member list carries the host card',
+  detail.members.length === 1 && detail.members[0]?.profile.display_name === 'E2E Bob',
+  'a joiner sees only their own row',
 );
+const hostDetail = await aliceApp.gatherings.get({ id: created.gathering.id });
 assert(
-  detail.members.some((m) => m.profile.display_name === 'E2E Bob'),
-  'member list carries the joiner card',
+  hostDetail.members.length === 1 && hostDetail.members[0]?.profile.display_name === 'E2E Alice',
+  'the host sees only their own row too',
 );
 const mine = await bobApp.gatherings.listMine();
 assert(
-  mine.gatherings.some((g) => g.id === created.gathering.id),
+  mine.gatherings.some((g) => g.id === created.gathering.id && g.is_member),
   'joined gathering shows in listMine',
+);
+
+// connecting is what reveals who is going
+await bobApp.requests.send({ recipient_id: alice.id });
+const inboxAgain = await aliceApp.requests.listPending();
+await aliceApp.requests.accept({ id: inboxAgain.requests[0]!.id });
+const connectedDetail = await bobApp.gatherings.get({ id: created.gathering.id });
+assert(
+  connectedDetail.members.some((m) => m.profile.display_name === 'E2E Alice'),
+  'once connected, the host appears in who is going',
 );
 
 // 14. only the host edits; a member's edit reads as not found
@@ -211,13 +232,29 @@ const bobRepoint = await bobApp.tags
   );
 assert(bobRepoint === 'NOT_FOUND', `a stranger cannot re-point another's tag (got ${bobRepoint})`);
 
-// 16. leaving removes visibility entirely
+// 16. leaving removes the membership, not the listing; a block does both
 await bobApp.gatherings.leave({ id: created.gathering.id });
+const left = await bobApp.gatherings.get({ id: created.gathering.id });
+assert(left.member_count === 1, 'leaving lowers the headcount');
+assert(
+  !(await bobApp.gatherings.listMine()).gatherings.some((g) => g.id === created.gathering.id),
+  'a left gathering drops out of listMine',
+);
+assert(
+  (await bobApp.gatherings.list()).gatherings.some((g) => g.id === created.gathering.id),
+  'a left gathering stays in the feed',
+);
+await aliceApp.blocks.block({ user_id: bob.id });
 const gone = await bobApp.gatherings.get({ id: created.gathering.id }).then(
   () => 'visible',
   (e: { code?: string }) => e.code ?? 'error',
 );
-assert(gone === 'NOT_FOUND', `a left gathering reads as not found (got ${gone})`);
+assert(gone === 'NOT_FOUND', `a blocked viewer reads the gathering as not found (got ${gone})`);
+assert(
+  !(await bobApp.gatherings.list()).gatherings.some((g) => g.id === created.gathering.id),
+  'a blocked viewer does not see it in the feed',
+);
+await aliceApp.blocks.unblock({ user_id: bob.id });
 
 // 17. the host deletes; the gathering is gone for everyone, and a tag that
 // pointed at it degrades to the profile card

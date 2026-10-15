@@ -171,7 +171,7 @@ working.
    column update list. Then `bun run db:reset && bun run db:seed && bun
    run db:types` and commit the regenerated types.
 3. Tests: `packages/db/test/gatherings.test.ts` passes the new argument
-   and gets a rejected-at-the-boundary case for the CHECK. The seventeen
+   and gets a rejected-at-the-boundary case for the CHECK. The twenty-one
    existing tests pass untouched.
 4. Queries and API: `packages/db/src/queries/gatherings.ts`,
    `apps/api/src/routers/app.ts`.
@@ -213,7 +213,7 @@ Strava handle; strangers cannot. Nobody gets into the app without a pace.
 | Layer | Card tier (`pace`) | Connections tier (`strava_handle`) |
 | --- | --- | --- |
 | Contract | `schemas/profile.ts`: `ProfileSchema`, `PublicProfileSchema`, `UpdateProfileInputSchema`, `REQUIRED_PROFILE_FIELDS`, `isProfileComplete` | `ProfileDetailsSchema`; `ConnectionSchema.details`; the `profile.get` / `profile.update` outputs in `contract/app.ts` |
-| RLS tests, red first | `packages/db/test/profile-fields.test.ts`: rides the anonymous resolve, length-checked at the boundary, rides the accept return | same file: owner reads and writes; an accepted connection reads both ways; the pending-request recipient, a gathering co-member, a blocker, and anon read nothing and get no oracle |
+| RLS tests, red first | `packages/db/test/profile-fields.test.ts`: rides the anonymous resolve, length-checked at the boundary, rides the accept return | same file: owner reads and writes; an accepted connection reads both ways; the pending-request recipient, a gathering co-member (not a connection), a blocker, and anon read nothing and get no oracle |
 | Migration | a column on `profiles` with a CHECK; `resolve_tag` and `accept_connect_request` redefined from their newest bodies to carry it | the `profile_details` table, its tenant seam, its narrow policy; `accept_connect_request` returns `details` |
 | Queries / API | `CARD_COLUMNS`, `upsertOwnProfile` in `queries/handshake.ts`; `getProfile`, `updateProfile` in `routers/app.ts` | `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, `listConnections`; `acceptRequest` and `connectionsList` pass it through |
 | SDK | `PublicProfileCard` gains `pace` | never |
@@ -226,8 +226,8 @@ The order has one deliberate swap from the slice: the RLS tests come
 before the migration, so the boundary is written down before the policy
 that enforces it. The skill explains why the connections tier is its own
 table and not a column: RLS admits rows, and every viewer the card policy
-admits (the pending-request recipient, a gathering co-member, someone who
-blocked you) would read every column. That mistake was made for real in
+admits (the pending-request recipient, someone who blocked you) would read
+every column. That mistake was made for real in
 the build the skill came from; the test file is its regression test.
 
 The completion gate is a UX gate, never a policy: the columns stay

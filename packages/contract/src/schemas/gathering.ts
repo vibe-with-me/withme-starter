@@ -32,10 +32,25 @@ export const GatheringSummarySchema = GatheringSchema.pick({
   location: true,
 });
 
-/** A member as co-members see them: the card plus when they joined. */
+/**
+ * A member as the viewer may see them: the card plus when they joined. Only
+ * the viewer's own row and their accepted connections' rows are ever
+ * readable (RLS); a gathering never reveals a stranger's card.
+ */
 export const GatheringMemberSchema = z.object({
   joined_at: z.iso.datetime({ offset: true }),
   profile: PublicProfileSchema,
+});
+
+/**
+ * A gathering as the Events tab lists it: the entity plus the viewer's view
+ * of who is going. `member_count` counts every member; `members` carries
+ * only the ones the viewer may see (themself and their connections).
+ */
+export const GatheringListItemSchema = GatheringSchema.extend({
+  member_count: z.number().int().nonnegative(),
+  is_member: z.boolean(),
+  members: z.array(GatheringMemberSchema),
 });
 
 export const CreateGatheringInputSchema = z.object({
@@ -61,5 +76,6 @@ export const UpdateGatheringInputSchema = z
 export type Gathering = z.infer<typeof GatheringSchema>;
 export type GatheringSummary = z.infer<typeof GatheringSummarySchema>;
 export type GatheringMember = z.infer<typeof GatheringMemberSchema>;
+export type GatheringListItem = z.infer<typeof GatheringListItemSchema>;
 export type CreateGatheringInput = z.infer<typeof CreateGatheringInputSchema>;
 export type UpdateGatheringInput = z.infer<typeof UpdateGatheringInputSchema>;

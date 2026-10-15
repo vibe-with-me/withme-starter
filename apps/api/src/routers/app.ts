@@ -4,12 +4,14 @@ import {
   blockUser,
   deleteGathering,
   getGathering,
+  getGatheringMemberCount,
   getOwnProfile,
   leaveGathering,
   listBlocks,
   listConnections,
   listGatheringMembers,
   listMyGatherings,
+  listUpcomingGatherings,
   listOwnAvatarObjects,
   listOwnLinks,
   listOwnTags,
@@ -266,11 +268,15 @@ const gatheringsGet = appProcedure.gatherings.get.handler(async ({ input, contex
   requireUser(context);
   const gathering = await run(context, () => getGathering(context.db, input.id));
   if (!gathering) {
-    // invisible (stranger or blocked) and nonexistent are the same answer
+    // invisible (blocked either way with the host) and nonexistent are the same answer
     throw new ORPCError('NOT_FOUND', { message: 'Not found' });
   }
-  const members = await run(context, () => listGatheringMembers(context.db, input.id));
-  return { gathering, members };
+  // members: the viewer and their connections; member_count: everyone
+  const [members, member_count] = await Promise.all([
+    run(context, () => listGatheringMembers(context.db, input.id)),
+    run(context, () => getGatheringMemberCount(context.db, input.id)),
+  ]);
+  return { gathering, members, member_count };
 });
 
 const gatheringsJoin = appProcedure.gatherings.join.handler(async ({ input, context }) => {
@@ -286,9 +292,15 @@ const gatheringsLeave = appProcedure.gatherings.leave.handler(async ({ input, co
   return { ok: true as const };
 });
 
+const gatheringsList = appProcedure.gatherings.list.handler(async ({ context }) => {
+  const userId = requireUser(context);
+  const gatherings = await run(context, () => listUpcomingGatherings(context.db, userId));
+  return { gatherings };
+});
+
 const gatheringsListMine = appProcedure.gatherings.listMine.handler(async ({ context }) => {
-  requireUser(context);
-  const gatherings = await run(context, () => listMyGatherings(context.db));
+  const userId = requireUser(context);
+  const gatherings = await run(context, () => listMyGatherings(context.db, userId));
   return { gatherings };
 });
 
@@ -348,6 +360,7 @@ export const appRouter = {
     get: gatheringsGet,
     join: gatheringsJoin,
     leave: gatheringsLeave,
+    list: gatheringsList,
     listMine: gatheringsListMine,
     update: gatheringsUpdate,
     remove: gatheringsRemove,

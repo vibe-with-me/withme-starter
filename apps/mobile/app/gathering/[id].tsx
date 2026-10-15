@@ -20,16 +20,25 @@ import {
   whenAndWhere,
 } from '../../lib/format-time';
 import { gatheringHref } from '../../lib/gathering-link';
+import { goingLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
 import { fonts, space, useTokens } from '../../lib/tokens';
 
 type ScreenState =
   | { kind: 'loading' }
   | { kind: 'failed' }
-  // Non-member, blocked, or missing — all the same NOT_FOUND, so the screen
-  // offers a calm join instead of an error.
+  // Blocked either way with the host, or missing — the same NOT_FOUND, so
+  // the screen offers a calm join (which answers "not available") instead
+  // of an error. A stranger who found the gathering in the feed gets the
+  // detail, with Join on it.
   | { kind: 'join' }
-  | { kind: 'detail'; gathering: Gathering; members: GatheringMember[]; userId: string | null };
+  | {
+      kind: 'detail';
+      gathering: Gathering;
+      members: GatheringMember[];
+      memberCount: number;
+      userId: string | null;
+    };
 
 /** The detail is a stack screen: it pushes over the tab bar (docs/the-slice.md step 6). */
 /**
@@ -52,11 +61,17 @@ export default function GatheringScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [{ gathering, members }, { data }] = await Promise.all([
+      const [{ gathering, members, member_count }, { data }] = await Promise.all([
         api.app.gatherings.get({ id }),
         supabase.auth.getSession(),
       ]);
-      setState({ kind: 'detail', gathering, members, userId: data.session?.user.id ?? null });
+      setState({
+        kind: 'detail',
+        gathering,
+        members,
+        memberCount: member_count,
+        userId: data.session?.user.id ?? null,
+      });
     } catch (error) {
       setState((error as { code?: string }).code === 'NOT_FOUND' ? { kind: 'join' } : { kind: 'failed' });
     }
@@ -151,11 +166,13 @@ interface GatheringPatch {
 function GatheringDetail({
   gathering,
   members,
+  memberCount,
   userId,
   reload,
 }: {
   gathering: Gathering;
   members: GatheringMember[];
+  memberCount: number;
   userId: string | null;
   reload: () => Promise<void>;
 }) {
@@ -165,7 +182,31 @@ function GatheringDetail({
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const isHost = userId === gathering.host_id;
+  // The member list is the viewer's view, so the viewer's own row is in it iff they joined.
   const isMember = userId !== null && members.some((member) => member.profile.id === userId);
+
+  async function join() {
+    setBusy(true);
+    setActionError(null);
+    try {
+      // Connections see your card here, so a profile must exist before you join.
+      const { profile } = await api.app.profile.get();
+      if (!profile) {
+        router.push({ pathname: '/profile', params: { redirect: gatheringHref(gathering.id) } });
+        return;
+      }
+      await api.app.gatherings.join({ id: gathering.id });
+      await reload();
+    } catch (error) {
+      setActionError(
+        (error as { code?: string }).code === 'NOT_FOUND'
+          ? "This gathering isn't available."
+          : "That didn't go through. Try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function run(
     work: () => Promise<unknown>,
@@ -235,10 +276,13 @@ function GatheringDetail({
             <>
               <Title>{gathering.title}</Title>
               <Muted>{whenAndWhere(gathering)}</Muted>
+              <Muted>{goingLine(memberCount)}</Muted>
             </>
           )}
-          {/* Outside the ternary so Edit/Cancel keeps its tags instead of refetching. */}
-          <TagPointer gatheringId={gathering.id} hidden={editing} />
+          {/* Members only: a tag whose owner is not a member degrades to the
+              profile card. Outside the ternary so Edit/Cancel keeps its tags
+              instead of refetching. */}
+          {isMember ? <TagPointer gatheringId={gathering.id} hidden={editing} /> : null}
           {actionError ? <ErrorText>{actionError}</ErrorText> : null}
           {!editing && isHost ? (
             <>
@@ -254,10 +298,19 @@ function GatheringDetail({
               onPress={() => run(() => api.app.gatherings.leave({ id: gathering.id }), 'list')}
             />
           ) : null}
+          {/* Joining is the consent moment: the accent's job, as on the resolver. */}
+          {!editing && !isMember ? (
+            <Button kind="connect" label={busy ? 'Joining…' : 'Join'} disabled={busy} onPress={join} />
+          ) : null}
           {!editing ? <Button label="Back" kind="quiet" onPress={goBack} /> : null}
         </Card>
 
-        <Text style={[styles.sectionTitle, { color: t.ink }]}>Who's coming</Text>
+        <Text style={[styles.sectionTitle, { color: t.ink }]}>Who's going</Text>
+        <Muted>
+          {members.length === 0
+            ? "You'll see the people you're connected with here."
+            : "The people you're connected with. Everyone else, you meet there."}
+        </Muted>
         {members.map((member) => (
           <PersonRow
             key={member.profile.id}
