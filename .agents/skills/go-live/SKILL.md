@@ -338,16 +338,17 @@ OK, and never on an app with real users (section 1). Web: `bun run build && bunx
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
 
 The starter's own demo DB is migrated by
-`.github/workflows/demo-migrate.yml`, which runs `supabase db push`
-against the `demo` GitHub Environment. While the repository is private it
-runs only when the owner starts it from the Actions tab (migrations can
-delete data, and a private repository gets no required reviewer). Once
-the repository is public it runs after migrations merge to `main`, gated
-by a required reviewer on `demo`. It only runs in
-`vibe-with-me/withme-starter`. A fork deletes it, or points its `if:` at
-its own repository and gives its own `demo` environment the
-`SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF`
-secrets.
+`.github/workflows/demo-migrate.yml`: after migrations merge to `main`,
+it runs `supabase db push` against the `demo` GitHub Environment with no
+approval step (the demo holds only seed data, and CI already applied each
+migration to a fresh local stack). Re-run it from the Actions tab to
+retry. It only runs in `vibe-with-me/withme-starter`. A fork deletes it,
+or points its `if:` at its own repository and gives its own `demo`
+environment the `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and
+`SUPABASE_PROJECT_REF` secrets. Against a database with real users,
+never let it push unreviewed: add a required reviewer to the environment
+(public repositories; a private one needs GitHub Enterprise), or remove
+the `push` trigger and start each run by hand.
 
 The marketing site, the privacy and support URLs the store listings ask
 for, and the hostname split between site and app are
