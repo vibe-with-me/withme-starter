@@ -88,10 +88,10 @@ newer. Start Docker before you begin.
 git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
 cd withme-starter
 bun install
-bun run db:start        # Supabase local on ports 553xx; the first run downloads images
-bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
+bun run db:start        # Supabase local on ports 553xx; the first run downloads images
+bun run db:seed         # demo users + tags
 bun run dev             # api on :8786, web on :3000
 ```
 

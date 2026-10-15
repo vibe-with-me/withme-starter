@@ -22,10 +22,10 @@ handful of things that go wrong on a fresh install.
 git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
 cd withme-starter
 bun install
-bun run db:start        # Supabase local: Postgres, Auth, Storage, PostgREST
-bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
+bun run db:start        # Supabase local: Postgres, Auth, Storage, PostgREST
+bun run db:seed         # demo users + tags
 bun run dev             # api on :8786, web on :3000
 ```
 
