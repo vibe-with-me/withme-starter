@@ -76,8 +76,8 @@ In the order a new fork usually runs them:
 - **Gatherings are listed to the domain; who's going is connections-only.**
   A list of gatherings is a bulletin board, not a directory: people see
   where their scene is congregating, and the tap is still how they meet.
-  Every signed-in user sees every gathering (minus a block either way with
-  the host); member rows are visible only for the viewer and their
+  Every signed-in user of the tenant sees every gathering in that tenant
+  (minus a block either way with the host); member rows are visible only for the viewer and their
   accepted connections; co-membership never reveals a card. A fork that
   needs private gatherings adds one column and one clause
   (customize-gathering §3). [safety-model.md](safety-model.md) has the
