@@ -33,16 +33,16 @@ body:
         - Docs
     validations:
       required: true
-  - type: checkboxes
+  - type: dropdown
     id: invariant
     attributes:
       label: The invariant
       description: The starter has nothing that ranks, recommends, aggregates, or monetizes. [What this is not](https://github.com/vibe-with-me/withme-starter/blob/main/README.md#what-this-is-not).
       options:
-        - label: This proposal does not rank, recommend, aggregate, or monetize.
-          required: false
-        - label: It might, and I want the discussion (this gets the `invariant` label).
-          required: false
+        - This proposal does not rank, recommend, aggregate, or monetize.
+        - It might, and I want the discussion (a maintainer will add the `invariant` label).
+    validations:
+      required: true
   - type: checkboxes
     id: stack
     attributes:

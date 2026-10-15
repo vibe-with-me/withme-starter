@@ -36,6 +36,9 @@ plays each role today. Read it before you open a PR; the review will ask
 where each layer of your slice is, and a slice nobody can walk end to end
 is not done.
 
+Docs-only changes are the exception: they need no slice. Check that every
+link and file name you cite still exists.
+
 Two things the slice doc says that are worth repeating:
 
 - **Tests are the spec.** Every safety property exists twice: once in SQL,
