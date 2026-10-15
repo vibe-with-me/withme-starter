@@ -178,7 +178,9 @@ export function normalizeLinkValue(platform: LinkPlatformId, raw: string): strin
       value = value.toLowerCase();
       break;
     case 'url':
-      if (value !== '' && !/^https?:\/\//i.test(value)) value = `https://${value}`;
+      // A phone keyboard capitalizes the first letter: "Https://…" is still a URL.
+      if (/^https?:\/\//i.test(value)) value = value.replace(/^https?/i, (s) => s.toLowerCase());
+      else if (value !== '') value = `https://${value}`;
       break;
   }
   return isCanonicalLinkValue(platform, value) ? value : null;

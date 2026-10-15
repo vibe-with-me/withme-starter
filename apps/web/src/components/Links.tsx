@@ -115,6 +115,8 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
     setRows((prev) =>
       prev.map((row) => (row.platform === platform ? { ...row, value, error: null } : row)),
     );
+    // A draft is not saved: drop "Links saved." (or a failure) once a value changes.
+    setStatus(null);
   }
 
   async function save(event: React.FormEvent) {
@@ -174,6 +176,8 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
           type="button"
           className="btn btn--quiet"
           aria-expanded={choosing}
+          // A save's response replaces the rows: a platform added mid-save would vanish.
+          disabled={busy}
           onClick={() => setChoosing((open) => !open)}
         >
           {rows.length === 0 ? 'Add a link' : 'Add another link'}
@@ -182,7 +186,13 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
       {choosing ? (
         <div className="chooser" role="group" aria-label="Choose a platform">
           {available.map((platform) => (
-            <button key={platform} type="button" className="btn" onClick={() => add(platform)}>
+            <button
+              key={platform}
+              type="button"
+              className="btn"
+              disabled={busy}
+              onClick={() => add(platform)}
+            >
               {LINK_PLATFORMS[platform].label}
             </button>
           ))}

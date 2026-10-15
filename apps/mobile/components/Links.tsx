@@ -43,10 +43,12 @@ interface Row {
   error: string | null;
 }
 
-/** iOS has no live regions: say it outright. Android reads the live region. */
+/** Say it outright on both platforms: iOS has no live regions, and the status text here has none either. */
 function announce(message: string) {
   if (Platform.OS === 'ios') {
     AccessibilityInfo.announceForAccessibilityWithOptions(message, { queue: true });
+  } else {
+    AccessibilityInfo.announceForAccessibility(message);
   }
 }
 
@@ -99,6 +101,9 @@ export function Links() {
     setRows((prev) =>
       prev.map((row) => (row.platform === platform ? { ...row, value, error: null } : row)),
     );
+    // A draft is not saved: drop "Links saved." (or a failure) once a value changes.
+    setStatus(null);
+    setFailed(false);
   }
 
   async function save() {
@@ -185,6 +190,8 @@ export function Links() {
               label={rows.length === 0 ? 'Add a link' : 'Add another link'}
               kind="quiet"
               expanded={choosing}
+              // A save's response replaces the rows: a platform added mid-save would vanish.
+              disabled={busy}
               onPress={() => setChoosing((open) => !open)}
             />
           ) : null}
@@ -195,6 +202,7 @@ export function Links() {
                   key={platform}
                   inline
                   label={LINK_PLATFORMS[platform].label}
+                  disabled={busy}
                   onPress={() => add(platform)}
                 />
               ))}

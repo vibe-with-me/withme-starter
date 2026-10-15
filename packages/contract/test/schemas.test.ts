@@ -346,6 +346,8 @@ describe('profile links', () => {
     expect(normalizeLinkValue('email', ' Ada@Example.COM ')).toBe('ada@example.com');
     expect(normalizeLinkValue('website', 'example.com/ada')).toBe('https://example.com/ada');
     expect(normalizeLinkValue('website', 'http://example.com')).toBe('http://example.com');
+    expect(normalizeLinkValue('website', 'Https://Example.com/Ada')).toBe('https://Example.com/Ada');
+    expect(normalizeLinkValue('website', 'HTTP://example.com')).toBe('http://example.com');
   });
 
   it('refuses what has no stored form', () => {
