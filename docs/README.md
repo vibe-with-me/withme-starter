@@ -41,7 +41,6 @@ longer version of something it mentions.
 
 ## For someone curious how the starter is built
 
-- [Skills roadmap](skills-roadmap.md): which skills exist, which were
-  deliberately skipped, and the decisions behind both.
-- [`superpowers/`](superpowers/): the build-out program, its specs, and the
-  per-milestone plans. This is the working record, not reference docs.
+- [Skills roadmap](skills-roadmap.md): why growth ships as skills rather
+  than features, which skills exist, which were deliberately skipped, and
+  the product decisions a fork inherits with them.
