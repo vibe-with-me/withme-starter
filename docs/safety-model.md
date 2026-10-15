@@ -14,8 +14,8 @@ moved a safety mechanism", this is what it means.
 
 **The promise.** There is no way to see a person you have not met. A card
 is reachable by tapping their tag (knowing the unguessable UID is the
-capability) or through a connection, a live incoming request, or a shared
-gathering.
+capability) or through a connection or a live incoming request. Sharing a
+gathering reveals nothing.
 
 **How.** `profiles` has no anonymous select policy at all. `resolve_tag`
 is the only anonymous read, and it answers for one UID at a time. There
