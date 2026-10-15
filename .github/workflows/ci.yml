@@ -48,6 +48,15 @@ jobs:
       - name: Start Supabase (for RLS tests)
         run: supabase start -x studio,mailpit
 
+      # The test helpers have no service-role key in source; hand them the
+      # local stack's own, as docs/local-development.md does.
+      - name: Export the local service-role key
+        run: |
+          key="$(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | sed -n 's/^SUPABASE_SERVICE_ROLE_KEY="\(.*\)"$/\1/p')"
+          test -n "$key"
+          echo "::add-mask::$key"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$key" >> "$GITHUB_ENV"
+
       - name: Test
         run: bun run test
 

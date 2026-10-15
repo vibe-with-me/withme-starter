@@ -2,6 +2,7 @@
 // pending connect request, one gathering — enough to walk the full handshake
 // locally.
 // Idempotent: re-running resets the demo users and tags. Local stack only.
+import './local-env.ts';
 import { admin, anonClient } from '@withme/db/test-utils';
 
 // This seed DELETES the demo users and tags it owns. Refuse anything that

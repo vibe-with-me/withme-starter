@@ -7,8 +7,17 @@ import type { Db } from '../index.ts';
 export const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321';
 export const ANON_KEY =
   process.env.SUPABASE_ANON_KEY ?? 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
-const SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz';
+// The service-role key has no default in source: it bypasses RLS, and a
+// literal one here reads as a leaked secret to every scanner.
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_KEY) {
+  throw new Error(
+    'SUPABASE_SERVICE_ROLE_KEY is not set. For the local stack, take it from ' +
+      'the `bun run db:start` output (the Secret key) or `supabase status -o env`:\n' +
+      '  eval "export $(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep ^SUPABASE_SERVICE_ROLE_KEY=)"\n' +
+      'docs/local-development.md has the details.',
+  );
+}
 
 /** Service-role client: bypasses RLS. Test fixtures and assertions only. */
 export const admin: Db = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {

@@ -26,7 +26,7 @@ owner's OK).
 | Piece | Where |
 | --- | --- |
 | The script | `supabase/seed/provision.ts`, wired as `db:provision` in the root `package.json` |
-| Its service-role client | `admin` from `packages/db/src/test-utils/index.ts` — reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, local defaults otherwise |
+| Its service-role client | `admin` from `packages/db/src/test-utils/index.ts` — reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; with the URL unset it targets the local stack, and with the key unset on a local target `supabase/seed/local-env.ts` takes the local key from `supabase status` |
 | The row | `public.tags` in `supabase/migrations/20260610120000_initial_handshake_schema.sql`: `uid` CHECK `^[0-9A-F]{14}$`, `tags_state_consistent`, no anon policy, owner-only `tags_select_own` / `tags_update_own` |
 | First tap wins | `public.claim_tag`, same migration |
 | Unknown and unclaimed look alike | `public.resolve_tag` answers `unclaimed` for both (newest definition: the last migration that defines it) |

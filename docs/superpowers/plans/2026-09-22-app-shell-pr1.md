@@ -148,7 +148,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321';
 const SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz';
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? '<local service-role key, redacted>';
 
 /** Service-role client: test setup only (provisioning tags), never the path under test. */
 export const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });

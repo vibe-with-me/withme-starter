@@ -83,8 +83,8 @@ Currently ahead of skills work, per earlier session decisions:
    @withme scope, LICENSE placeholder filled).
 3. Open-sourcing checklist as one deliberate session: license decision
    (MIT vs Apache-2.0) + trademark review, CONTRIBUTING + templates, public
-   flip, demo links into README. Note: local-dev `sb_secret_` strings in test
-   files will trip secret scanners — move to env-only first or expect noise.
+   flip, demo links into README. (The local-dev `sb_secret_` fallback in the
+   test helpers is gone: they read the key from the environment.)
 4. V1.1 product gaps (post-demo-feedback): account-deletion UI in /me,
    universal links/AASA so taps open the mobile app, avatar uploads
    (Supabase storage currently disabled), request-expiry cron, dev build with
