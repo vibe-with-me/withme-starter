@@ -155,6 +155,9 @@ export async function unblockUser(db: Db, blockerId: string, blockedId: string):
   if (error) throw error;
 }
 
+/** Stands in for a card the block does not reveal. */
+export const BLOCKED_USER_NAME = 'Blocked user';
+
 export interface BlockRow {
   created_at: string;
   user: ProfileCard;
@@ -163,10 +166,18 @@ export interface BlockRow {
 export async function listBlocks(db: Db): Promise<BlockRow[]> {
   const { data, error } = await db
     .from('blocks')
-    .select(`created_at, user:profiles!blocks_blocked_id_fkey(${CARD_COLUMNS})`)
+    .select(`blocked_id, created_at, user:profiles!blocks_blocked_id_fkey(${CARD_COLUMNS})`)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).flatMap((row) =>
-    row.user ? [{ created_at: row.created_at, user: row.user }] : [],
-  );
+  // A block that does not reveal its card (reveals_card false: the blocker
+  // could not see it when they blocked) still lists, so it can be undone.
+  return (data ?? []).map((row) => ({
+    created_at: row.created_at,
+    user: row.user ?? {
+      id: row.blocked_id,
+      display_name: BLOCKED_USER_NAME,
+      avatar_path: null,
+      bio: null,
+    },
+  }));
 }

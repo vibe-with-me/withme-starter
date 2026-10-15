@@ -12,8 +12,7 @@
 -- private.sees_card says the blocker sees that card right then (the WITH
 -- CHECK runs before the after-insert trigger drops the connection). There is
 -- no update policy, so a row cannot be flipped afterwards. A block that does
--- not reveal still blocks; it just does not show up with a card in the block
--- list.
+-- not reveal still blocks; it shows in the block list without a card.
 --
 -- private.sees_card is also the non-block half of profiles_select, so the
 -- two cannot drift. It is a definer because blocks_insert reading profiles
@@ -22,10 +21,12 @@
 alter table public.blocks
   add column reveals_card boolean not null default false;
 
--- Rows written before this migration came from the block-list flow, which
--- only offers Block on a visible connection. Keep them listable; an operator
--- worried about rows written by the exploit can set reveals_card = false.
-update public.blocks set reveals_card = true;
+-- Rows written before this migration keep the default, false. The block
+-- deleted the connection that made a legitimate card visible, so an old row
+-- cannot be told apart from one written to read a stranger's card, and
+-- granting them all would keep every exploit-made grant. The cost is that an
+-- old block shows in the block list as "Blocked user" (listBlocks), still
+-- unblockable, until it is unblocked and made again.
 
 -- "Does p_viewer see p_target's card, block list aside?" Themselves, or,
 -- unless p_target blocked them, a connection or the sender of a live

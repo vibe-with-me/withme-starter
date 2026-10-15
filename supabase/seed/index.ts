@@ -5,7 +5,7 @@
 // removes them.
 import './local-env.ts';
 import { admin, anonClient } from '@withme/db/test-utils';
-import { DEMO_TAGS as TAGS, DEMO_USERS } from './demo.ts';
+import { DEMO_TAGS as TAGS, DEMO_USERS, findDemoUsers } from './demo.ts';
 
 // This seed DELETES the demo users and tags it owns. Refuse anything that
 // isn't the local stack unless explicitly overridden.
@@ -36,8 +36,7 @@ if (remote && (DEMO_PASSWORD === LOCAL_DEMO_PASSWORD || DEMO_PASSWORD.length < 1
 }
 
 async function resetDemoUser(email: string): Promise<void> {
-  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  const existing = data.users.find((user) => user.email === email);
+  const existing = (await findDemoUsers(admin)).find((user) => user.email === email);
   if (existing) await admin.auth.admin.deleteUser(existing.id);
 }
 

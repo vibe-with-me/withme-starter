@@ -8,7 +8,7 @@ import {
   createTestUser,
   provisionTag,
 } from '../src/test-utils/index.ts';
-import { blockUser, listBlocks } from '../src/queries/handshake.ts';
+import { BLOCKED_USER_NAME, blockUser, listBlocks, unblockUser } from '../src/queries/handshake.ts';
 
 beforeAll(assertStackRunning);
 
@@ -164,6 +164,16 @@ describe('block invisibility', () => {
     await blockUser(mallory.client, mallory.id, host.id);
     const { data } = await mallory.client.from('profiles').select('*').eq('id', host.id);
     expect(data ?? []).toEqual([]);
+
+    // The block still lists, without the card, so it can be undone.
+    expect(await listBlocks(mallory.client)).toEqual([
+      {
+        created_at: expect.any(String),
+        user: { id: host.id, display_name: BLOCKED_USER_NAME, avatar_path: null, bio: null },
+      },
+    ]);
+    await unblockUser(mallory.client, mallory.id, host.id);
+    expect(await listBlocks(mallory.client)).toEqual([]);
   });
 
   it('blockUser keeps the card in the block list when it was visible', async () => {

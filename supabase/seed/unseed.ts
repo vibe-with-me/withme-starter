@@ -9,7 +9,7 @@
 // unless SEED_ALLOW_REMOTE=1.
 import './local-env.ts';
 import { admin } from '@withme/db/test-utils';
-import { DEMO_TAGS, DEMO_USERS } from './demo.ts';
+import { DEMO_TAGS, findDemoUsers } from './demo.ts';
 
 const target = new URL(process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321');
 if (
@@ -22,10 +22,7 @@ if (
   process.exit(1);
 }
 
-const emails = new Set<string>(Object.values(DEMO_USERS));
-const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
-if (error) throw error;
-const demoUsers = data.users.filter((user) => user.email && emails.has(user.email));
+const demoUsers = await findDemoUsers(admin);
 for (const user of demoUsers) {
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
   if (deleteError) throw deleteError;
