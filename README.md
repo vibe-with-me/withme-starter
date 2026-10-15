@@ -271,6 +271,12 @@ runbook; the short version is:
    it through a service binding, and Turborepo enforces the order.
 6. Encode a tag, tap it, claim it.
 
+A public website for the fork, with the privacy and support URLs the app
+stores ask for, is a third Worker: the
+[`add-marketing-site`](.agents/skills/add-marketing-site/SKILL.md) skill,
+run after `go-live`. Decide its hostname before you encode tags
+([docs/nfc-tags.md](docs/nfc-tags.md#the-domain-is-forever)).
+
 Free tiers cover a demo. [docs/stack.md](docs/stack.md) covers what each
 platform costs once it is real.
 
