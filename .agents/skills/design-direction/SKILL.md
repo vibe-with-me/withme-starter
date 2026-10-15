@@ -28,8 +28,17 @@ self-hosted fonts. A direction that needs a second accent, a gradient, a
 new token, or a different layout is not a direction for this starter;
 see "What must not move".
 
-Run it before `make-it-yours`. Skip it entirely if the fork already has
-a brand: then fill make-it-yours' Inputs directly.
+Run it before `make-it-yours`. Skip it if the fork already has a brand
+it is keeping as is: then fill make-it-yours' Inputs directly.
+
+**Uplift of an existing brand.** A fork that has a brand but wants it
+refreshed runs the skill anyway. The existing palette, fonts, product
+brief and any design critique go in as the brief's References; the
+names may be fixed (say so, and let only their treatment vary). Put the
+legacy values through `contrast.ts` first, on a scratch Colors table:
+that output is the "before" every direction is compared with. At least
+one direction must evolve the existing palette rather than replace it,
+so the owner can keep what people already recognise.
 
 ## What is already in the starter (the map)
 
@@ -47,15 +56,19 @@ a brand: then fill make-it-yours' Inputs directly.
 - The three surfaces a direction must be drawn on, because they are
   what a person sees first:
   - the resolver card, `apps/web/src/routes/t.$uid.tsx` — a stranger's
-    first screen after a tap: avatar, name, bio, the gathering line, one
-    accent button ("Join this gathering"), the wordmark footer;
+    first screen after a tap: avatar (one initial when there is no
+    photo), name, bio, the gathering line, one accent button ("Join this
+    gathering") and no secondary action, the wordmark footer;
   - the signed-in shell, `apps/web/src/components/AppShell.tsx` — the
     header wordmark, a list of gathering cards, the bottom tab bar
     (Events, Connections, Merch when a store is set, Profile; active tab
     in ink, never accent);
-  - the landing page, `apps/web/src/routes/index.tsx` — the wordmark
-    and the one-line promise under it ("Tap a tag. Meet a person. Stay
-    connected.").
+  - the landing page, `apps/web/src/routes/index.tsx` — the wordmark,
+    the one-line promise under it ("Tap a tag. Meet a person. Stay
+    connected."), a neutral "Sign in" button (ink on surface, no
+    accent), and a quiet "Get tags" button only when a store URL is
+    set. Its starter hints are make-it-yours' to rewrite or delete; do
+    not draw them.
 - Fonts: self-hosted variable woff2 on web (`apps/web/src/fonts/`,
   `@font-face` in `app.css`), `@expo-google-fonts/*` packages on mobile.
   A display face is usable only if `@fontsource-variable/<font>` and
@@ -65,7 +78,7 @@ a brand: then fill make-it-yours' Inputs directly.
 - `contrast.ts`, beside this file: WCAG 2.x contrast for `#hex` and
   `rgba()` values (an rgba foreground is composited over the background
   first, the way the input border is drawn). Given the sheet, it reads
-  the Colors table, requires all eight tokens in both modes, and checks
+  the table under `## Colors` and nothing else, requires all eight tokens in both modes, and checks
   the twelve pairs make-it-yours relies on, computed from the values
   that will be copied; the sheet holds no second table that could
   drift from them.
@@ -83,8 +96,13 @@ a brand: then fill make-it-yours' Inputs directly.
   page, a competitor to steer away from. A logo is copied, never
   redrawn by an artboard.
 - Whether a store exists (the Merch tab and the landing page's "Get
-  tags" link render only with a store URL; the sheet carries their
+  tags" button render only with a store URL; the sheet carries their
   copy either way).
+- The vertical's nouns, if already known ("round", not "gathering";
+  "Rounds", not "Events"). Draw the boards with them. The skills run
+  in an order: `customize-gathering` applies the nouns to the code
+  later, so until it runs the app still says "gathering" while the
+  boards do not. If the nouns are not decided, draw the starter's.
 
 Both color modes always matter: the app ships light and dark, and the
 accent must hold its contrast in each.
@@ -92,12 +110,17 @@ accent must hold its contrast in each.
 ## 1. The brief
 
 Run this from the fork root so `/design` finds `tokens.css`. Paste the
-block as the prompt, with the Inputs filled in. If `/design` is not
-available where you are (it is a research-preview skill; the Design
-canvas in claude.ai with the repository attached is the same workflow),
-hand the same brief to the agent directly: the sheet in step 3 is the
-contract, and the script checks it regardless of how the values were
-found.
+block as the prompt, with the Inputs filled in.
+
+If `/design` is not available where you are (it is a research-preview
+skill and often is not), the agent takes the same brief and draws the
+boards itself, as **one self-contained HTML file**: a section per
+direction with its six boards at 390×844, the eight tokens per mode as
+swatches, the two families, the mark as inline SVG, and the one-line
+fit. The page may load Google Fonts; nothing else external. The owner
+views it as a private Artifact, and that Artifact's link is the canvas
+link in step 2. The sheet in step 3 is the contract either way, and the
+script checks it regardless of how the values were found.
 
 ````text
 Design a brand direction for a fork of this app: <vertical and audience>.
@@ -107,15 +130,22 @@ References: <none, or what was attached>.
 Draw three artboards at 390×844, in light AND dark mode (six boards):
 1. The resolver card — what a stranger sees after tapping a tag
    (apps/web/src/routes/t.$uid.tsx): a centered card with a round
-   avatar, the person's name, a one-line bio, a muted line naming the
-   gathering they host, ONE primary button "Join this gathering", a
-   quiet secondary action, and the wordmark as a footer.
+   avatar (one initial when there is no photo), the person's name, a
+   one-line bio, a muted line naming the gathering they host, ONE
+   primary button "Join this gathering" and no secondary action, and
+   the wordmark as a footer below the card.
 2. The signed-in shell (apps/web/src/components/AppShell.tsx): a 56px
    header with the wordmark, a page title, two gathering cards, and a
    60px bottom tab bar (Events, Connections, Profile). The active tab is
    drawn in ink, not in the accent.
 3. The landing page (apps/web/src/routes/index.tsx): the wordmark, the
-   one-line promise under it, one quiet link.
+   one-line promise under it, a neutral "Sign in" button (ink on
+   surface, not the accent), and a quiet "Get tags" button only if
+   there is a store.
+
+Content the starter card does not have (a handicap, a home club) may
+be drawn as a proposal; label it as such. It is the fork's profile
+content, implemented later by extend-profile, not by the rebrand.
 
 Rules that do not move — this is the app's design system, read it in
 apps/web/src/styles/tokens.css:
@@ -133,9 +163,13 @@ apps/web/src/styles/tokens.css:
   reference was attached.
 
 What you may vary: the temperature of the neutrals, the accent hue, the
-display face and its weight, the wordmark's treatment (case, tracking),
-the avatar placeholder, the icon direction (a mark for a 1024px app
-icon, described in words or drawn as a flat shape).
+display face and its weight, the wordmark's treatment (case, tracking
+and weight, as one setting for the whole word: no split weights), the
+avatar placeholder's colors, the icon direction (a mark for a 1024px
+app icon, described in words or drawn as a flat shape). A new treatment
+inside the card (ruled cells, two-initial avatars, a split-weight
+wordmark) is a code change beyond the token swap: draw it only if
+flagged as one, so the owner can accept or drop it.
 
 Give 2–3 named directions, each with its six boards, and for each list:
 the eight token values per mode (bg, surface, border, border-input,
@@ -153,9 +187,13 @@ make-it-yours.
 
 Iterate on the canvas, at most three rounds: tighten a hue, swap a
 face, kill anything the rules exclude (a tinted card, an accent tab).
-The owner picks one direction and names it. Record the canvas link
-and the direction's name in the sheet; the canvas is private unless
-the owner shares it.
+The owner picks one direction and names it. Record the canvas and the
+direction's name in the sheet; the canvas is private unless the owner
+shares it, so the sheet describes it or marks its link "private link,
+owner only" (§3). If the owner changes the pick (removes an element,
+drops a flagged treatment), update the boards and republish the
+Artifact, or record the difference as one line under "Not this", so
+the canvas and the sheet do not silently disagree.
 
 **Checkpoint:** one direction chosen, with its light and dark boards of
 the resolver card, and a list of token values per mode.
@@ -170,10 +208,16 @@ write every value as `#rgb`, `#rrggbb` or `rgba(r, g, b, a)`. The script
 reads only that section (a sheet without the heading is an error), so the
 other tables are free to use any headers.
 
+The sheet is committed to the fork, so it holds no local absolute paths
+and no private links: write file paths repo-relative (`docs/brand/…`, or
+"kept outside the repo" with no path), and describe the canvas in words
+instead of linking a private Artifact (or mark the link "private link,
+owner only").
+
 ````markdown
 # Brand direction — <wordmark> (<Display name>)
 
-Direction: <name>, chosen <date> from <canvas link, or "no canvas">.
+Direction: <name>, chosen <date> from <the canvas, described (a private link is marked "private link, owner only"), or "no canvas">.
 Vertical: <one sentence>. Mood: <three words>.
 
 ## Names
@@ -219,14 +263,14 @@ A fresh starter ships Space Grotesk for display and Inter for body. Each row nam
 
 ## Artwork (make-it-yours step 8)
 
-- `apps/mobile/assets/icon.png` 1024×1024: <the mark, described>.
-- `apps/mobile/assets/android-icon-foreground.png`: <the same mark, with safe-zone padding>.
+- `apps/mobile/assets/icon.png` 1024×1024, no alpha: <the mark, described>.
+- `apps/mobile/assets/android-icon-foreground.png`: <the same mark on transparent, inside the central 66%, in a color that reads on the light bg>.
 - Optional `apps/web/public/favicon.ico`.
-- Source files live at <path outside the repo, or "none yet">.
+- Source files live at <a repo-relative path such as `docs/brand/`, "kept outside the repo" (no local path), or "none yet">.
 
 ## Not this
 
-<Three lines on what the direction refuses: the second accent that was tempting, the gradient, the typeface that failed the package check.>
+<Three lines on what the direction refuses: the second accent that was tempting, the gradient, the typeface that failed the package check. Plus one line per change the owner made to the boards, if the boards were not updated.>
 ````
 
 Then check it:
@@ -247,6 +291,28 @@ pair is checked. Paste the output under the Colors table. Both
 `npm view` lines print a version; a 404 means the face cannot be
 self-hosted on one platform and must change. One pair on its own is
 handy while adjusting: `bun run .agents/skills/design-direction/contrast.ts '#2447c9' '#ffffff'`.
+
+Then render the artwork from the chosen mark, drawn as two SVGs:
+`icon.svg` (the mark on a full-bleed accent or bg square) and
+`android-icon-foreground.svg` (the mark alone on a transparent
+background, every painted point inside the central 66% — a circle of
+radius 338 in a 1024 viewBox — in a color that reads on the light bg,
+which make-it-yours sets as the adaptive-icon background; that may
+invert the icon's colors). `rsvg-convert` and `magick` (Homebrew
+`librsvg`, `imagemagick`) do the rest; keep the sources and PNGs outside
+`apps/` until make-it-yours step 8 copies them in:
+
+```sh
+rsvg-convert -w 1024 -h 1024 icon.svg | magick png:- -background '<icon bg>' -alpha remove -alpha off icon.png
+rsvg-convert -w 1024 -h 1024 android-icon-foreground.svg -o android-icon-foreground.png
+magick icon.png -define icon:auto-resize=48,32,16 favicon.ico
+sips -g hasAlpha -g pixelWidth -g pixelHeight icon.png   # hasAlpha: no, 1024 × 1024
+```
+
+iOS rejects an app icon with an alpha channel, so `icon.png` must
+report `hasAlpha: no`; the Android foreground keeps its alpha. Look at
+the foreground composited on the light bg with the safe-zone circle
+drawn before you call it done.
 
 ## 4. Hand off to make-it-yours
 

@@ -1,6 +1,7 @@
 import type { ConnectRequest, Connection } from '@withme/contract';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
+import { LinkChips } from '../../components/Links';
 import { AccessibilityInfo, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import {
   Button,
@@ -214,6 +215,7 @@ export default function ConnectionsScreen() {
                 name={connection.profile.display_name}
                 path={connection.profile.avatar_path}
                 sub={connection.profile.bio}
+                extra={<LinkChips links={connection.links} />}
               >
                 {quiet('Remove', connection.id, () => api.app.connections.remove({ id: connection.id }))}
                 {quiet('Block', connection.id, () =>

@@ -1,33 +1,44 @@
-<!-- Read CONTRIBUTING.md first. One change per PR, built in the order docs/the-slice.md sets. -->
+<!--
+One slice per PR. Say what changed and why in two or three sentences, and
+link the issue. CONTRIBUTING.md and docs/the-slice.md explain the checklist.
+-->
 
-## What and why
+## What
 
-<!-- One or two sentences. Link the issue if there is one. -->
+## Why
 
-## Slice layers touched
+Closes #
 
-- [ ] Contract (`packages/contract`)
-- [ ] Migration + RLS (`supabase/migrations`)
-- [ ] RLS tests (`packages/db/test`)
-- [ ] API (`apps/api`)
-- [ ] Web (`apps/web`)
-- [ ] Mobile (`apps/mobile`)
-- [ ] E2E (`apps/api/e2e`, `apps/web/e2e`)
-- [ ] Skills or docs only
+## Checklist
 
-## RLS tests
+- [ ] **One slice, in order.** Contract → migration + RLS → RLS tests → API
+      → web → mobile → e2e, each layer present if the change touches it
+      ([docs/the-slice.md](https://github.com/vibe-with-me/withme-starter/blob/main/docs/the-slice.md)). Layers not
+      touched are listed below as "not touched", not skipped silently.
+- [ ] **RLS tests cover the negative space.** For any policy or
+      security-definer change, a test in `packages/db/test` asserts what a
+      stranger, a non-owner, a blocked user, and anon must *not* see, with
+      a positive control so it cannot pass red.
+- [ ] **Gate green locally.** `bun run lint && bun run typecheck && bun run
+      test` against the local stack, plus the e2e harness this slice
+      touches.
+- [ ] **Invariant respected.** Nothing here ranks, recommends, aggregates,
+      or monetizes, and no new path lists people someone has not met.
+- [ ] **Stack unchanged.** No framework port, no alternate database, only
+      Workers-compatible dependencies in `apps/api`.
+- [ ] **Skill updated if a seam moved.** If this touches tokens, the
+      destination union, the profile tiers, tab registration, or the deploy
+      steps, the skill in `.agents/skills/` that documents that seam is
+      updated in this PR.
 
-<!-- A migration that changes a policy without a test asserting the new boundary is half a change. -->
+## Layers
 
-- [ ] Added or changed an RLS test: <!-- which file, and which boundary it asserts -->
-- [ ] No RLS test needed: <!-- why; e.g. no migration, no new read or write path -->
-- [ ] A new read or write path answers "what does a blocked party see?" with "exactly what a stranger sees".
+<!-- One line per layer: the file, or "not touched". -->
 
-## The gate, run locally
-
-With the stack up (`bun run db:start`, then `bun run db:reset && bun run db:seed`):
-
-- [ ] `bun run lint`
-- [ ] `bun run typecheck`
-- [ ] `bun run test`
-- [ ] The e2e harness this slice touches (`bun run --cwd apps/web test:e2e` or `bun run --cwd apps/api e2e`)
+- Contract:
+- Migration + RLS:
+- RLS tests:
+- API:
+- Web:
+- Mobile:
+- E2E:

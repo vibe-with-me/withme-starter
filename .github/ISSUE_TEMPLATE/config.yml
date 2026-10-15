@@ -1,8 +1,9 @@
+# Discussions are enabled at the public flip; until then this link 404s.
 blank_issues_enabled: false
 contact_links:
-  - name: What could I build with this?
+  - name: Question, or "would this fit?"
     url: https://github.com/vibe-with-me/withme-starter/discussions
-    about: Ideas, verticals, and "would this fit my club?" questions go to Discussions, not issues.
-  - name: Report a vulnerability
-    url: https://github.com/vibe-with-me/withme-starter/blob/main/SECURITY.md
-    about: A break in the safety model is a vulnerability. Report it privately; never in a public issue.
+    about: Ask in Discussions. Issues are for bugs and concrete proposals.
+  - name: Security issue
+    url: https://github.com/vibe-with-me/withme-starter/security/advisories/new
+    about: Anything that lets someone see a card, a connection, or a gathering they should not. Report it privately here, never in a public issue.

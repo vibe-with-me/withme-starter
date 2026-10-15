@@ -1,4 +1,4 @@
-// Profile: the photo, My tags, and deleting the account (with or without a profile).
+// Profile: the photo, Links, My tags, and deleting the account (with or without a profile).
 import { fileURLToPath } from 'node:url';
 import { expect, type Page, test } from '@playwright/test';
 import { admin, claimFreshTag, signUp, signUpWithProfile } from './helpers.ts';
@@ -100,6 +100,80 @@ test('My tags: a claimed tag turns off and on, and re-points at a gathering', as
   await destination.selectOption('profile');
   await save.click();
   await expect(owner.getByText('A tap shows your card.')).toBeVisible();
+});
+
+test('Links: added on the profile, shown to a connection, never on the card', async ({ browser }) => {
+  const stamp = Date.now();
+  const ada = await (await browser.newContext()).newPage();
+  const uid = await claimFreshTag(ada, `smoke-links-ada-${stamp}@rls.test`, 'Smoke Links Ada');
+
+  // --- Ada adds two links from the picker; what she typed is normalized ----
+  await ada.goto('/profile');
+  const editor = ada.getByRole('form', { name: 'Links' });
+  await editor.getByRole('button', { name: 'Add a link' }).click();
+  await editor.getByRole('group', { name: 'Choose a platform' }).getByRole('button', { name: 'Instagram' }).click();
+  // the new field takes focus
+  await expect(editor.getByRole('textbox', { name: 'Instagram' })).toBeFocused();
+  await editor.getByRole('textbox', { name: 'Instagram' }).fill('@smoke.ada');
+  await editor.getByRole('button', { name: 'Add another link' }).click();
+  await editor.getByRole('group', { name: 'Choose a platform' }).getByRole('button', { name: 'Website' }).click();
+  await editor.getByRole('textbox', { name: 'Website' }).fill('not a website');
+  await editor.getByRole('button', { name: 'Save links' }).click();
+  // a bad value is named next to its field, and nothing is saved
+  await expect(editor.getByText('Enter a web address.')).toBeVisible();
+  await expect(editor.getByRole('textbox', { name: 'Website' })).toBeFocused();
+  await editor.getByRole('textbox', { name: 'Website' }).fill('ada.example');
+  await editor.getByRole('button', { name: 'Save links' }).click();
+  await expect(editor.getByRole('status')).toHaveText('Links saved.');
+  await expect(editor.getByRole('textbox', { name: 'Instagram' })).toHaveValue('smoke.ada');
+  await expect(editor.getByRole('textbox', { name: 'Website' })).toHaveValue('https://ada.example');
+
+  await ada.reload();
+  await expect(editor.getByRole('textbox', { name: 'Instagram' })).toHaveValue('smoke.ada');
+  await expect(editor.getByRole('textbox', { name: 'Website' })).toHaveValue('https://ada.example');
+
+  // --- Bob taps the tag: the card, and not a handle on it ------------------
+  const bob = await (await browser.newContext()).newPage();
+  await bob.goto(`/t/${uid}`);
+  await expect(bob.getByRole('heading', { name: 'Smoke Links Ada' })).toBeVisible();
+  await expect(bob.getByText('smoke.ada')).toHaveCount(0);
+  await expect(bob.getByText('ada.example')).toHaveCount(0);
+
+  await bob.getByRole('link', { name: 'Connect' }).click();
+  await signUp(bob, `smoke-links-bob-${stamp}@rls.test`);
+  await bob.waitForURL(`**/t/${uid}`);
+  await bob.getByRole('button', { name: 'Connect' }).click();
+  await bob.waitForURL('**/profile**');
+  await bob.getByLabel('Name').fill('Smoke Links Bob');
+  await bob.getByRole('button', { name: 'Save' }).click();
+  await bob.waitForURL(`**/t/${uid}`);
+  await bob.getByRole('button', { name: 'Connect' }).click();
+  await expect(bob.getByText(/request sent/i)).toBeVisible();
+
+  // Pending, Bob still sees nothing of hers.
+  await bob.goto('/connections');
+  await expect(bob.getByText('No connections yet. Tap someone\'s tag to start.')).toBeVisible();
+
+  // --- Ada accepts; Bob's connection row carries her links -----------------
+  await ada.goto('/connections?tab=requests');
+  await ada.getByRole('button', { name: 'Accept' }).click();
+  await expect(ada.getByText('No requests right now.')).toBeVisible();
+
+  await bob.reload();
+  await expect(bob.getByText('Smoke Links Ada')).toBeVisible();
+  const chips = bob.getByRole('list', { name: 'Smoke Links Ada’s links' });
+  await expect(chips.getByRole('link', { name: 'Instagram @smoke.ada' })).toHaveAttribute(
+    'href',
+    'https://instagram.com/smoke.ada',
+  );
+  await expect(chips.getByRole('link', { name: 'Website https://ada.example' })).toHaveAttribute(
+    'href',
+    'https://ada.example',
+  );
+  // Bob added none: Ada's row for him has no list.
+  await ada.goto('/connections');
+  await expect(ada.getByText('Smoke Links Bob')).toBeVisible();
+  await expect(ada.getByRole('list', { name: 'Smoke Links Bob’s links' })).toHaveCount(0);
 });
 
 test('deleting the account signs out and releases the tag', async ({ page }) => {

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { AccountSection } from '../../components/AccountSection';
 import { AvatarPicker } from '../../components/AvatarPicker';
+import { Links } from '../../components/Links';
 import { MyTags } from '../../components/MyTags';
 import { Button, Card, ErrorText, Field, Title } from '../../components/ui';
 import type { Profile } from '@withme/contract';
@@ -119,6 +120,8 @@ export default function ProfileScreen() {
           {error ? <ErrorText>{error}</ErrorText> : null}
           <Button label={busy ? 'Saving…' : 'Save'} onPress={save} disabled={busy || !displayName.trim()} />
         </Card>
+        {/* Links hang off the profile row: it needs the row to exist first. */}
+        {exists ? <Links /> : null}
         {exists ? <MyTags /> : null}
         <AccountSection />
       </ScrollView>

@@ -25,6 +25,12 @@ describe('anonymous access', () => {
       const { data } = await anon.from(table).select('*');
       expect(data ?? []).toEqual([]);
     }
+    // Connections tier: anon holds Supabase's default select grant and no
+    // policy, so RLS answers with an empty, error-free result. An error here
+    // means the table is missing or a grant changed.
+    const { data: links, error: linksError } = await anon.from('profile_links').select('*');
+    expect(linksError).toBeNull();
+    expect(links).toEqual([]);
   });
 
   it('anon CAN resolve a claimed tag by uid (capability-based access)', async () => {

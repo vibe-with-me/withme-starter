@@ -4,7 +4,15 @@
 
 **Tap a tag. Meet a person. Stay connected.**
 
-withme-starter is an open-source starter for apps where people meet in
+withme-starter grew out of [Vibe With Me](https://vibewithme.co), an app
+for the people you meet at shows: tap a tag at a concert or a festival and
+stay connected with the stranger who loved the same set you did. Live
+music is where it started. Golf is my other passion, so the first app
+built from this starter is [Golf With Me](https://github.com/vibe-with-me/golf-with-me):
+the same handshake, with rounds instead of shows and a handicap on the
+card. Read that repo to see how a finished fork is structured.
+
+This repo is the open-source starter for apps where people meet in
 person around something they love. Someone taps an NFC tag (on a keychain,
 a bib, a table, a door) and a phone opens the other person's card. Two taps
 later, they are connected. A host can point a tag at a gathering so the tap
@@ -37,6 +45,7 @@ minutes ([Try it](#try-it-locally)).
 | **Gatherings** | A host creates one ("Rooftop listening session"), points a tag at it, and a tap on that tag is the invitation. Members see each other's cards through it. No browse surface, ever. |
 | **Blocks** | Absolute and invisible. A blocked person sees exactly what a stranger sees, and gets no signal that anything happened. |
 | **Profile & account** | Photo upload, "My tags" (re-point or turn off), account deletion that cascades through everything and releases your tags. |
+| **Links** | Where you can be reached: Instagram, WhatsApp, a website, a phone number, one per platform from a picker. Seen only by the people you have connected with, never on the card. |
 | **Web app** | The resolver page (`/t/{UID}`), sign in, claim a tag, and a four-tab shell: Events, Connections, Merch (optional), Profile. |
 | **Mobile app** | The same tabs and the same resolver over the same contract, in Expo. Reads NFC in a development build. |
 | **One API** | Every client talks to one Hono + oRPC API on Cloudflare Workers. It runs every query as the signed-in user, never as an admin. |
@@ -48,9 +57,9 @@ is the tour; [the glossary](docs/glossary.md) defines the words.
 
 ## What you could build with it
 
-The starter is the generic version of a product that already shipped
-(Vibe With Me, for live music). The first fork, Golf With Me, needed the
-same two moves every vertical needs: rename the gathering, add a couple of
+The starter is the generic version of [Vibe With Me](https://vibewithme.co).
+The first fork, [Golf With Me](https://github.com/vibe-with-me/golf-with-me),
+needed the same two moves every vertical needs: rename the gathering, add a couple of
 profile fields. The skills exist because those moves repeat.
 
 | Idea | The gathering becomes | Fields on the card | Fields only connections see | Where the tag lives |

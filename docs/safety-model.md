@@ -105,12 +105,15 @@ blocked.
 `profiles_select` policy admits reads every column of the row. That is
 why a connections-tier field is never a column on `profiles`: the
 recipient of your pending request, a gathering co-member, and someone who
-blocked you would all read it. Instead it lives in `profile_details`,
-with its own narrower policy. `extend-profile` builds this and explains
-the mistake it prevents, because a real build made that mistake first.
+blocked you would all read it. Instead it lives in a sibling table with
+its own narrower policy. The starter ships one: `profile_links` (Profile →
+Links, the places you can be reached), readable by you and your accepted
+connections with no block in either direction. `extend-profile` builds a
+second one, `profile_details`, and explains the mistake it prevents,
+because a real build made that mistake first.
 
-**The test.** `packages/db/test/profile-fields.test.ts`, once a fork runs
-`extend-profile`.
+**The test.** `packages/db/test/links.test.ts`, and
+`profile-fields.test.ts` once a fork runs `extend-profile`.
 
 ## Scans are privacy-default
 

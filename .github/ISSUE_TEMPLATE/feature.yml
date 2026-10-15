@@ -1,0 +1,99 @@
+name: Feature or extension
+description: A change to the starter, or a new skill. The questions follow the slice.
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [CONTRIBUTING](https://github.com/vibe-with-me/withme-starter/blob/main/CONTRIBUTING.md) first. Two things get a
+        proposal closed quickly: it needs ranking, recommending, aggregating,
+        or monetizing (the V1 invariant), or it swaps part of the stack. A
+        feature that belongs to one vertical is usually a **skill**, not a
+        change to the app; say so below and it gets the `skill` label.
+
+        Every change ships as one slice, in the order in
+        [docs/the-slice.md](https://github.com/vibe-with-me/withme-starter/blob/main/docs/the-slice.md). The questions below are
+        that order. "Not touched" is a fine answer for a layer; "not sure" is
+        too, if you say why.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: Who taps what, and what should happen that does not today. A fork's real need beats a hypothetical.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change
+      options:
+        - A change to the starter itself (core)
+        - A new skill in .agents/skills/
+        - A change to an existing skill
+        - Docs
+    validations:
+      required: true
+  - type: dropdown
+    id: invariant
+    attributes:
+      label: The invariant
+      description: The starter has nothing that ranks, recommends, aggregates, or monetizes. [What this is not](https://github.com/vibe-with-me/withme-starter/blob/main/README.md#what-this-is-not).
+      options:
+        - This proposal does not rank, recommend, aggregate, or monetize.
+        - It might, and I want the discussion (a maintainer will add the `invariant` label).
+    validations:
+      required: true
+  - type: checkboxes
+    id: stack
+    attributes:
+      label: The stack
+      options:
+        - label: This proposal keeps the stack as is (no framework port, no alternate database).
+          required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: 1. Contract
+      description: Which schema or router in `packages/contract` changes, and how. New Zod schema, new procedure, new union member?
+  - type: textarea
+    id: migration
+    attributes:
+      label: 2. Migration and RLS
+      description: New tables or columns, the policies on them, any CHECK constraint, any security-definer function. Every table carries `tenant_id`; every policy predicates on it. What does a stranger, a non-owner, a blocked user, and anon see?
+  - type: textarea
+    id: rls_tests
+    attributes:
+      label: 3. RLS tests
+      description: Which test in `packages/db/test` pins the new boundary, and which negative cases it covers. A policy change without a test is half a change.
+  - type: textarea
+    id: api
+    attributes:
+      label: 4. API
+      description: Which handler in `apps/api/src/routers` changes. It runs on the caller's JWT; say if it needs anything else.
+  - type: textarea
+    id: web
+    attributes:
+      label: 5. Web
+      description: Which route in `apps/web/src/routes`. A new tab registers one entry in `navItems`; the web app owns no data access.
+  - type: textarea
+    id: mobile
+    attributes:
+      label: 6. Mobile
+      description: Which screen in `apps/mobile/app`. Mirrors the web route; one `Tabs.Screen` for a new tab.
+  - type: textarea
+    id: e2e
+    attributes:
+      label: 7. E2E
+      description: Which harness you would extend (`apps/api/e2e` or the Playwright smoke in `apps/web/e2e`) and what it would walk.
+  - type: textarea
+    id: skill
+    attributes:
+      label: If this is a skill
+      description: Which fork it was built in, and what the fork looked like before and after. Skills are distilled from a working implementation, never written from imagination. If the change touches a seam an existing skill documents (tokens, the destination union, the profile tiers, tab registration, the deploy steps), name the skill that must be updated.
+  - type: checkboxes
+    id: offer
+    attributes:
+      label: Are you offering to build it?
+      options:
+        - label: Yes, I would open the PR.
+          required: false

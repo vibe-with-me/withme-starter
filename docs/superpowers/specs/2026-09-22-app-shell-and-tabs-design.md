@@ -228,6 +228,12 @@ Five PRs, in order, each passing the gate:
 5. **Proof.** Fresh clone → make-it-yours → customize-gathering →
    extend-profile → go-live, as a fake derivation, timed. This is the
    acceptance test for "derivations are no longer barebones."
+   *Done 2026-10-14: see `../reports/2026-10-14-proof-run.md`. Covered
+   by two runs, not one: Run Club, a fresh clone through the skills
+   locally, timed, no go-live; and Golf with Me, a fork rebuilt on a fresh
+   starter tree through the skills and a real go-live. No single run was a
+   fresh clone through go-live. Deferred: the tailgate
+   rebuild (ENG-756), physical tags, an EAS build.*
 
 **Precondition.** The Playwright web smoke is out of CI (dev-SSR stall,
 `ci.yml` note). PR 1 rewrites every web route. Spend a bounded hour on the

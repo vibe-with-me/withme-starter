@@ -180,3 +180,12 @@ artwork. Optional, skipped by a fork that already has a brand; its last
 step, `/design-sync`, gives the fork its own design-system project so
 later `/design` runs start from the fork's brand. Built once (a
 bouldering-gym direction) before it was written down. No app code.
+
+## Proven 2026-10-14 — the proof run (milestone 5)
+
+Hard constraint 4, covered by two runs: Run Club, a fresh clone through
+make-it-yours, customize-gathering, extend-profile and provision-tags,
+locally with no go-live (65 min clean path); and Golf with Me, a fork
+rebuilt on a fresh starter tree through design-direction, those skills,
+add-destination-type and a real go-live. No single run was a fresh clone
+through go-live. Nineteen text fixes, no app code. Report: `docs/superpowers/reports/2026-10-14-proof-run.md`.
