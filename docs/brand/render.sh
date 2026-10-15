@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Renders every app icon from the two sources in this folder:
 #   icon.svg       light icon (background rect + mark)
-#   icon-dark.svg  dark icon, used for the dark splash and the web favicon
+#   icon-dark.svg  dark icon, used only for the dark splash
+# The favicons and store icons come from icon.svg. apps/web/public/favicon.svg
+# is hand-written and switches colors itself: update it separately.
 # Edit those, then run from the repo root:  docs/brand/render.sh
 # Needs rsvg-convert and ImageMagick 7 (brew install librsvg imagemagick).
 #
