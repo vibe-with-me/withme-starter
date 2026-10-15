@@ -84,7 +84,8 @@ Every block that sources the keys file does it in a subshell like this one,
 so the keys never stay exported in your shell: the db package's test utils
 read `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, and a later
 `cd packages/db && bun test` would run the RLS suite against production
-with the service role (a code guard is tracked as ENG-752). One command per
+with the service role (no code guard refuses a remote target yet; one is
+an open item). One command per
 line: under `set -e`, zsh does not stop partway through an `&&` chain.
 
 Auth note: hosted signups hit email confirmation, and the default

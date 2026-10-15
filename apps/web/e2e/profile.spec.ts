@@ -122,8 +122,9 @@ test('deleting the account signs out and releases the tag', async ({ page }) => 
 });
 
 // "Create your profile" offers Sign out and Delete account before anything is
-// saved. Leaving the shell from there must land on / (ENG-759: the profile
-// gate used to hijack the navigation out, and bounce /login <-> /profile forever).
+// saved. Leaving the shell from there must land on / (a fixed regression: the
+// profile gate used to hijack the navigation out, and bounce /login <-> /profile
+// forever).
 test('a session without a profile can delete its account', async ({ page }) => {
   const email = `smoke-noprofile-delete-${Date.now()}@rls.test`;
   await signUpWithoutProfile(page, email);

@@ -336,4 +336,5 @@ stay neutral).
 Two things the same script found in the starter itself, which a fork
 inherits until make-it-yours replaces the values: `tokens.css` cites
 4.8:1 for the light accent pair, and the pair is 5.18:1; the light
-input border is 2.97:1 against the surface, just under 3:1 (ENG-753).
+input border is 2.97:1 against the surface, just under 3:1 (both are
+known and not yet fixed in the starter's tokens).
