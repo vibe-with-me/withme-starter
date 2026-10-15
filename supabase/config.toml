@@ -40,13 +40,22 @@ enabled = false
 
 [auth]
 enabled = true
+# Local-only: a hosted project's Site URL is its own web origin. Never
+# `supabase config push` this file to a hosted project as it stands; set the
+# hosted values in the dashboard (go-live does).
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/auth/callback"]
 jwt_expiry = 3600
 enable_signup = true
+# Safe anywhere, and the clients ask for the same 10 on sign-up (web and
+# mobile login screens). The server default would be 6 with no rules.
+minimum_password_length = 10
+password_requirements = "letters_digits"
 
 [auth.email]
 enable_signup = true
+# Local-only: no confirmation email, so a local sign-up signs straight in. A
+# hosted project must confirm emails; never push this value to one.
 enable_confirmations = false
 
 # Phone sign-in: a 6-digit code by text, no password. Signing in with a new

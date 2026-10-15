@@ -11,6 +11,7 @@ import {
   GatheringListItemSchema,
   GatheringSchema,
   GatheringSummarySchema,
+  isPlainText,
   LINK_PLATFORM_IDS,
   LINK_PLATFORMS,
   linkHref,
@@ -18,6 +19,7 @@ import {
   normalizeLinkValue,
   ProfileLinkSchema,
   ProfileLinksInputSchema,
+  ProfileSchema,
   PublicProfileSchema,
   ResolveOutputSchema,
   TagUidSchema,
@@ -276,6 +278,20 @@ describe('gathering schemas', () => {
     ).toBeNull();
   });
 
+  it('a title or location refuses control, bidi and invisible characters', () => {
+    const { starts_at } = gathering;
+    for (const bad of ['Tee\u202Etime', 'Tee\u200Btime', 'Tee\ttime', 'Tee\ntime', '\u2066Tee']) {
+      expect(GatheringSchema.safeParse({ ...gathering, title: bad }).success).toBe(false);
+      expect(GatheringSchema.safeParse({ ...gathering, location: bad }).success).toBe(false);
+      expect(CreateGatheringInputSchema.safeParse({ title: bad, starts_at }).success).toBe(false);
+      expect(
+        CreateGatheringInputSchema.safeParse({ title: 'Tee', starts_at, location: bad }).success,
+      ).toBe(false);
+      const update = { id: gathering.id, title: bad };
+      expect(UpdateGatheringInputSchema.safeParse(update).success).toBe(false);
+    }
+  });
+
   it('rejects an update with nothing to update', () => {
     expect(UpdateGatheringInputSchema.safeParse({ id: gathering.id }).success).toBe(false);
     expect(UpdateGatheringInputSchema.safeParse({ id: gathering.id, title: 'Moved' }).success).toBe(
@@ -392,6 +408,46 @@ describe('profile links', () => {
     expect(normalizeLinkValue('website', `https://${'x'.repeat(200)}.com`)).toBeNull();
   });
 
+  it('an email cannot smuggle mailto parameters or a second recipient', () => {
+    for (const value of [
+      'ada@example.com?bcc=eve@evil.example',
+      'ada@example.com&body=hi',
+      'ada@example.com#x',
+      'eve@evil.example,ada@example.com',
+      'ada;eve@evil.example',
+      'ada%40example.com@evil.example',
+      'ada@exa/mple.com',
+      '<ada@example.com>',
+      '"ada"@example.com',
+      'ada@example.com\u202e',
+    ]) {
+      expect(normalizeLinkValue('email', value)).toBeNull();
+      expect(ProfileLinkSchema.safeParse({ platform: 'email', value }).success).toBe(false);
+    }
+  });
+
+  it('a website is anchored at both ends and carries no userinfo', () => {
+    for (const value of [
+      'https://google.com@evil.example',
+      'https://user:pass@example.com/',
+      'https://google.com%40evil.example',
+      'https://example.com\\@evil.example',
+      'https://example.com evil',
+      'https://example.com/\u202egpj.exe',
+      'https://exa\u200bmple.com',
+    ]) {
+      expect(normalizeLinkValue('website', value)).toBeNull();
+      expect(ProfileLinkSchema.safeParse({ platform: 'website', value }).success).toBe(false);
+    }
+    // an @ after the host is a path, not userinfo
+    expect(normalizeLinkValue('website', 'https://example.com/@ada')).toBe(
+      'https://example.com/@ada',
+    );
+    expect(normalizeLinkValue('website', 'https://example.com/a?b=c#d')).toBe(
+      'https://example.com/a?b=c#d',
+    );
+  });
+
   it('every platform in the registry normalizes its own placeholder', () => {
     for (const platform of LINK_PLATFORM_IDS) {
       const { placeholder } = LINK_PLATFORMS[platform];
@@ -449,5 +505,51 @@ describe('profile links', () => {
     expect(PublicProfileSchema.parse({ ...card, links: [{ platform: 'x', value: 'ada' }] })).toEqual(
       card,
     );
+  });
+});
+
+describe('plain text', () => {
+  it('names and bios refuse control, bidi and invisible characters', () => {
+    for (const bad of [
+      'Ad\u202Ea', // right-to-left override
+      'Ad\u2067a', // right-to-left isolate
+      'Ad\u200Fa', // right-to-left mark
+      'Ad\u061Ca', // Arabic letter mark
+      'Ad\u061Ca', // Arabic letter mark
+      'A\u200Bda', // zero-width space
+      'A\uFEFFda', // zero-width no-break space
+      'A\u0000da',
+      'Ada\u001b[31m',
+    ]) {
+      expect(UpdateProfileInputSchema.safeParse({ display_name: bad }).success).toBe(false);
+      expect(UpdateProfileInputSchema.safeParse({ bio: bad }).success).toBe(false);
+    }
+  });
+
+  it('a bio keeps its line breaks; a name does not', () => {
+    expect(UpdateProfileInputSchema.safeParse({ bio: 'line one\nline two' }).success).toBe(true);
+    expect(UpdateProfileInputSchema.safeParse({ display_name: 'Ada\nLovelace' }).success).toBe(
+      false,
+    );
+  });
+
+  it('emoji sequences and joining scripts pass: U+200C and U+200D are allowed', () => {
+    for (const ok of ['Ada 👩\u200D💻', '🏳️\u200D🌈', 'می\u200Cخواهم', 'Zoë']) {
+      expect(isPlainText(ok)).toBe(true);
+      expect(UpdateProfileInputSchema.safeParse({ display_name: ok }).success).toBe(true);
+    }
+  });
+
+  it('the card refuses a spoofed name on the way out too', () => {
+    const card = {
+      id: '9b2c8f43-1b1a-4f7e-9d3c-2a6c1e5b8d90',
+      display_name: 'Ada',
+      avatar_path: null,
+      bio: null,
+      created_at: '2026-10-01T00:00:00Z',
+      updated_at: '2026-10-01T00:00:00Z',
+    };
+    expect(ProfileSchema.safeParse(card).success).toBe(true);
+    expect(ProfileSchema.safeParse({ ...card, display_name: 'Ad\u202Ea' }).success).toBe(false);
   });
 });

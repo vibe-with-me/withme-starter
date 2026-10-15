@@ -999,7 +999,7 @@ export async function upsertOwnDetails(
 
 ```ts
 const getProfile = appProcedure.profile.get.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const [profile, details] = await run(context, () =>
     Promise.all([getOwnProfile(context.db, userId), getOwnDetails(context.db, userId)]),
   );
@@ -1007,7 +1007,7 @@ const getProfile = appProcedure.profile.get.handler(async ({ context }) => {
 });
 
 const updateProfile = appProcedure.profile.update.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const { details, ...patch } = input;
   // Two writes, not a transaction, by design: a failure surfaces and a retry
   // is idempotent. Never "fix" it with a definer RPC that loosens the grants.

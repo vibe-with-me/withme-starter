@@ -277,6 +277,12 @@ describe('the boundary', () => {
       { platform: 'website', value: 'ada.example' }, // no scheme
       { platform: 'website', value: `https://${'x'.repeat(200)}.com` },
       { platform: 'myspace', value: 'ada' }, // not a platform
+      { platform: 'email', value: 'ada@example.com?bcc=eve@evil.example' }, // mailto injection
+      { platform: 'email', value: 'eve@evil.example,ada@example.com' }, // a second recipient
+      { platform: 'email', value: 'ada@example.com\u202e' }, // bidi override
+      { platform: 'website', value: 'https://google.com@evil.example' }, // userinfo
+      { platform: 'website', value: 'https://example.com evil' }, // unanchored tail
+      { platform: 'website', value: 'https://exa\u200bmple.com' }, // zero-width space
     ]) {
       const { error } = await alice.client.rpc('set_my_links', { p_links: [link] });
       expect(error?.message).toContain('profile_links_value_shape');

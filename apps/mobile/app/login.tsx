@@ -88,7 +88,8 @@ export default function LoginScreen() {
           <Button
             label={busy ? 'One moment…' : mode === 'signin' ? 'Sign in' : 'Sign up'}
             onPress={submit}
-            disabled={busy || !email || password.length < 8}
+            // supabase/config.toml's minimum_password_length; sign-in leaves it to the server.
+            disabled={busy || !email || password.length < (mode === 'signup' ? 10 : 1)}
           />
           <Button
             label={mode === 'signin' ? 'New here? Create an account' : 'Have an account? Sign in'}

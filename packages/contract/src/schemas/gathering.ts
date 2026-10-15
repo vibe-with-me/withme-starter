@@ -1,11 +1,15 @@
 import { z } from 'zod';
 import { PublicProfileSchema } from './profile.ts';
+import { PLAIN_TEXT_MESSAGE, isPlainText } from './text.ts';
+
+const plain = (v: string) => isPlainText(v);
 
 /** An emptied location means "no location": the entity never carries ''. */
 const LocationInputSchema = z
   .string()
   .trim()
   .max(160)
+  .refine(plain, PLAIN_TEXT_MESSAGE)
   .transform((value) => (value === '' ? null : value))
   .nullable()
   .optional();
@@ -13,9 +17,9 @@ const LocationInputSchema = z
 /** A gathering as its members see it. host_id tells the UI who runs it. */
 export const GatheringSchema = z.object({
   id: z.uuid(),
-  title: z.string().min(1).max(120),
+  title: z.string().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE),
   starts_at: z.iso.datetime({ offset: true }),
-  location: z.string().min(1).max(160).nullable(),
+  location: z.string().min(1).max(160).refine(plain, PLAIN_TEXT_MESSAGE).nullable(),
   host_id: z.uuid(),
   created_at: z.iso.datetime({ offset: true }),
 });
@@ -54,7 +58,7 @@ export const GatheringListItemSchema = GatheringSchema.extend({
 });
 
 export const CreateGatheringInputSchema = z.object({
-  title: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE),
   starts_at: z.iso.datetime({ offset: true }),
   location: LocationInputSchema,
 });
@@ -63,7 +67,7 @@ export const CreateGatheringInputSchema = z.object({
 export const UpdateGatheringInputSchema = z
   .object({
     id: z.uuid(),
-    title: z.string().trim().min(1).max(120).optional(),
+    title: z.string().trim().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE).optional(),
     starts_at: z.iso.datetime({ offset: true }).optional(),
     location: LocationInputSchema,
   })

@@ -122,7 +122,8 @@ function LoginPage() {
             type="password"
             autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             required
-            minLength={8}
+            // supabase/config.toml's minimum_password_length; sign-in leaves it to the server.
+            minLength={mode === 'signup' ? 10 : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
