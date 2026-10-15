@@ -138,11 +138,14 @@ images from previous CLI versions accumulate in the Docker VM. Prune
 them (`docker image prune -a` removes every unused image; check what else
 you have first) and start again.
 
-**`db:start` fails with "port is already allocated".** Another
-project's Supabase stack is running on the same ports (553xx).
-`docker ps --format '{{.Names}}' | grep supabase_db` names it
-(`supabase_db_<project_id>`); stop it with
-`supabase stop --project-id <project_id>`, then start again. To run
+**`db:start` fails with "port is already allocated".** Something else
+holds one of the stack's ports (553xx). The usual culprit is another
+project's Supabase stack: `docker ps --format '{{.Names}} {{.Ports}}' | grep 553`
+names it (`supabase_db_<project_id>`), and
+`supabase stop --project-id <project_id>` stops it. Any other container
+in that list: `docker stop <name>`. If no container shows,
+`lsof -nP -iTCP:<port> -sTCP:LISTEN` names the host process; quit it.
+Then start again. To run
 both side by side instead, give this one other ports: change every
 `553xx` port in `supabase/config.toml` (e.g. to 556xx), the URLs in
 `apps/web/.env` and `apps/api/.dev.vars`, and export

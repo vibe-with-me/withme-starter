@@ -104,8 +104,8 @@ Then play the demo:
 - Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
   gathering, her pending request from Lin, and her tags.
 
-If `db:start` says a port is already allocated, another project's
-Supabase stack holds 553xx: stop it first
+If `db:start` says a port is already allocated, something else holds
+553xx, usually another project's Supabase stack: stop it first
 ([Local development](docs/local-development.md#when-something-goes-wrong)
 has the commands).
 
