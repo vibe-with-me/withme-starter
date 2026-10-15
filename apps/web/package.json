@@ -27,7 +27,7 @@
     "@cloudflare/vite-plugin": "^1.37.0",
     "@orpc/contract": "^1.13.6",
     "@playwright/test": "^1.59.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.2",

@@ -97,7 +97,7 @@
   "devDependencies": {
     "@orpc/contract": "^1.13.6",
     "@supabase/supabase-js": "^2.49.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.6.5",
     "@withme/contract": "workspace:*",
     "hono": "^4.7.0",
     "tsup": "^8.4.0",
