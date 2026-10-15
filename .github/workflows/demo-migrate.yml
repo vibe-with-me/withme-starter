@@ -4,9 +4,10 @@ name: Demo migrate
 # main, so the demo never drifts behind the schema. The demo holds only
 # seed data, and every migration was reviewed in its PR and applied to a
 # fresh local stack by ci.yml before it merged, so no one approves the run.
-# Dispatch it by hand from the Actions tab to retry or catch up. It never
-# seeds, never runs `supabase config push` (supabase/config.toml holds
-# local-only auth values), and never deploys Workers.
+# Dispatch it by hand from the Actions tab (branch: main) to retry or
+# catch up. It never seeds, never runs `supabase config push`
+# (supabase/config.toml holds local-only auth values), and never deploys
+# Workers.
 #
 # A project with real users needs a person in the loop: migrations can
 # delete data. Give its environment a required reviewer, or drop the push
@@ -30,8 +31,9 @@ jobs:
   migrate:
     # Only upstream migrates the starter demo: a fork skips this job. A fork
     # with its own hosted project points this at its own repository and
-    # environment, or deletes the file.
-    if: github.repository == 'vibe-with-me/withme-starter'
+    # environment, or deletes the file. Only main: a manual run from another
+    # branch would push migrations no one has merged.
+    if: github.repository == 'vibe-with-me/withme-starter' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # The three secrets below live on this environment.
     environment: demo

@@ -341,10 +341,10 @@ The starter's own demo DB is migrated by
 `.github/workflows/demo-migrate.yml`: after migrations merge to `main`,
 it runs `supabase db push` against the `demo` GitHub Environment with no
 approval step (the demo holds only seed data, and CI already applied each
-migration to a fresh local stack). Re-run it from the Actions tab to
-retry. It only runs in `vibe-with-me/withme-starter`. A fork deletes it,
-or points its `if:` at its own repository and gives its own `demo`
-environment the `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and
+migration to a fresh local stack). Re-run it from the Actions tab, on
+`main`, to retry; it skips any other branch. It only runs in
+`vibe-with-me/withme-starter`. A fork deletes it, or points its `if:` at
+its own repository and gives its own `demo` environment the `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and
 `SUPABASE_PROJECT_REF` secrets. Against a database with real users,
 never let it push unreviewed: add a required reviewer to the environment
 (public repositories; a private one needs GitHub Enterprise), or remove
