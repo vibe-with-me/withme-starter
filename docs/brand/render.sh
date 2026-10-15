@@ -4,6 +4,15 @@
 #   icon-dark.svg  dark icon, used for the dark splash and the web favicon
 # Edit those, then run from the repo root:  docs/brand/render.sh
 # Needs rsvg-convert and ImageMagick 7 (brew install librsvg imagemagick).
+#
+# The variants below are made with sed, not an SVG parser, so both sources
+# must keep this text layout (the script stops if they don't):
+#   - viewBox="0 0 1024 1024" exactly
+#   - the background is one <rect ... fill="#rrggbb"/> on a line of its own,
+#     and it is the only <rect>
+# The 16px favicon also drops the arcs whose paths contain "A180 " / "A320 "
+# and thickens stroke-width="32". A redrawn mark without them gets the
+# full mark at 16px instead.
 set -euo pipefail
 # ImageMagick stamps a create/modify date into PNGs; leave it out so a
 # re-run only changes files whose pixels changed.
@@ -17,14 +26,27 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$public"
 
+die() { echo "render.sh: $*" >&2; exit 1; }
+for src in "$brand/icon.svg" "$brand/icon-dark.svg"; do
+  grep -q 'viewBox="0 0 1024 1024"' "$src" || die "${src##*/}: needs viewBox=\"0 0 1024 1024\""
+  [ "$(grep -c '<rect ' "$src")" = 1 ] && grep -Eq '^[[:space:]]*<rect [^>]*/>[[:space:]]*$' "$src" ||
+    die "${src##*/}: needs exactly one <rect .../>, alone on its line (the background)"
+done
+
 # The mark alone, on transparent: the source minus its background rect.
 sed '/<rect /d' "$brand/icon.svg" > "$tmp/mark.svg"
 sed '/<rect /d' "$brand/icon-dark.svg" > "$tmp/mark-dark.svg"
 # Small sizes crop the empty margin so the mark stays legible at 16px.
 sed 's/viewBox="0 0 1024 1024"/viewBox="128 128 768 768"/' "$brand/icon.svg" > "$tmp/tight.svg"
 # At 16px three arcs blur together: keep only the middle one, drawn thicker.
-sed -e '/A180 /d' -e '/A320 /d' -e 's/stroke-width="32"/stroke-width="80"/' "$tmp/tight.svg" > "$tmp/tiny.svg"
-bg="$(sed -n 's/.*<rect [^>]*fill="\([^"]*\)".*/\1/p' "$brand/icon.svg")"
+if grep -q 'A180 ' "$tmp/tight.svg" && grep -q 'A320 ' "$tmp/tight.svg" && grep -q 'stroke-width="32"' "$tmp/tight.svg"; then
+  sed -e '/A180 /d' -e '/A320 /d' -e 's/stroke-width="32"/stroke-width="80"/' "$tmp/tight.svg" > "$tmp/tiny.svg"
+else
+  echo "render.sh: no starter arcs found; the 16px favicon uses the full mark" >&2
+  cp "$tmp/tight.svg" "$tmp/tiny.svg"
+fi
+bg="$(sed -n 's/.*<rect [^>]*fill="\(#[0-9A-Fa-f]\{3,8\}\)".*/\1/p' "$brand/icon.svg")"
+[ -n "$bg" ] || die "icon.svg: the background <rect> needs a hex fill, e.g. fill=\"#f6f3ee\""
 
 # iOS + store icon: full bleed, no alpha.
 rsvg-convert -w 1024 -h 1024 "$brand/icon.svg" | magick - -alpha off "${strip[@]}" "$assets/icon.png"

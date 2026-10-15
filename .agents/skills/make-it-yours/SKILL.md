@@ -405,6 +405,10 @@ and `icon-dark.svg` (dark). Each is a background `<rect>` plus the mark,
 on a 1024 canvas, with colors copied from `tokens.css`. Either recolor the
 starter mark to the new tokens or draw a new one with the same structure:
 one `<rect>` for the background, the mark centered with ~150px of margin.
+The script edits the SVGs as text, so keep `viewBox="0 0 1024 1024"` and
+the background `<rect ... fill="#hex"/>` on its own line, the only `<rect>`
+in the file. It stops with an error if either is missing (its header
+lists the rest of the format).
 Then run `docs/brand/render.sh` from the repo root (it needs `rsvg-convert`
 and ImageMagick 7: `brew install librsvg imagemagick`). It writes:
 
