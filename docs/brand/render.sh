@@ -5,6 +5,9 @@
 # Edit those, then run from the repo root:  docs/brand/render.sh
 # Needs rsvg-convert and ImageMagick 7 (brew install librsvg imagemagick).
 set -euo pipefail
+# ImageMagick stamps a create/modify date into PNGs; leave it out so a
+# re-run only changes files whose pixels changed.
+strip=(-define png:exclude-chunks=date,time)
 
 brand="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$brand/../.." && pwd)"
@@ -24,15 +27,15 @@ sed -e '/A180 /d' -e '/A320 /d' -e 's/stroke-width="32"/stroke-width="80"/' "$tm
 bg="$(sed -n 's/.*<rect [^>]*fill="\([^"]*\)".*/\1/p' "$brand/icon.svg")"
 
 # iOS + store icon: full bleed, no alpha.
-rsvg-convert -w 1024 -h 1024 "$brand/icon.svg" | magick - -alpha off "$assets/icon.png"
+rsvg-convert -w 1024 -h 1024 "$brand/icon.svg" | magick - -alpha off "${strip[@]}" "$assets/icon.png"
 
 # Android adaptive icon. The launcher masks to a circle or squircle, and only
 # the center 66% is guaranteed visible, so the mark is scaled into it.
 rsvg-convert -w 780 -h 780 "$tmp/mark.svg" |
-  magick - -background none -gravity center -extent 1024x1024 "$assets/android-icon-foreground.png"
-magick -size 1024x1024 "xc:$bg" "$assets/android-icon-background.png"
+  magick - -background none -gravity center -extent 1024x1024 "${strip[@]}" "$assets/android-icon-foreground.png"
+magick -size 1024x1024 "xc:$bg" "${strip[@]}" "$assets/android-icon-background.png"
 # Themed (Android 13+) icons use only the alpha channel; the color is ignored.
-magick "$assets/android-icon-foreground.png" -fill white -colorize 100 "$assets/android-icon-monochrome.png"
+magick "$assets/android-icon-foreground.png" -fill white -colorize 100 "${strip[@]}" "$assets/android-icon-monochrome.png"
 
 # Splash: the mark on the splash backgroundColor set in app.json.
 rsvg-convert -w 1024 -h 1024 "$tmp/mark.svg" -o "$assets/splash-icon.png"
@@ -40,10 +43,13 @@ rsvg-convert -w 1024 -h 1024 "$tmp/mark-dark.svg" -o "$assets/splash-icon-dark.p
 
 # Favicons.
 rsvg-convert -w 48 -h 48 "$tmp/tight.svg" -o "$assets/favicon.png"
-rsvg-convert -w 180 -h 180 "$brand/icon.svg" | magick - -alpha off "$public/apple-touch-icon.png"
+rsvg-convert -w 180 -h 180 "$brand/icon.svg" | magick - -alpha off "${strip[@]}" "$public/apple-touch-icon.png"
 rsvg-convert -w 16 -h 16 "$tmp/tiny.svg" -o "$tmp/fav-16.png"
 for s in 32 48; do rsvg-convert -w $s -h $s "$tmp/tight.svg" -o "$tmp/fav-$s.png"; done
 magick "$tmp/fav-16.png" "$tmp/fav-32.png" "$tmp/fav-48.png" "$public/favicon.ico"
 
-echo "Rendered icons into apps/mobile/assets and apps/web/public."
+# GitHub social preview card. Uploaded by hand: see make-it-yours step 8.
+rsvg-convert -w 1280 -h 640 "$brand/social-preview.svg" | magick - -alpha off "${strip[@]}" "$brand/social-preview.png"
+
+echo "Rendered icons into apps/mobile/assets, apps/web/public and docs/brand."
 echo "apps/web/public/favicon.svg is hand-written: update its colors to match."

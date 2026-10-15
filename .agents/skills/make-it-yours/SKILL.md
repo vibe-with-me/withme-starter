@@ -420,6 +420,13 @@ and ImageMagick 7: `brew install librsvg imagemagick`). It writes:
 - `apps/web/public/favicon.ico` + `apple-touch-icon.png`, linked from
   `apps/web/src/routes/__root.tsx`.
 
+- `docs/brand/social-preview.png`: the 1280×640 card GitHub shows when the
+  repo link is shared. It is rendered from `docs/brand/social-preview.svg`:
+  set its name and tagline to the fork's (and swap in the new mark) before
+  rendering. GitHub has no API for it, and the setting only appears once the
+  repository is public: upload the PNG by hand under **Settings → General →
+  Social preview → Edit → Upload an image**.
+
 `apps/web/public/favicon.svg` is hand-written (it switches colors with the
 browser's color scheme): copy the new mark's shapes into it and set its
 light and dark colors by hand.
