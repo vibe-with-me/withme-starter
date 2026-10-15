@@ -91,9 +91,11 @@ export function scopeRouterToAccount(router: AnyRouter): void {
     // Nothing of the previous account is on screen or about to be (the login
     // page, a tag): the cleared cache is all that is needed. A pending
     // navigation into the shell counts: its loader ran as the previous account.
-    const shellOnScreen = [...router.state.matches, ...router.stores.pendingMatches.get()].some(
-      (match) => match.routeId === '/_app',
-    );
+    // `latestLocation` is the navigation's destination as soon as it starts.
+    const [destination] = router.getMatchedRoutes(router.latestLocation.pathname);
+    const shellOnScreen =
+      router.state.matches.some((match) => match.routeId === '/_app') ||
+      destination.some((route) => route.id === '/_app');
     if (!shellOnScreen) return;
 
     setSwitchesInFlight(switchesInFlight + 1);
