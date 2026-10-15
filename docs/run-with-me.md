@@ -50,8 +50,9 @@ Decide the handful of things the skills will ask for. For Run With Me:
 | Card-tier profile field | `pace` ("easy, 10:00/mi"), required to open the app |
 | Connections-tier profile field | `strava_handle`, optional |
 | Bundle id / scheme | `com.example.runwithme` / `runwithme` |
-| Worker names | `runwithme-api`, `runwithme-web` |
-| Domain for tags | `https://runwithme.example` (one you own, forever) |
+| Worker names | `runwithme-api`, `runwithme-web`, `runwithme-site` |
+| Domain for tags | `https://app.runwithme.example`, the app's hostname (one you own, forever); the site takes `runwithme.example` in step 8 |
+| Contact email | `hello@runwithme.example`, for the support and privacy pages |
 | Store URL | none yet; the Merch tab stays absent |
 
 ## Step 0: fork and run the demo
@@ -297,7 +298,7 @@ regulars, a few spares, one for the start-line sign.
 
 > Run `.agents/skills/provision-tags/SKILL.md`. Rehearse locally with
 > three tags, then provision 25 against production with base URL
-> `https://runwithme.example`. Output directory
+> `https://app.runwithme.example`. Output directory
 > `~/runwithme-tags/<date>`, outside the repo. Stop before the production
 > write and ask me.
 
@@ -344,18 +345,50 @@ returns `{"ok":true}`; your domain's `/t/<a provisioned UID>` renders the
 claim page; a phone with the EAS update installed signs in and sees the
 Runs tab.
 
+## Step 8: `add-marketing-site`
+
+**What you want.** A page at `runwithme.example` that says what the bib
+tag does and where to get one, plus the privacy and support URLs the
+App Store and Google Play ask for.
+
+**The prompt.**
+
+> Run `.agents/skills/add-marketing-site/SKILL.md`. Site at
+> `runwithme.example`, app at `app.runwithme.example` (the tags already
+> encode it). Contact `hello@runwithme.example`. Sample card: an invented
+> runner with a pace line. No store yet. Stop and ask me before the
+> deploy.
+
+**What changes.** `apps/site/`, copied from the skill's template: an
+Astro site with static output, no adapter, and no client JavaScript. Its
+layout imports the web app's `tokens.css` and `app.css`, so it shows the
+Run With Me accent and the real card idiom with no styles of its own.
+`src/brand.ts` gets the wordmark, promise, and contact email. The home
+page gets runner nouns ("Tap the sign at the start line to join the
+run"). The privacy page gets a line for `pace` under "Your card", one for
+`strava_handle` under connections-only, and Twilio only if phone sign-in
+is on. Outside `apps/site`: a `@withme/site#build` task in `turbo.json`
+(so a token change rebuilds the site), and `.astro` in `.gitignore` and
+`.oxlintrc.json`.
+
+**Done when.** `curl` on `/`, `/privacy`, `/support` returns 200 at
+`runwithme.example` and `/nope` returns 404 with the site's page; the
+built pages contain no `<script>`; App Store Connect has the privacy and
+support URLs, and Google Play has `/support#delete-account` as the
+account-deletion URL.
+
 ## What you have
 
 A run club app with your brand, your nouns, your fields, and the same
 promises as the starter: nobody can list runners, blocks are invisible,
-connections are mutual, a run is reachable only by a member's tag or
-link, taps record nothing but a user agent, and deleting an account
-releases its tags. None of the seven steps moved a boundary, and the
-seventy-plus RLS tests plus your new ones say so.
+connections are mutual, runs are listed to signed-in members while who
+is going stays connections-only, taps record nothing but a user agent,
+and deleting an account releases its tags. None of the eight steps moved
+a boundary, and the seventy-plus RLS tests plus your new ones say so.
 
 ## Variations
 
-The same seven steps, different inputs:
+The same eight steps, different inputs:
 
 | Vertical | `customize-gathering` | `extend-profile` card | `extend-profile` connections | `add-destination-type` |
 | --- | --- | --- | --- | --- |

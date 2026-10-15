@@ -337,6 +337,10 @@ DB: new migrations via `supabase db push`; reseed only with the owner's
 OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
 
+The marketing site, the privacy and support URLs the store listings ask
+for, and the hostname split between site and app are
+`.agents/skills/add-marketing-site/SKILL.md`, run after this one.
+
 ## Gotcha index
 
 | Symptom | Cause |

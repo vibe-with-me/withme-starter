@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+import { APP_URL } from '../brand.ts';
+---
+
+<Base title="Not found" notFound>
+  <article class="prose">
+    <h1>Nothing here</h1>
+    <p>
+      That page doesn't exist. <a href="/">Go home</a>{
+        APP_URL && (
+          <>
+            , or <a href={APP_URL}>open the app</a>
+          </>
+        )
+      }.
+    </p>
+  </article>
+</Base>

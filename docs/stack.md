@@ -125,6 +125,26 @@ A2P 10DLC registration.
 - A new Twilio account is a trial: it texts only verified numbers until
   you upgrade it.
 
+## Astro (a fork's marketing site)
+
+The starter ships no marketing site; the `add-marketing-site` skill adds
+one to a fork as `apps/site`. It is opinionated like the rest: Astro,
+because a site is several pages sharing a header and footer (the privacy
+and support pages are required for a store listing) and Astro's layouts
+give that with no JavaScript in the output.
+
+**What it buys.** `astro build` writes plain HTML and CSS. The Worker
+serves them as static assets with no code of its own, so there is nothing
+to secure and nothing to hydrate. The layout imports the web app's
+`tokens.css` and `app.css`, so the site wears the fork's brand and card
+idiom without a second set of styles.
+
+**Constraints.** Static output only: no adapter, no server routes, no
+data from the API. No Tailwind, no React islands, no analytics. Turbo
+needs a package task for the site's build, because the site reads files
+outside its package (the web app's styles) and `PUBLIC_*` variables that
+the global task does not hash. The skill adds it.
+
 ## What it costs to run
 
 For a club-sized fork:
@@ -132,6 +152,7 @@ For a club-sized fork:
 | Service | Free tier | When you pay |
 | --- | --- | --- |
 | Cloudflare Workers (API + web) | 100k requests/day | Beyond that, a few dollars a month. |
+| Cloudflare static assets (the marketing site) | Requests for static assets are free | Not billed as Worker requests: the site runs no code. |
 | Supabase | Two projects per free org, paused after ~1 week idle | ~$10/month for an always-on project. |
 | Twilio Verify | Trial credit, verified numbers only | About $0.05 per successful sign-in, plus the SMS fee. Only if you turn phone sign-in on. |
 | Expo EAS | Updates and a limited number of builds | Builds beyond the free allotment. |

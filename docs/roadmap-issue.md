@@ -30,7 +30,8 @@ aggregates, or monetizes, and the stack stays as it is.
 - The handshake, blocks, gatherings, profile with two visibility tiers,
   avatar uploads, account deletion, My tags.
 - Skills: `design-direction`, `make-it-yours`, `customize-gathering`,
-  `extend-profile`, `add-destination-type`, `provision-tags`, `go-live`.
+  `extend-profile`, `add-destination-type`, `provision-tags`, `go-live`,
+  `add-marketing-site`.
 - `@withme/nfc`, the standalone redirect SDK, published from `nfc-v*` tags.
 
 ## Open
@@ -41,10 +42,6 @@ from here.
 
 ### Skills
 
-- [ ] **add-marketing-site.** A candidate skill: a one-page site for a fork
-      (what the tag does, how to get one), on the same Cloudflare account.
-      Stays a candidate until the proof run of the existing skills is done.
-      Not accepting PRs yet.
 - [ ] **Skill rot check.** Each skill re-run against a fresh clone on a
       schedule, so a skill that drifts from the substrate gets caught before
       a fork hits it. `help wanted` once the harness shape is written down.

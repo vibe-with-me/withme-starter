@@ -1,0 +1,91 @@
+---
+import Base from '../layouts/Base.astro';
+import { APP_URL, DISPLAY_NAME, PROMISE, STORE_URL } from '../brand.ts';
+---
+
+<Base>
+  <section class="hero" aria-labelledby="promise">
+    <div>
+      <h1 id="promise">{PROMISE}</h1>
+      <p class="lede">
+        {DISPLAY_NAME} is a small NFC tag that opens your card. Someone taps it with their phone,
+        sees who you are, and asks to connect. You say yes, or nothing happens.
+      </p>
+      {
+        (STORE_URL || APP_URL) && (
+          <div class="actions">
+            {STORE_URL && (
+              <a class="btn btn--ink" href={STORE_URL} rel="noopener noreferrer">
+                Get tags
+              </a>
+            )}
+            {APP_URL && (
+              <a class="btn" href={APP_URL}>
+                Open the app
+              </a>
+            )}
+          </div>
+        )
+      }
+    </div>
+    <figure class="sample">
+      <div class="card" aria-hidden="true">
+        <span class="avatar">SR</span>
+        <p class="card-name">Sam Rivera</p>
+        <p class="bio">Here most Fridays. Say hi.</p>
+        <span class="btn btn--connect">Connect</span>
+      </div>
+      <figcaption>What someone sees when they tap your tag.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section" aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="steps">
+      <li>
+        <h3>Tap</h3>
+        <p>Hold a phone to someone's tag. Their card opens in the browser, no app needed.</p>
+      </li>
+      <li>
+        <h3>Connect</h3>
+        <p>Send a request. They accept, or it quietly expires after a week.</p>
+      </li>
+      <li>
+        <h3>Stay connected</h3>
+        <p>Connections see each other's links: the places you can actually be reached.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="section" aria-labelledby="gatherings">
+    <h2 id="gatherings">See where people are going</h2>
+    <div class="prose">
+      <p>
+        Everyone signed in sees every upcoming gathering: when, where, and how many are going. Who
+        is going, you see only among your connections. Tap the tag at the door to join.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="promises">
+    <h2 id="promises">What we promise</h2>
+    <div class="promises">
+      <div>
+        <h3>Nobody can browse people</h3>
+        <p>There is no search and no directory. You see a card by tapping its tag, or because you connected.</p>
+      </div>
+      <div>
+        <h3>Blocks are absolute</h3>
+        <p>Someone you block sees exactly what a stranger sees, and is never told.</p>
+      </div>
+      <div>
+        <h3>A tap records a time, not a place</h3>
+        <p>No location, no IP address, no device fingerprint. No ads, and no analytics.</p>
+      </div>
+      <div>
+        <h3>Delete means delete</h3>
+        <p>Delete your account and everything goes with it. Your tags go back to blank.</p>
+      </div>
+    </div>
+  </section>
+</Base>

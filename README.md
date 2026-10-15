@@ -154,13 +154,20 @@ start-line sign can send people to today's route map. The skill's worked
 example is exactly this type.
 
 **6. `provision-tags`: tags for the first Saturday.** Twenty-five random
-UIDs, an encode list of `https://runwithme.example/t/{UID}` URLs, and a
+UIDs, an encode list of `https://app.runwithme.example/t/{UID}` URLs, and a
 printable sheet. Encode with any NFC writer app, lock the tags, hand them
 out. First tap claims.
 
 **7. `go-live`: ship it.** Hosted Supabase, the API worker, the web
 worker, an EAS update for mobile. Every pothole in the runbook was hit on
 a real deploy.
+
+**8. `add-marketing-site`: a front door.** A static Astro site at
+`runwithme.example` (the app lives at `app.runwithme.example`, which the
+tags encode) that says what the bib tag does, plus the privacy and
+support pages the app stores ask for. It imports the app's tokens and
+card, so it wears your brand with no styles of its own, and it ships no
+JavaScript and no analytics.
 
 At the end you have Run With Me: a run club app with your brand, your
 nouns, your fields, and the same privacy promises as the starter, because

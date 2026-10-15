@@ -162,7 +162,7 @@ constraints 2 and 4).
   copy `resolve_tag`'s newest definition: the gatherings migration's body
   still emits `avatar_url`, which the avatars migration dropped.
 - **add-marketing-site** stays a candidate until the proof run
-  (milestone 5).
+  (milestone 5). (Shipped 2026-10-15; see the section at the end.)
 
 ## Added 2026-10-12 — design-direction, the step before make-it-yours
 
@@ -217,3 +217,44 @@ Not taken: a per-gathering `invite_only` flag (a fork adds one column and
 one clause), Vibe With Me's opt-in "Show me in the crowd" tab, and Connect
 from a gathering tag (the resolver's gathering branch offers Join or Open,
 not Connect — a follow-up).
+
+## Shipped 2026-10-15 — add-marketing-site
+
+`.agents/skills/add-marketing-site/`, built once in a throwaway fork and
+re-run against a fresh clone before it was written down. It adds
+`apps/site` to a fork: a home page (what the tag does, a sample card, how
+it works, the promises), a privacy page, a support page with an
+account-deletion section for Google Play, and a 404.
+
+- **Astro, kept opinionated and narrow.** Tailgate With Me's site was
+  hand-written HTML on Vite, one page; Vibe With Me's own is Astro with
+  an adapter, Tailwind, Stripe, and PostHog.
+  The skill takes Astro, because the privacy and support pages make a
+  site several pages with a shared layout, but only its static output:
+  no adapter (the Worker runs no code), no Tailwind, no islands, no
+  analytics. One framework keeps the runbook short and testable, as
+  `docs/stack.md` keeps every other choice fixed.
+- **The site wears the app's design system.** Its layout imports
+  `apps/web/src/styles/tokens.css` and `app.css`; `site.css` uses
+  `var(--*)` only. make-it-yours' token swap restyles the site on its next
+  build, and the accent stays on the sample card's Connect.
+- **The pages ship as files.** `site/` beside the SKILL.md is the working
+  build; a fork copies it and rewrites the words. The template is outside
+  the workspaces, so the starter neither installs nor builds it.
+- **Potholes the build hit:** turbo replayed a stale site after a token
+  change (the site reads files outside its package) and after a `.env`
+  change (turbo hashes neither gitignored files nor `PUBLIC_*`), fixed by
+  a `@withme/site#build` task; oxlint failed on Astro's generated
+  `.astro/types.d.ts`; `/privacy` took a 307 to `/privacy/` until
+  `build.format: 'file'`; a contact email read from `.env` broke CI's
+  build, so brand words live in `src/brand.ts`.
+- **The hostname decision moved earlier.** The site and the app are two
+  Workers, and tags encode one origin forever, so the recommended layout
+  is the site on the apex and the tags on the app's subdomain.
+  `docs/nfc-tags.md` now says so before any tag is encoded. A `_redirects`
+  file forwarding `/t/*` and `/claim/*` covers a fork that wants the site
+  on a hostname its tags already encode, at one 302 per tap.
+
+Not yet run live: the deploy (step 7) was checked with `wrangler deploy
+--dry-run` and served locally by `wrangler dev`; the first fork to deploy
+it confirms the custom-domain route.

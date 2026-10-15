@@ -36,7 +36,8 @@ longer version of something it mentions.
   migrations from both sides interleave, and how to keep merges cheap.
 - [The skills](../.agents/skills/): `design-direction`, `make-it-yours`,
   `customize-gathering`, `extend-profile`, `add-destination-type`,
-  `provision-tags`, `go-live`. Each is a runbook with a checkpoint per step.
+  `provision-tags`, `go-live`, `add-marketing-site`. Each is a runbook
+  with a checkpoint per step.
 
 ## For someone curious how the starter is built
 

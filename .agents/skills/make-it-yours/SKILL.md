@@ -209,6 +209,10 @@ names no brand, so there only the title and badge change):
   the starter app — tags resolve at `/t/<uid>`." It names no brand, so
   no sweep catches it, but your fork is no longer the starter app:
   rewrite it in your voice, or delete the `<p className="hint">`.
+- `apps/site/src/brand.ts`, only in a fork that ran `add-marketing-site`:
+  `WORDMARK`, `DISPLAY_NAME`, `PROMISE` (the landing line above). The
+  site's colors and fonts come from `tokens.css` and `app.css` on its
+  next build; nothing to edit there, but redeploy the site.
 - The demo seed identity: `supabase/seed/demo.ts` holds the demo emails
   (`*@demo.withme.local`) and `supabase/seed/index.ts` the local-only
   password (`withme-demo-1`; a hosted project needs its own
@@ -344,6 +348,9 @@ ends with that new projectId.
   Production URLs/keys are deploy-time secrets. `VITE_DEMO_CREDENTIALS`
   (web) renders the landing-page demo hint — unset it or keep it in sync
   with your seed identity (step 3).
+
+- `apps/site/wrangler.jsonc` → `name` (e.g. `acme-site`), only in a fork
+  that ran `add-marketing-site`.
 
 **Checkpoint:** `grep -n 'withme' apps/api/wrangler.jsonc apps/web/wrangler.jsonc`
 returns nothing, and the web `services` entry matches the api `name`.
