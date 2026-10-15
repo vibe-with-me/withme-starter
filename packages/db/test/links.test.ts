@@ -176,7 +176,7 @@ describe('visibility', () => {
     await connectUsers(alice, bob);
     const { error } = await bob.client
       .from('blocks')
-      .insert({ blocker_id: bob.id, blocked_id: alice.id });
+      .insert({ blocker_id: bob.id, blocked_id: alice.id, reveals_card: true });
     expect(error).toBeNull();
 
     // the blocker still sees the blocked card (their block list) ...

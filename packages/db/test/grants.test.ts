@@ -58,6 +58,7 @@ const POLICY_HELPERS = [
   'private.is_blocked',
   'private.is_gathering_member',
   'private.is_link_value',
+  'private.sees_card',
 ];
 
 describe('function grants', () => {

@@ -304,8 +304,10 @@ a. `gatherings_select` admits every signed-in user of the tenant, minus a
    own policy reads `gatherings`, and Postgres would recurse forever.
 b. `gathering_members_select` admits the viewer's own row and their
    accepted connections' rows, on a gathering the viewer can see — the
-   host included. Co-membership never reveals a card: `profiles_select` is
-   byte-identical to the initial schema, and there is no `shares_gathering`.
+   host included. Co-membership never reveals a card: `profiles_select` has no gathering
+   clause (it reads `private.sees_card` since
+   `20261015120000_block_reveals_only_known_cards.sql`), and there is no
+   `shares_gathering`.
    Hosting must not become a way to collect strangers' cards.
 c. `public.gathering_member_counts` is the headcount: a definer read whose
    `where` re-states (a), so a hidden gathering has no count. Any new

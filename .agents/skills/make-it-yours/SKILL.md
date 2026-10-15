@@ -209,10 +209,12 @@ names no brand, so there only the title and badge change):
   the starter app — tags resolve at `/t/<uid>`." It names no brand, so
   no sweep catches it, but your fork is no longer the starter app:
   rewrite it in your voice, or delete the `<p className="hint">`.
-- The demo seed identity: `supabase/seed/index.ts` hardcodes the demo
-  emails (`*@demo.withme.local`) and password (`withme-demo-1`), which
-  surface in the seed's console output, the README, and the
-  `VITE_DEMO_CREDENTIALS` landing-page hint. Rebrand them or keep them —
+- The demo seed identity: `supabase/seed/demo.ts` holds the demo emails
+  (`*@demo.withme.local`) and `supabase/seed/index.ts` the local-only
+  password (`withme-demo-1`; a hosted project needs its own
+  `SEED_DEMO_PASSWORD`, see go-live), which surface in the seed's console
+  output, the README, and the `VITE_DEMO_CREDENTIALS` landing-page hint.
+  Rebrand them or keep them —
   but whatever the seed creates is what the README and
   `VITE_DEMO_CREDENTIALS` must say. That hint has a commented example
   line in `apps/web/.env.example` AND in the `apps/web/.env` you copied

@@ -59,7 +59,11 @@ UIDs are normalized to uppercase by the SDK before they reach the adapter, so ad
 
 ## Schema
 
-The Supabase adapter expects the schema in [`sql/0001_initial.sql`](sql/0001_initial.sql) (`tags` and `scans` tables). Apply it with your migration tool of choice. The adapter takes an already-constructed `SupabaseClient`; the SDK never manages keys or auth.
+The Supabase adapter expects the schema in [`sql/`](sql/): apply [`0001_initial.sql`](sql/0001_initial.sql) (`tags` and `scans` tables) and then [`0002_lock_down.sql`](sql/0002_lock_down.sql) with your migration tool of choice. If you applied `0001` from an earlier release, apply `0002` now.
+
+`0002` turns on row-level security with no policies and revokes the `anon` and `authenticated` roles, so the tables are server-only. Without it, anyone holding your publishable key can change any tag's destination or read the scan log through the Supabase Data API. Construct the adapter's `SupabaseClient` on the server with the secret (service-role) key, and never ship that client to a browser or app. The SDK never manages keys or auth.
+
+If your project already has a `tags` table (the withme starter does), create these in another schema or under other names and pass `tagsTable` / `scansTable` to the adapter.
 
 ## Status
 

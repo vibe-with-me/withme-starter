@@ -134,12 +134,15 @@ export async function removeConnection(db: Db, connectionId: string): Promise<vo
 /**
  * Idempotent and oracle-free: re-blocking succeeds silently, and so does
  * blocking an unknown id (an FK error would let callers probe which UUIDs
- * exist).
+ * exist). The block keeps the card in the block list only if the blocker
+ * can see it now; RLS refuses reveals_card for anyone else (42501), and the
+ * retry blocks without it.
  */
 export async function blockUser(db: Db, blockerId: string, blockedId: string): Promise<void> {
-  const { error } = await db
-    .from('blocks')
-    .insert({ blocker_id: blockerId, blocked_id: blockedId });
+  const insert = (reveals_card: boolean) =>
+    db.from('blocks').insert({ blocker_id: blockerId, blocked_id: blockedId, reveals_card });
+  let { error } = await insert(true);
+  if (error?.code === '42501') ({ error } = await insert(false));
   if (error && error.code !== '23505' && error.code !== '23503') throw error;
 }
 
