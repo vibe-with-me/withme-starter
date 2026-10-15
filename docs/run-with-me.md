@@ -208,6 +208,13 @@ Strava handle; strangers cannot. Nobody gets into the app without a pace.
 > optional. Use the skill's `affiliation` → `pace` and `contact_handle` →
 > `strava_handle` substitutions throughout, keeping the shapes.
 
+Today a Strava handle would fit Links instead: one entry in the platform
+registry (`strava`, the athlete id from a profile URL,
+`https://strava.com/athletes/<id>`) and one
+line in `private.is_link_value`, with no new table. This walkthrough keeps
+`strava_handle` because it is the run that exercised the skill's
+connections tier; reach for Links first in a real fork.
+
 **What changes.** The skill's map, with your names:
 
 | Layer | Card tier (`pace`) | Connections tier (`strava_handle`) |

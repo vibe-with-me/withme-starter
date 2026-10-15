@@ -145,7 +145,8 @@ constraints 2 and 4).
   claimed on the spot.
 - **extend-profile** (Tier 2, item 3, "onboarding") ships the two-tier
   model: card-tier columns on `profiles`, and a connections tier in its own
-  table, `profile_details`, whose policy admits the owner and accepted
+  table, `profile_details` (the same model as the starter's own Links
+  table, `profile_links`), whose policy admits the owner and accepted
   connections with no block either way. The build showed why it is not a
   `profiles_select` change: RLS is per row, and the pending-request
   recipient, the gathering co-member, and the blocker all read every column
