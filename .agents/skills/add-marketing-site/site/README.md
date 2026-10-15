@@ -13,7 +13,7 @@ the app restyles the site on its next build. Brand words live in
 ```sh
 bun run dev                              # http://localhost:4321
 bun run build && bunx wrangler dev       # the built site, served as it will be
-bun run build && bunx wrangler deploy    # the owner's OK first
+bun run build && bun run deploy         # needs PUBLIC_SITE_URL; the owner's OK first
 ```
 
 Made by `.agents/skills/add-marketing-site/` (the full runbook, including

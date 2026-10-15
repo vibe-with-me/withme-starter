@@ -9,7 +9,7 @@
     "build": "astro build",
     "preview": "astro preview --port 4321",
     "typecheck": "astro check",
-    "deploy": "wrangler deploy"
+    "deploy": "node check-site-url.mjs && wrangler deploy"
   },
   "dependencies": {
     "astro": "~7.3.8"

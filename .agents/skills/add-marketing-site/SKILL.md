@@ -121,7 +121,7 @@ build:
   "@withme/site#build": {
     "dependsOn": ["^build"],
     "env": ["PUBLIC_*"],
-    "inputs": ["$TURBO_DEFAULT$", ".env*", "../web/src/styles/**", "../web/src/fonts/**"],
+    "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/apps/web/src/styles/**", "$TURBO_ROOT$/apps/web/src/fonts/**"],
     "outputs": ["dist/**"]
   }
   ```
@@ -254,7 +254,9 @@ it.
    `"account_id": "<account id>"` to `apps/site/wrangler.jsonc`, the same
    pin go-live puts in the other two configs.
 2. Write `apps/site/.env.production` (gitignored; nothing in it is
-   secret):
+   secret). `PUBLIC_SITE_URL` is required for a deploy: without it the
+   build falls back to localhost for every canonical and `og:url`, and
+   `bun run deploy` refuses (`check-site-url.mjs`):
 
    ```env
    PUBLIC_SITE_URL=https://example.com
@@ -270,12 +272,17 @@ it.
    "routes": [{ "pattern": "example.com", "custom_domain": true }],
    ```
 
-   Skip this to start on `workers.dev`, and leave `PUBLIC_SITE_URL` as
-   that URL until the domain is attached.
+   Skip this to start on `workers.dev`, and set `PUBLIC_SITE_URL` to
+   the `https://<name>.<subdomain>.workers.dev` URL until the domain is
+   attached.
 
 ```sh
-cd apps/site && bun run build && bunx wrangler deploy
+cd apps/site && bun run build && bun run deploy
 ```
+
+`bun run deploy` runs `check-site-url.mjs` before `wrangler deploy`: it
+stops when `dist/` is missing or its canonical URL is localhost. Deploy
+through it, not with a bare `bunx wrangler deploy`.
 
 Cloudflare's API intermittently returns 502/504/524. Retry with backoff,
 as in go-live §2.
@@ -298,7 +305,7 @@ Python; go-live §3 explains why). `view-source` shows
 
 ## Redeploys and keeping it true
 
-`cd apps/site && bun run build && bunx wrangler deploy`. A token or font
+`cd apps/site && bun run build && bun run deploy`. A token or font
 change in the app reaches the site only on its next build: redeploy the
 site whenever make-it-yours runs again. Re-read step 5 whenever a
 migration adds a column holding user data or a provider is added.
@@ -318,7 +325,8 @@ blog, a sitemap, and anything that sells (the store stays a link, per
 | `bun run lint` fails on `apps/site/.astro/types.d.ts` | `.astro` missing from `.oxlintrc.json` `ignorePatterns` and `.gitignore` |
 | `/privacy` answers 307 to `/privacy/` | `build.format: 'file'` was removed from `astro.config.mjs` |
 | Canonical link says `/index` or `.html` | The `canonical` line in `Base.astro` was changed |
-| Canonical link says `localhost` in production | `PUBLIC_SITE_URL` missing from `apps/site/.env.production`, or `astro.config.mjs` reads `process.env` directly (the config runs before Astro loads `.env` files; keep the `loadEnv` call) |
+| `bun run deploy`: "The build's canonical URL is http://localhost:4321/" | `PUBLIC_SITE_URL` missing from `apps/site/.env.production`; set it and rebuild |
+| Canonical link says `localhost` in production | Deployed with a bare `wrangler deploy` past the check, or `astro.config.mjs` reads `process.env` directly (the config runs before Astro loads `.env` files; keep the `loadEnv` call) |
 | `Cannot find module 'vite' imported from …/astro.config.mjs` | `vite` dropped from `apps/site/package.json` devDependencies |
 | Taps on old tags 404 after the site took their hostname | The site took the tags' hostname without `public/_redirects` (step 1) |
 | "Open the app" or "Get tags" missing | The button is dormant: set `PUBLIC_APP_URL` / `PUBLIC_STORE_URL` and rebuild |
