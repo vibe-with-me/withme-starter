@@ -74,6 +74,12 @@ control, never a `*.workers.dev` URL tied to a worker name. If you later
 move hosting, keep the domain and point it at the new place; the tags do
 not care.
 
+If the fork will have a marketing site, decide its hostname now too. The
+site and the app are separate Workers, so the tags should encode the
+app's hostname (`app.example.com`) and leave the apex for the site.
+`add-marketing-site` step 1 covers a fork whose tags already encode the
+apex.
+
 ## What a tap records
 
 `tag_scans` stores a user-agent string and a timestamp per tap. No GPS,

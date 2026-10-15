@@ -19,7 +19,7 @@ const os = implement(contract).$context<ApiContext>();
 
 export const publicProcedure = os.public;
 
-/** Procedures that require a verified Supabase identity. */
+/** The one public procedure that needs an identity (claim) calls this itself. */
 export function requireUser(context: ApiContext): string {
   if (!context.userId) {
     throw new ORPCError('UNAUTHORIZED', { message: 'Authentication required' });
@@ -27,4 +27,11 @@ export function requireUser(context: ApiContext): string {
   return context.userId;
 }
 
-export const appProcedure = os.app;
+/**
+ * Every app.* procedure requires a verified Supabase identity. The check runs
+ * here, once, so a new handler cannot forget it, and handlers read a typed,
+ * non-null `context.userId`.
+ */
+export const appProcedure = os.app.use(({ context, next }) =>
+  next({ context: { userId: requireUser(context) } }),
+);

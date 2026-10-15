@@ -82,14 +82,16 @@ below does one of these end to end.
 No cloud accounts needed. Prerequisites: [Bun](https://bun.sh),
 [Docker](https://www.docker.com/products/docker-desktop/), and the
 [Supabase CLI](https://supabase.com/docs/guides/cli) version 2.118 or
-newer.
+newer. Start Docker before you begin.
 
 ```sh
+git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
+cd withme-starter
 bun install
-bun run db:start        # Supabase local on ports 553xx (Postgres, Auth, Storage)
-bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
+bun run db:start        # Supabase local on ports 553xx; the first run downloads images
+bun run db:seed         # demo users + tags
 bun run dev             # api on :8786, web on :3000
 ```
 
@@ -101,6 +103,11 @@ Then play the demo:
   and claim it.
 - Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
   gathering, her pending request from Lin, and her tags.
+
+If `db:start` says a port is already allocated, something else holds
+553xx, usually another project's Supabase stack: stop it first
+([Local development](docs/local-development.md#when-something-goes-wrong)
+has the commands).
 
 Mobile, tests, ports, and the fixes for the two or three things that go
 wrong on a fresh machine are in [Local development](docs/local-development.md).
@@ -118,7 +125,9 @@ The full version, with the agent prompts, every file that changes, and the
 checks at each step, is [docs/run-with-me.md](docs/run-with-me.md).
 
 **0. Fork and run the demo.** Everything above. You now have `withme`,
-working, on your machine.
+working, on your machine. Add the starter as an `upstream` remote now;
+its later fixes reach your fork as an ordinary `git merge`
+([Staying current](docs/staying-current.md)).
 
 **1. `design-direction` (optional): a look for the domain.**
 "A neighborhood run club. Mood: dawn, asphalt, Saturday." The skill runs
@@ -152,13 +161,20 @@ start-line sign can send people to today's route map. The skill's worked
 example is exactly this type.
 
 **6. `provision-tags`: tags for the first Saturday.** Twenty-five random
-UIDs, an encode list of `https://runwithme.example/t/{UID}` URLs, and a
+UIDs, an encode list of `https://app.runwithme.example/t/{UID}` URLs, and a
 printable sheet. Encode with any NFC writer app, lock the tags, hand them
 out. First tap claims.
 
 **7. `go-live`: ship it.** Hosted Supabase, the API worker, the web
 worker, an EAS update for mobile. Every pothole in the runbook was hit on
 a real deploy.
+
+**8. `add-marketing-site`: a front door.** A static Astro site at
+`runwithme.example` (the app lives at `app.runwithme.example`, which the
+tags encode) that says what the bib tag does, plus the privacy and
+support pages the app stores ask for. It imports the app's tokens and
+card, so it wears your brand with no styles of its own, and it ships no
+JavaScript and no analytics.
 
 At the end you have Run With Me: a run club app with your brand, your
 nouns, your fields, and the same privacy promises as the starter, because
@@ -243,7 +259,9 @@ runbook; the short version is:
 
 1. Create a Supabase project, `supabase link`, `supabase db push`.
 2. In the Supabase dashboard, set your site URL and
-   `https://<your-web-domain>/auth/callback` as a redirect URL.
+   `https://<your-web-domain>/auth/callback` as a redirect URL. For
+   phone sign-in, turn on the Phone provider with your Twilio Verify
+   credentials ([docs/stack.md](docs/stack.md#twilio-verify-phone-sign-in-codes)).
 3. Put the API's config in as Worker **secrets** (`SUPABASE_URL`,
    `SUPABASE_PUBLISHABLE_KEY`, `CORS_ORIGIN`), so a deploy can never
    clobber them.
@@ -252,6 +270,12 @@ runbook; the short version is:
 5. `bun run deploy`. The API worker deploys first; the web worker reaches
    it through a service binding, and Turborepo enforces the order.
 6. Encode a tag, tap it, claim it.
+
+A public website for the fork, with the privacy and support URLs the app
+stores ask for, is a third Worker: the
+[`add-marketing-site`](.agents/skills/add-marketing-site/SKILL.md) skill,
+run after `go-live`. Decide its hostname before you encode tags
+([docs/nfc-tags.md](docs/nfc-tags.md#the-domain-is-forever)).
 
 Free tiers cover a demo. [docs/stack.md](docs/stack.md) covers what each
 platform costs once it is real.
@@ -304,4 +328,6 @@ GoToTags from the starter's encode list, a Shopify store behind the tab.
 
 ## License
 
-MIT
+MIT for the code. The Vibe With Me name and marks are not covered by
+the license: [TRADEMARKS.md](TRADEMARKS.md) says what forks may call
+themselves, including the "[Something] With Me" pattern.

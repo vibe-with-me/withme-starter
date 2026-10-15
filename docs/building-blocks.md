@@ -56,11 +56,13 @@ decides what they can see.
 
 - `src/schemas/`: one file per concept. `destination.ts` (the typed union
   a tag points at), `tag.ts`, `profile.ts` (the owner's profile, the public
-  card, the avatar path rules), `connection.ts`, `gathering.ts`.
+  card, the avatar path rules), `link.ts` (the Links platform registry and
+  the stored shape per platform), `connection.ts`, `gathering.ts`.
 - `src/contract/public.ts`: `resolve`, `claim`, `logScan`. Anonymous
   except `claim`. This is what the SDK wraps.
 - `src/contract/app.ts`: profile (get, update, upload and remove avatar,
-  delete account), connect requests (send, list pending, accept, decline),
+  delete account), links (list mine, replace), connect requests (send, list
+  pending, accept, decline),
   connections (list, remove), blocks (block, unblock, list), gatherings
   (create, get, join, leave, update, delete, point tags), my tags (list,
   update).
@@ -72,8 +74,10 @@ decides what they can see.
 Hono on Cloudflare Workers, implementing the contract with
 `implement(contract)`.
 
-- `src/routers/public.ts` and `src/routers/app.ts`: thin handlers.
-  `requireUser` where auth is required, then either a typed query from
+- `src/routers/public.ts` and `src/routers/app.ts`: thin handlers. Every
+  `app.*` procedure requires a signed-in caller through `appProcedure`'s
+  middleware, which hands the handler `context.userId`; `public.ts` calls
+  `requireUser` where it needs one. Then either a typed query from
   `packages/db` or an RPC call, with Postgres error codes mapped to oRPC
   codes.
 - JWT verification is ES256 against Supabase's JWKS. Every handler runs on
@@ -99,7 +103,8 @@ TanStack Start, deployed as a Worker. File routes in `src/routes/`:
   `_app.gatherings_.$id.tsx`, `_app.connections.tsx`, `_app.merch.tsx`
   (present only when a store URL is set), `_app.profile.tsx`.
 - `src/components/`: `AppShell.tsx` (header, tab bar, `navItems`),
-  `ProfileCard.tsx`, `MyTags.tsx`, `AvatarField.tsx`, `AccountSection.tsx`,
+  `ProfileCard.tsx`, `MyTags.tsx`, `AvatarField.tsx`, `Links.tsx` (the
+  Profile → Links editor and a connection's link chips), `AccountSection.tsx`,
   the list and shell state ladders (`ListStates.tsx`, `CalmStates.tsx`).
 - `src/styles/tokens.css`: the design system. Eight color tokens in light
   and dark, a type scale, radii, spacing, one motion token. Every style
@@ -129,7 +134,7 @@ NFC in development builds, and publishing with EAS Update.
 ### `packages/db`: queries, types, and the RLS suite
 
 - `src/queries/`: typed query helpers the API calls (`handshake.ts`,
-  `tags.ts`, `gatherings.ts`, `avatars.ts`).
+  `tags.ts`, `gatherings.ts`, `avatars.ts`, `links.ts`).
 - `src/types/supabase.ts`: generated from the local database
   (`bun run db:types`). Commit it after a migration.
 - `test/`: the row-level security suite, run with `bun test` against the

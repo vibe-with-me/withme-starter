@@ -32,6 +32,10 @@ rewrite it in your voice and keep one card, one action. Leave
 test pins the tab absent on purpose. `make-it-yours` step 7 walks the
 same settings.
 
+A fork with a marketing site (`add-marketing-site`) sets the same URL as
+`PUBLIC_STORE_URL` in `apps/site/.env.production`; the site's "Get tags"
+button appears only when it is set.
+
 If you do not want to run a store, leave the URL unset. The tab is
 absent, the landing page has no "Get tags" link, and the app is complete
 without it.

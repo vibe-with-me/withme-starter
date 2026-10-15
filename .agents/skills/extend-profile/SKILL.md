@@ -29,6 +29,16 @@ there binds every step here.
 A field that must not reach a stranger holding your tag is connections
 tier. A field nobody else should read is neither: do not collect it.
 
+**Check Links first.** The starter already ships one connections-tier
+table: `public.profile_links` (Profile → Links), one row per platform from
+the registry in `packages/contract/src/schemas/link.ts` (Instagram,
+WhatsApp, a phone number, an email, a website, and more). A handle on a
+service, or a way to reach someone, belongs there: add the platform to
+`LINK_PLATFORMS` and to `private.is_link_value` in a new migration, and
+skip this skill's connections tier. Use `profile_details` for what is not
+a link: a shirt size, a dietary note, a postcode. The worked example's
+`contact_handle` stands in for any such field; rename it.
+
 **Why the connections tier is not a column on `profiles`.** RLS decides
 rows, not columns: every viewer `profiles_select` admits reads every column
 of the row. In the build this skill was distilled from, a `contact_handle`
@@ -165,7 +175,7 @@ mirroring above does not apply; this does.
 | Contract | `packages/contract/src/schemas/profile.ts` (`ProfileSchema`, `PublicProfileSchema`, `UpdateProfileInputSchema`) | `schemas/profile.ts` (`ProfileDetailsSchema`), `schemas/connection.ts` (`ConnectionSchema.details`), `contract/app.ts` (`profile.get` / `profile.update` outputs) |
 | SQL | `public.profiles`; every function that builds a card (`resolve_tag`, `accept_connect_request`) | `public.profile_details` and its policies; `accept_connect_request` |
 | RLS tests | `packages/db/test/profile-fields.test.ts` (both tiers), `enumeration.test.ts`, `cascade.test.ts`, `account.test.ts` | same |
-| Queries | `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile` in `packages/db/src/queries/handshake.ts` | `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, `listConnections` (same file) |
+| Queries | `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile` in `packages/db/src/queries/handshake.ts` | `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, `listConnections` (same file; it already embeds links, keep that) |
 | API | `apps/api/src/routers/app.ts`: `getProfile`, `updateProfile` | same; `acceptRequest` and `connectionsList` pass it through |
 | SDK | `PublicProfileCard` in `packages/nfc-sdk/src/client.ts` | never |
 | Web (`apps/web/src/`) | `components/ProfileCard.tsx`, `routes/_app.profile.tsx`, `routes/claim.$uid.tsx` | `routes/_app.profile.tsx`, `routes/_app.connections.tsx` (its local `PersonRow`) |
@@ -294,6 +304,7 @@ describe('profile tiers', () => {
       id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
       created_at: '2026-10-11T00:00:00Z',
       profile: card,
+      links: [],
     };
     expect(ConnectionSchema.safeParse(connection).success).toBe(false);
     expect(ConnectionSchema.safeParse({ ...connection, details: null }).success).toBe(true);
@@ -506,7 +517,7 @@ describe('connections tier', () => {
     await connectUsers(alice, bob);
     const { error } = await bob.client
       .from('blocks')
-      .insert({ blocker_id: bob.id, blocked_id: alice.id });
+      .insert({ blocker_id: bob.id, blocked_id: alice.id, reveals_card: true });
     expect(error).toBeNull();
 
     // the blocker still sees the blocked card (their block list) ...
@@ -819,7 +830,9 @@ grep -lE 'create (or replace )?function public\.resolve_tag' supabase/migrations
 grep -lE 'create (or replace )?function public\.accept_connect_request' supabase/migrations/*.sql | grep -v _extend_profile | sort | tail -1
 ```
 
-In the starter both print `supabase/migrations/20261011120000_avatars.sql`.
+In the starter the first prints `supabase/migrations/20261011120000_avatars.sql`
+and the second `supabase/migrations/20261014190000_profile_links.sql`
+(Links redefined accept to return the requester's `links`).
 After customize-gathering, `resolve_tag`'s newest may be that skill's
 migration instead (it redefines `resolve_tag`), which is why the grep,
 not a file name, decides; copy each function from its own newest file.
@@ -848,6 +861,8 @@ plpgsql`, `stable` or `volatile`, `security definer`, `set search_path =
   (A definer function bypasses RLS, so it states the tenant seam itself.)
 
   and add `'details', v_details` beside `'profile'` in the returned object.
+  Keep its `'links'` key: the copied body already builds it, and dropping
+  it breaks `ConnectionSchema`, which requires `links`.
 
 `resolve_tag` never reads `profile_details`. Same signatures keep their
 grants. Diff each copy against its source: the only changes are the ones
@@ -947,21 +962,33 @@ export async function upsertOwnDetails(
 }
 ```
 
-- `listConnections`: embed the tier under each side's card, and lift it out:
+- `listConnections`: embed the tier under each side's card, beside the
+  links embed it already has, and lift both out:
 
 ```ts
-       a:profiles!connections_user_a_fkey(${CARD_COLUMNS}, details:profile_details(${DETAILS_COLUMNS})),
-       b:profiles!connections_user_b_fkey(${CARD_COLUMNS}, details:profile_details(${DETAILS_COLUMNS}))`,
+       a:profiles!connections_user_a_fkey(${CARD_COLUMNS}, ${LINK_EMBED}, details:profile_details(${DETAILS_COLUMNS})),
+       b:profiles!connections_user_b_fkey(${CARD_COLUMNS}, ${LINK_EMBED}, details:profile_details(${DETAILS_COLUMNS}))`,
 ```
 
 ```ts
   return (data ?? []).flatMap((row) => {
     const other = row.user_a === userId ? row.b : row.a;
     if (!other) return [];
-    const { details, ...profile } = other;
-    return [{ id: row.id, created_at: row.created_at, profile, details: details ?? null }];
+    const { links, details, ...profile } = other;
+    return [
+      {
+        id: row.id,
+        created_at: row.created_at,
+        profile,
+        links: sortLinks(links),
+        details: details ?? null,
+      },
+    ];
   });
 ```
+
+  (The API casts these rows to `Connection[]`, so a dropped `links` key is
+  not a type error: it fails the contract's output check at runtime.)
 
   and `ConnectionRow` gains `details: ProfileDetails | null`. (The primary
   key is the foreign key, so PostgREST embeds one object or null; if your
@@ -972,7 +999,7 @@ export async function upsertOwnDetails(
 
 ```ts
 const getProfile = appProcedure.profile.get.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const [profile, details] = await run(context, () =>
     Promise.all([getOwnProfile(context.db, userId), getOwnDetails(context.db, userId)]),
   );
@@ -980,7 +1007,7 @@ const getProfile = appProcedure.profile.get.handler(async ({ context }) => {
 });
 
 const updateProfile = appProcedure.profile.update.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const { details, ...patch } = input;
   // Two writes, not a transaction, by design: a failure surfaces and a retry
   // is idempotent. Never "fix" it with a definer RPC that loosens the grants.
@@ -1113,19 +1140,22 @@ const [contact, setContact] = useState(details?.contact_handle ?? '');
   save your name. Try again." over two fields: make it "Could not save
   your profile. Try again." No test reads that string.
 - `apps/web/src/routes/_app.connections.tsx`. Every list renders the
-  file's local `PersonRow` (`profile`, `sub`, children), which shows one
-  `sub` line. Give it a second, optional line:
+  file's local `PersonRow` (`profile`, `sub`, `links`, children), which
+  shows one `sub` line. Give it a second, optional line:
 
 ```tsx
 function PersonRow({
   profile,
   sub,
   detail,
+  links,
   children,
 }: {
   profile: CardProfile;
   sub?: string | null;
   detail?: string | null;
+  /** Connections only: the one list that carries them. */
+  links?: ProfileLink[];
   children: ReactNode;
 }) {
 ```
@@ -1248,7 +1278,7 @@ of returning to the tag.
   `createProfile`'s "Could not save your name. Try again." becomes "Could
   not save your profile. Try again.", both as on web.
 - `PersonRow` in `apps/mobile/components/ui.tsx` (`name`, `path`, `sub`,
-  children) gains `detail?: string | null`, rendered after the `sub` `Text`
+  `extra`, children) gains `detail?: string | null`, rendered after the `sub` `Text`
   as a second `Text` with the same `numberOfLines={2}` and
   `[styles.personSub, { color: t.inkMuted }]`, when non-null. In
   `apps/mobile/app/(tabs)/connections.tsx`, the Connections segment's
@@ -1422,8 +1452,8 @@ contract seven, API e2e seven.
 8. The new table carries the tenant seam, and every policy predicates on it.
 9. Any later migration that redefines `resolve_tag` or
    `accept_connect_request` copies the newest definition (this migration
-   once it exists). An older body silently drops the card tier and the
-   `details` hand-off.
+   once it exists). An older body silently drops the card tier, the
+   `details` hand-off, and accept's `links`.
 
 ## Scope notes
 

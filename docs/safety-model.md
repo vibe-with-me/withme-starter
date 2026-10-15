@@ -14,8 +14,8 @@ moved a safety mechanism", this is what it means.
 
 **The promise.** There is no way to see a person you have not met. A card
 is reachable by tapping their tag (knowing the unguessable UID is the
-capability) or through a connection, a live incoming request, or a shared
-gathering.
+capability) or through a connection or a live incoming request. Sharing a
+gathering reveals nothing.
 
 **How.** `profiles` has no anonymous select policy at all. `resolve_tag`
 is the only anonymous read, and it answers for one UID at a time. There
@@ -48,6 +48,13 @@ blocked sender returns the same bare `{ ok: true }` as one that was
 stored; it is simply never written. `join_gathering` raises the same
 `'gathering not found'` for a blocked joiner as for an id that does not
 exist. Creating a block evicts the pair from gatherings they share.
+
+Blocking is not a way to see someone. The blocker keeps the blocked card
+in their block list only when the block row's `reveals_card` is true, and
+the `blocks_insert` policy allows that only if the blocker could already
+see the card at that moment (`private.sees_card`, the same rule
+`profiles_select` uses). Blocking a stranger, such as a gathering host
+whose id the feed lists, blocks them and reveals nothing.
 
 **The test.** `packages/db/test/blocks.test.ts`, plus the blocked-viewer
 assertions in `apps/api/e2e/handshake.e2e.ts`.
@@ -85,8 +92,9 @@ admits the viewer's own row and their accepted connections' rows, on a
 gathering the viewer can see — the host gets the same view as everyone.
 The headcount is `public.gathering_member_counts`, a security-definer
 function whose `where` restates the gathering's visibility. There is no
-card bridge: `profiles_select` is byte-identical to the initial schema, so
-co-membership never reveals a card. A listed gathering does expose its
+card bridge: `profiles_select` admits only you, your connections, the
+sender of a live request to you, and cards you could already see when you
+blocked them, so co-membership never reveals a card. A listed gathering does expose its
 host's id; that id is not a card, and what it allows is one consent-gated
 connect request. A host cannot leave their own gathering; deleting it is
 how they leave.

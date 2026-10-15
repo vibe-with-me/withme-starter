@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "withme-site",
+  "compatibility_date": "2026-05-01",
+  // Static assets only: no `main`, so no Worker code runs. Wrangler uploads
+  // dist/ and Cloudflare serves it, with dist/404.html for unknown paths.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  "workers_dev": true,
+  "preview_urls": false
+}

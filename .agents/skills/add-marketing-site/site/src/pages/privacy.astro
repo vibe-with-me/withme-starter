@@ -1,0 +1,55 @@
+---
+// A starting point, drawn from docs/safety-model.md and the migrations. The
+// owner reviews it before launch; it is not legal advice. Every line must stay
+// true of this fork: a new column, provider, or tracker changes this page.
+import Base from '../layouts/Base.astro';
+import { CONTACT_EMAIL, DISPLAY_NAME } from '../brand.ts';
+
+const UPDATED = '2026-10-15';
+---
+
+<Base title="Privacy" description={`What ${DISPLAY_NAME} stores, who can see it, and how to delete it.`}>
+  <article class="prose">
+    <h1>Privacy</h1>
+    <p>Last updated {UPDATED}.</p>
+
+    <h2>What we store</h2>
+    <ul>
+      <li><strong>Your sign-in</strong>: an email address or phone number.</li>
+      <li><strong>Your card</strong>: your name, a short bio, and a photo if you add one.</li>
+      <li><strong>Your links</strong>: the places you can be reached, if you add them.</li>
+      <li><strong>Your connections</strong>: the requests you send and accept, and the people you block.</li>
+      <li><strong>Gatherings</strong>: the ones you host and the ones you join.</li>
+      <li>
+        <strong>Taps on your tags</strong>: the time and the browser's user-agent string. Never a
+        location, an IP address, or a device identifier.
+      </li>
+    </ul>
+
+    <h2>Who can see it</h2>
+    <ul>
+      <li>Your card: anyone who taps your tag, your connections, and someone whose request to you is waiting.</li>
+      <li>Your links: you and your connections, never someone either of you has blocked.</li>
+      <li>Gatherings: every signed-in user sees the listing and a headcount. Who is going, each person sees only among their own connections.</li>
+      <li>Nobody can search for you or list the people using {DISPLAY_NAME}.</li>
+    </ul>
+
+    <h2>What we don't do</h2>
+    <p>No ads, no analytics, no selling or sharing your data. Your IP address is used to slow down abuse and is not stored.</p>
+
+    <h2>Who processes it</h2>
+    <p>
+      Supabase hosts the database, sign-in, and photos. Cloudflare serves the app and this site. If you
+      sign in by phone, Twilio sends the code. Each handles data only to provide that service.
+    </p>
+
+    <h2>Deleting it</h2>
+    <p>
+      Delete your account from <strong>Profile → Account</strong> and all of the above is deleted at
+      once. See <a href="/support#delete-account">Support</a> if you can't sign in.
+    </p>
+
+    <h2>Contact</h2>
+    <p><a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+  </article>
+</Base>

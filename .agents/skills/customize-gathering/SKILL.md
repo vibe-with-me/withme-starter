@@ -116,8 +116,11 @@ without containing "gathering"; rewrite it for your vertical too:
   label `Title`; the start label, one `Starts` field on web, two fields
   `Date` and `Time` on mobile; `Location (optional)`, and the location
   placeholder `"Where to find it"` (create forms only);
-- the members heading `Who's coming` on the detail screen
-  (web `_app.gatherings_.$id.tsx`, mobile `gathering/[id].tsx`);
+- the members heading `Who's going` and the hint under it on the detail
+  screen (web `_app.gatherings_.$id.tsx`, mobile `gathering/[id].tsx`),
+  the `Happening` / `Yours` section titles and their empty states on the
+  list, the `Hosting` / `Going` marks, and the `N going` / `With …` lines
+  (`lib/going.ts` on both platforms);
 - the seed's gathering, in `supabase/seed/index.ts`: its `p_title`
   (`'Rooftop listening session'`), its `p_location`
   (`'The roof, 14 Loom St'`), and the console text it prints
@@ -190,11 +193,11 @@ In slice order:
    re-issue the grants for the new signature:
    `revoke execute on function public.create_gathering(text, timestamptz, text, text) from public, anon;`
    `grant execute on function public.create_gathering(text, timestamptz, text, text) to authenticated;`.
-   Revoke from `anon` by name: Supabase's default privileges grant `anon`
-   execute on every new function directly, so a revoke from `public`
-   alone leaves it callable by anon (core's own older RPCs have the same
-   gap, tracked as ENG-754; the body's `'authentication required'` still
-   refuses, but the grant should say so too).
+   Core's default privileges (`20261015140000_default_function_privileges.sql`)
+   already keep a new function closed to `anon` and `public`, so the revoke
+   is belt and braces; keep it, so the grant says who may call the function
+   even on a database whose defaults differ. The body's
+   `'authentication required'` check stays as the second gate.
    If the summary carries the field, also
    `create or replace function public.resolve_tag(p_uid text) returns jsonb`
    (copy the whole body of its **newest** definition,
@@ -304,8 +307,10 @@ a. `gatherings_select` admits every signed-in user of the tenant, minus a
    own policy reads `gatherings`, and Postgres would recurse forever.
 b. `gathering_members_select` admits the viewer's own row and their
    accepted connections' rows, on a gathering the viewer can see — the
-   host included. Co-membership never reveals a card: `profiles_select` is
-   byte-identical to the initial schema, and there is no `shares_gathering`.
+   host included. Co-membership never reveals a card: `profiles_select` has no gathering
+   clause (it reads `private.sees_card` since
+   `20261015120000_block_reveals_only_known_cards.sql`), and there is no
+   `shares_gathering`.
    Hosting must not become a way to collect strangers' cards.
 c. `public.gathering_member_counts` is the headcount: a definer read whose
    `where` re-states (a), so a hidden gathering has no count. Any new

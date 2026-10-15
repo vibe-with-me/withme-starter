@@ -43,6 +43,17 @@ interface Row {
   error: string | null;
 }
 
+type Direction = 'up' | 'down';
+
+/** The list with the row at `from` swapped with its neighbour; unchanged at either end. */
+function moved(rows: Row[], from: number, direction: Direction): Row[] {
+  const to = direction === 'up' ? from - 1 : from + 1;
+  const a = rows[from];
+  const b = rows[to];
+  if (!a || !b) return rows;
+  return rows.map((row, i) => (i === from ? b : i === to ? a : row));
+}
+
 /** Say it outright on both platforms: iOS has no live regions, and the status text here has none either. */
 function announce(message: string) {
   if (Platform.OS === 'ios') {
@@ -67,6 +78,7 @@ export function Links() {
   const [status, setStatus] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const inputs = useRef(new Map<LinkPlatformId, TextInput>());
+  const moves = useRef(new Map<string, View>());
   const taken = new Set(rows.map((row) => row.platform));
   const available = LINK_PLATFORM_IDS.filter((platform) => !taken.has(platform));
 
@@ -95,6 +107,25 @@ export function Links() {
   function remove(platform: LinkPlatformId) {
     setRows((prev) => prev.filter((row) => row.platform !== platform));
     setStatus(null);
+  }
+
+  function move(platform: LinkPlatformId, direction: Direction) {
+    const from = rows.findIndex((row) => row.platform === platform);
+    const to = direction === 'up' ? from - 1 : from + 1;
+    if (from < 0 || to < 0 || to >= rows.length) return;
+    // The order is a draft until Save links, like a changed value.
+    setRows((prev) => moved(prev, from, direction));
+    setStatus(null);
+    setFailed(false);
+    // At either end the pressed control is gone: stay on the row's other move.
+    // The controls settle on the next frame; the position is read after the focus move.
+    const other = direction === 'up' ? 'down' : 'up';
+    setTimeout(() => {
+      const target =
+        moves.current.get(`${platform}:${direction}`) ?? moves.current.get(`${platform}:${other}`);
+      if (target) AccessibilityInfo.sendAccessibilityEvent(target, 'focus');
+      announce(`${LINK_PLATFORMS[platform].label} moved to ${to + 1} of ${rows.length}.`);
+    }, 0);
   }
 
   function edit(platform: LinkPlatformId, value: string) {
@@ -153,8 +184,12 @@ export function Links() {
         </View>
       ) : (
         <>
-          {rows.map((row) => {
+          {rows.map((row, i) => {
             const { label, kind, placeholder } = LINK_PLATFORMS[row.platform];
+            const moveRef = (direction: Direction) => (el: View | null) => {
+              if (el) moves.current.set(`${row.platform}:${direction}`, el);
+              else moves.current.delete(`${row.platform}:${direction}`);
+            };
             return (
               <View key={row.platform} style={styles.row}>
                 <View style={styles.rowField}>
@@ -174,14 +209,39 @@ export function Links() {
                   />
                   {row.error ? <ErrorText>{row.error}</ErrorText> : null}
                 </View>
-                <Button
-                  inline
-                  label="Remove"
-                  kind="quiet"
-                  accessibilityLabel={`Remove ${label}`}
-                  disabled={busy}
-                  onPress={() => remove(row.platform)}
-                />
+                {/* Up, Down, Remove under the field: three beside it would squeeze it. */}
+                <View style={styles.rowActions}>
+                  {i === 0 ? null : (
+                    <Button
+                      ref={moveRef('up')}
+                      inline
+                      label="Up"
+                      kind="quiet"
+                      accessibilityLabel={`Move ${label} up`}
+                      disabled={busy}
+                      onPress={() => move(row.platform, 'up')}
+                    />
+                  )}
+                  {i === rows.length - 1 ? null : (
+                    <Button
+                      ref={moveRef('down')}
+                      inline
+                      label="Down"
+                      kind="quiet"
+                      accessibilityLabel={`Move ${label} down`}
+                      disabled={busy}
+                      onPress={() => move(row.platform, 'down')}
+                    />
+                  )}
+                  <Button
+                    inline
+                    label="Remove"
+                    kind="quiet"
+                    accessibilityLabel={`Remove ${label}`}
+                    disabled={busy}
+                    onPress={() => remove(row.platform)}
+                  />
+                </View>
               </View>
             );
           })}
@@ -276,13 +336,9 @@ export function LinkChips({ links }: { links: ProfileLink[] }) {
 
 const styles = StyleSheet.create({
   loadError: { width: '100%', alignItems: 'center', gap: space.s2 },
-  row: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: space.s2,
-  },
-  rowField: { flex: 1, minWidth: 0, gap: space.s2 },
+  row: { width: '100%' },
+  rowField: { width: '100%', gap: space.s2 },
+  rowActions: { flexDirection: 'row', justifyContent: 'flex-end' },
   chooser: {
     flexDirection: 'row',
     flexWrap: 'wrap',

@@ -40,14 +40,47 @@ enabled = false
 
 [auth]
 enabled = true
+# Local-only: a hosted project's Site URL is its own web origin. Never
+# `supabase config push` this file to a hosted project as it stands; set the
+# hosted values in the dashboard (go-live does).
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/auth/callback"]
 jwt_expiry = 3600
 enable_signup = true
+# Safe anywhere, and the clients ask for the same 10 on sign-up (web and
+# mobile login screens). The server default would be 6 with no rules.
+minimum_password_length = 10
+password_requirements = "letters_digits"
 
 [auth.email]
 enable_signup = true
+# Local-only: no confirmation email, so a local sign-up signs straight in. A
+# hosted project must confirm emails; never push this value to one.
 enable_confirmations = false
+
+# Phone sign-in: a 6-digit code by text, no password. Signing in with a new
+# number creates the account. Twilio Verify sends the codes.
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+max_frequency = "30s"
+
+# +1 555-555-0100 (a fictional number) always takes 123456 and never reaches
+# Twilio, so local dev and CI need no Twilio account. Leave it out of a
+# hosted project.
+[auth.sms.test_otp]
+15555550100 = "123456"
+
+# Twilio Verify. It has to stay enabled even locally: the CLI turns phone
+# login off when no SMS provider is. Unset env vars are passed through as
+# placeholders, so only real numbers fail without them. For real texts, put
+# the Account SID (AC...), Verify Service SID (VA...) and Auth Token in
+# supabase/.env, or in the dashboard for a hosted project.
+[auth.sms.twilio_verify]
+enabled = true
+account_sid = "env(SUPABASE_AUTH_SMS_TWILIO_VERIFY_ACCOUNT_SID)"
+message_service_sid = "env(SUPABASE_AUTH_SMS_TWILIO_VERIFY_SERVICE_SID)"
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_VERIFY_AUTH_TOKEN)"
 
 # Google OAuth: set client_id/secret via env in supabase/.env or the dashboard
 # for hosted projects. Disabled by default for zero-cloud-account local dev.

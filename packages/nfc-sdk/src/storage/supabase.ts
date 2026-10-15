@@ -16,9 +16,10 @@ export interface SupabaseStorageAdapterOptions {
 }
 
 /**
- * StorageAdapter backed by Supabase, against the schema in sql/0001_initial.sql.
+ * StorageAdapter backed by Supabase, against the schema in sql/ (0001 and 0002).
  * Takes an already-constructed SupabaseClient — this SDK never creates clients
- * or manages keys/auth; that is the consumer's responsibility.
+ * or manages keys/auth. The tables are server-only (0002), so pass a
+ * server-side client holding the secret key, never a browser client.
  */
 export class SupabaseStorageAdapter implements StorageAdapter {
   private readonly client: SupabaseClient;

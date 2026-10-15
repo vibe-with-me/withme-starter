@@ -368,7 +368,7 @@ describe('gatherings respect blocks', () => {
 
     const { error } = await carol.client
       .from('blocks')
-      .insert({ blocker_id: carol.id, blocked_id: bob.id });
+      .insert({ blocker_id: carol.id, blocked_id: bob.id, reveals_card: true });
     expect(error).toBeNull();
 
     // both stay members of alice's gathering, which both still see

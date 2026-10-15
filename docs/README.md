@@ -31,13 +31,16 @@ longer version of something it mentions.
 - [The slice](the-slice.md): the fixed order every change moves through
   (contract → migration + RLS → tests → API → web → mobile → e2e), with the
   real file that plays each role today. The skills assume you have read it.
+- [Staying current](staying-current.md): keep the starter as a git
+  remote and merge its updates, with where the conflicts come from, how
+  migrations from both sides interleave, and how to keep merges cheap.
 - [The skills](../.agents/skills/): `design-direction`, `make-it-yours`,
   `customize-gathering`, `extend-profile`, `add-destination-type`,
-  `provision-tags`, `go-live`. Each is a runbook with a checkpoint per step.
+  `provision-tags`, `go-live`, `add-marketing-site`. Each is a runbook
+  with a checkpoint per step.
 
 ## For someone curious how the starter is built
 
-- [Skills roadmap](skills-roadmap.md): which skills exist, which were
-  deliberately skipped, and the decisions behind both.
-- [`superpowers/`](superpowers/): the build-out program, its specs, and the
-  per-milestone plans. This is the working record, not reference docs.
+- [Skills roadmap](skills-roadmap.md): why growth ships as skills rather
+  than features, which skills exist, which were deliberately skipped, and
+  the product decisions a fork inherits with them.

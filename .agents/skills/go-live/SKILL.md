@@ -69,13 +69,14 @@ command line (it lands in shell history and transcripts):
 ```sh
 ( umask 077
 supabase projects api-keys --project-ref <ref> -o json | python3 -c "
-import json, sys
+import json, secrets, sys
 keys = {k['name']: k['api_key'] for k in json.load(sys.stdin)}
 anon = next((v for v in keys.values() if str(v).startswith('sb_publishable_')), keys.get('anon', ''))
 with open('.env.demo-seed', 'w') as f:
     f.write('SUPABASE_URL=https://<ref>.supabase.co\n')
     f.write(f\"SUPABASE_SERVICE_ROLE_KEY={keys['service_role']}\n\")
     f.write(f'SUPABASE_ANON_KEY={anon}\n')
+    f.write(f'SEED_DEMO_PASSWORD={secrets.token_urlsafe(18)}\n')
 " ) && chmod 600 .env.demo-seed   # umask: never world-readable; chmod: an existing file
 ```
 
@@ -92,6 +93,21 @@ freshly issued token verifying through the API. If the project still issues
 HS256 tokens (empty list, or that check 401s), rotate to an asymmetric
 signing key in the dashboard (look under Project Settings → JWT Keys)
 before go-live.
+
+Decide with the owner which deploy this is, because the seed creates two
+demo logins (`ada@` and `lin@demo.withme.local`):
+
+- **A public demo** (nobody signs up for real): the seed stays, and the
+  landing page may show a demo login (`VITE_DEMO_CREDENTIALS`, section 3).
+- **An app for real users**: the seed is only for the checks in sections
+  2 and 3, and section 5 removes it before anyone is told about the app.
+  Never publish a demo login next to real users. Whoever holds it can sign
+  in as Ada, see the cards of everyone who sends Ada a request, accept
+  them, and read their links (phone, email).
+
+On a hosted project the seed refuses to run without its own
+`SEED_DEMO_PASSWORD` (the keys file above has one), so no fork ships the
+local default password that every copy of this repo prints.
 
 Seed (a production write — owner's OK first):
 
@@ -110,15 +126,24 @@ Seed (a production write — owner's OK first):
 Every block that sources the keys file does it in a subshell like this one,
 so the keys never stay exported in your shell: the db package's test utils
 read `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, and a later
-`cd packages/db && bun test` would run the RLS suite against production
-with the service role (no code guard refuses a remote target yet; one is
-an open item). One command per
+`cd packages/db && bun test` would otherwise run the RLS suite against
+production with the service role. `@withme/db/test-utils` now refuses a
+non-local `SUPABASE_URL` unless `SEED_ALLOW_REMOTE=1` is set, which is why
+that variable only ever appears inline on a single command. One command per
 line: under `set -e`, zsh does not stop partway through an `&&` chain.
 
 Auth note: hosted signups hit email confirmation, and the default
-Supabase SMTP only delivers to org members — seeded demo credentials are
-the path for anyone else unless you configure SMTP or flip confirmations
-off in the dashboard.
+Supabase SMTP only delivers to org members. For real users, the owner sets
+up custom SMTP (Authentication → Emails → SMTP Settings) before launch.
+Keep email confirmation on: without it anyone can sign up as someone
+else's address. A public demo can lean on the seeded login instead.
+
+Phone sign-in is off on a new hosted project until you turn it on. Ask
+the owner for their Twilio Account SID, Verify Service SID (`VA…`) and
+Auth Token, then have them enter these under Authentication → Sign In /
+Providers → Phone → Twilio Verify. Secrets go into the dashboard, never
+the repo. Do not add the local test number there. A Twilio trial account
+texts verified numbers only.
 
 ## 2. API worker (first — the web worker's service binding needs it)
 
@@ -179,7 +204,8 @@ Write `apps/web/.env.production` (gitignored; nothing here is secret):
 VITE_API_URL=https://<api-worker>.workers.dev
 VITE_SUPABASE_URL=https://<ref>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
-VITE_DEMO_CREDENTIALS=<demo email> / <demo password>
+# Public demo only (section 1); leave unset for an app with real users:
+# VITE_DEMO_CREDENTIALS=<demo email> / <demo password>
 # VITE_STORE_URL=https://<your-store>   # optional: the Merch tab
 ```
 
@@ -213,10 +239,11 @@ import { createORPCClient } from '@orpc/client';
 import { RPCLink } from '@orpc/client/fetch';
 
 const env = process.env;
-const [email, password] = (env.VITE_DEMO_CREDENTIALS ?? '').split(' / ');
+const email = 'ada@demo.withme.local';
+const password = env.SEED_DEMO_PASSWORD ?? '';
 const apiUrl = env.VITE_API_URL ?? '';
-if (!email || !password || /localhost|127\.0\.0\.1/.test(apiUrl + env.VITE_SUPABASE_URL)) {
-  throw new Error('needs apps/web/.env.production: production URLs + VITE_DEMO_CREDENTIALS');
+if (!password || /localhost|127\.0\.0\.1/.test(apiUrl + env.VITE_SUPABASE_URL)) {
+  throw new Error('needs apps/web/.env.production (production URLs) and .env.demo-seed');
 }
 const supabase = createClient(env.VITE_SUPABASE_URL!, env.VITE_SUPABASE_PUBLISHABLE_KEY!, {
   auth: { persistSession: false },
@@ -232,7 +259,7 @@ console.log(`profile.get via ${new URL(apiUrl).host}: ok; fields: ${Object.keys(
 ```
 
 ```sh
-cd apps/web && ( trap 'rm -f authed-check.ts' EXIT; bun --env-file=.env.production authed-check.ts )
+cd apps/web && ( trap 'rm -f authed-check.ts' EXIT; bun --env-file=.env.production --env-file=../../.env.demo-seed authed-check.ts )
 ```
 
 The trap deletes the file however the check ends, and the subshell exits
@@ -282,11 +309,37 @@ NODE_ENV=production bunx expo export --platform ios --no-bytecode \
 `.env.production` beats `.env` in production exports (verified), so a
 local `.env` sitting next to it is harmless.
 
+## 5. Before real users
+
+Skip this for a public demo. For an app with real users, after every check
+above passes and before the app is announced (a production write, the
+owner's OK first):
+
+```sh
+(
+  set -e
+  set -a
+  source .env.demo-seed
+  set +a
+  SEED_ALLOW_REMOTE=1 bun run db:unseed
+)
+```
+
+**Checkpoint:** it prints `Removed 2 demo user(s) and the demo tags.`;
+signing in as `ada@demo.withme.local` fails; `apps/web/.env.production`
+has no `VITE_DEMO_CREDENTIALS` and the live landing page shows no login.
+Email confirmation is on and custom SMTP delivers to an outside address
+(section 1's Auth note).
+
 ## Redeploys
 
 DB: new migrations via `supabase db push`; reseed only with the owner's
-OK. Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
+OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
+
+The marketing site, the privacy and support URLs the store listings ask
+for, and the hostname split between site and app are
+`.agents/skills/add-marketing-site/SKILL.md`, run after this one.
 
 ## Gotcha index
 
@@ -302,7 +355,10 @@ OK. Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 | Authed calls 401 after a good sign-in | Project JWKS has no asymmetric key — enable JWT signing keys |
 | `bunx eas-cli`: `Cannot find module 'yallist'` | Broken bunx cache — `npx -y eas-cli@24.13.0 …` (the version last verified) |
 | Web resolver errors only in production SSR | Service binding name ≠ api worker name |
-| Signups never confirm | Default SMTP delivers to org members only |
+| Signups never confirm | Default SMTP delivers to org members only — set up custom SMTP; never turn confirmation off for real users |
+| Seed: "Refusing to seed a hosted project without SEED_DEMO_PASSWORD" | Keys file predates this runbook — append `SEED_DEMO_PASSWORD=` plus a random 24+ character value |
+| Phone sign-in: "Unsupported phone provider" | The Phone provider is off in the dashboard |
+| Phone sign-in texts some numbers only | Twilio trial account: verify the number or upgrade |
 | `eas update` fails non-interactively | Missing `--environment` |
 | Published app seems to point at localhost | You byte-grepped Hermes bytecode — use `--no-bytecode` to verify |
 | Demo DB unreachable weeks later | Free-tier project paused — wake it in the dashboard |

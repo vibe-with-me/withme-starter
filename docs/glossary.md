@@ -45,14 +45,23 @@ checked inside database policies and functions, never in UI code.
 
 **Gathering.** The one feature beyond the handshake: an event a host
 creates (a listening session, a run, a round, a tailgate) and can point a
-tag at. Tapping that tag is the invitation. Only members see a gathering
-or each other through it. Forks rename it (`customize-gathering`); the
-internal name stays `gathering`.
+tag at. Everyone signed in to the domain sees it in the Events tab, with
+a headcount, unless they and the host have blocked each other in either
+direction; who is going shows you and the people you have connected with,
+nobody else. Tapping a member's tag is still the invitation. Forks rename it
+(`customize-gathering`); the internal name stays `gathering`.
 
-**Card tier / connections tier.** The two kinds of profile field a fork
-can add. Card tier rides the card (a pace, a handicap, a team).
-Connections tier is readable only by you and the people you accepted (a
-phone number, a Strava handle). `extend-profile` builds both.
+**Card tier / connections tier.** The two kinds of profile field. Card
+tier rides the card (a pace, a handicap, a team). Connections tier is
+readable only by you and the people you accepted. The starter ships one
+connections-tier feature, Links (`profile_links`: a phone number, an
+Instagram handle, a website); `extend-profile` adds fields of either tier.
+
+**Links.** Profile → Links: the places you can be reached, one per
+platform from the registry in `packages/contract/src/schemas/link.ts`.
+Connections tier, so they never ride the card; a connection's row shows
+them as chips. A fork adds a platform to the registry and to
+`private.is_link_value`.
 
 **Tenant seam.** Every table carries a `tenant_id` column with one fixed
 value. The starter never varies it; it exists so a future multi-tenant

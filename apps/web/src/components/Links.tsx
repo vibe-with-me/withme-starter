@@ -35,6 +35,17 @@ interface Row {
   error: string | null;
 }
 
+type Direction = 'up' | 'down';
+
+/** The list with the row at `from` swapped with its neighbour; unchanged at either end. */
+function moved(rows: Row[], from: number, direction: Direction): Row[] {
+  const to = direction === 'up' ? from - 1 : from + 1;
+  const a = rows[from];
+  const b = rows[to];
+  if (!a || !b) return rows;
+  return rows.map((row, i) => (i === from ? b : i === to ? a : row));
+}
+
 /**
  * Profile → Links: the places people can reach you, one per platform, from
  * a picker of every platform the starter knows. Saved as a whole list
@@ -88,6 +99,7 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const inputs = useRef(new Map<LinkPlatformId, HTMLInputElement>());
+  const moves = useRef(new Map<string, HTMLButtonElement>());
   const addButton = useRef<HTMLButtonElement>(null);
   const taken = new Set(rows.map((row) => row.platform));
   const available = LINK_PLATFORM_IDS.filter((platform) => !taken.has(platform));
@@ -109,6 +121,23 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
       setStatus(null);
     });
     addButton.current?.focus();
+  }
+
+  function move(platform: LinkPlatformId, direction: Direction) {
+    const from = rows.findIndex((row) => row.platform === platform);
+    const to = direction === 'up' ? from - 1 : from + 1;
+    if (from < 0 || to < 0 || to >= rows.length) return;
+    // Flushed so the moved row's controls are in place to take focus. The
+    // order is a draft until Save links, like a changed value.
+    flushSync(() => {
+      setRows((prev) => moved(prev, from, direction));
+      setStatus(`${LINK_PLATFORMS[platform].label} moved to ${to + 1} of ${rows.length}.`);
+    });
+    // At either end the pressed control is gone: stay on the row's other move.
+    const other = direction === 'up' ? 'down' : 'up';
+    const target =
+      moves.current.get(`${platform}:${direction}`) ?? moves.current.get(`${platform}:${other}`);
+    target?.focus();
   }
 
   function edit(platform: LinkPlatformId, value: string) {
@@ -157,16 +186,23 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
       <p className="hint">
         Where people can reach you. Only the people you’ve connected with can see these.
       </p>
-      {rows.map((row) => (
+      {rows.map((row, i) => (
         <LinkRow
           key={row.platform}
           row={row}
+          first={i === 0}
+          last={i === rows.length - 1}
           disabled={busy}
           inputRef={(el) => {
             if (el) inputs.current.set(row.platform, el);
             else inputs.current.delete(row.platform);
           }}
+          moveRef={(direction, el) => {
+            if (el) moves.current.set(`${row.platform}:${direction}`, el);
+            else moves.current.delete(`${row.platform}:${direction}`);
+          }}
           onChange={(value) => edit(row.platform, value)}
+          onMove={(direction) => move(row.platform, direction)}
           onRemove={() => remove(row.platform)}
         />
       ))}
@@ -211,15 +247,24 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
 
 function LinkRow({
   row,
+  first,
+  last,
   disabled,
   inputRef,
+  moveRef,
   onChange,
+  onMove,
   onRemove,
 }: {
   row: Row;
+  /** The first row has no "Move up", the last no "Move down". */
+  first: boolean;
+  last: boolean;
   disabled: boolean;
   inputRef: (el: HTMLInputElement | null) => void;
+  moveRef: (direction: Direction, el: HTMLButtonElement | null) => void;
   onChange: (value: string) => void;
+  onMove: (direction: Direction) => void;
   onRemove: () => void;
 }) {
   const id = useId();
@@ -249,15 +294,41 @@ function LinkRow({
           </p>
         ) : null}
       </div>
-      <button
-        type="button"
-        className="btn btn--quiet"
-        disabled={disabled}
-        aria-label={`Remove ${label}`}
-        onClick={onRemove}
-      >
-        Remove
-      </button>
+      <div className="link-row__actions">
+        {first ? null : (
+          <button
+            ref={(el) => moveRef('up', el)}
+            type="button"
+            className="btn btn--quiet"
+            disabled={disabled}
+            aria-label={`Move ${label} up`}
+            onClick={() => onMove('up')}
+          >
+            Up
+          </button>
+        )}
+        {last ? null : (
+          <button
+            ref={(el) => moveRef('down', el)}
+            type="button"
+            className="btn btn--quiet"
+            disabled={disabled}
+            aria-label={`Move ${label} down`}
+            onClick={() => onMove('down')}
+          >
+            Down
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn btn--quiet"
+          disabled={disabled}
+          aria-label={`Remove ${label}`}
+          onClick={onRemove}
+        >
+          Remove
+        </button>
+      </div>
     </div>
   );
 }

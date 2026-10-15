@@ -33,7 +33,11 @@ verified. Run it first, then fill this list from the sheet.
   used wherever the brand renders as a mark (headings, page titles,
   slugs, user-agent strings) — and the **display name** (e.g. `Acme`) —
   used in prose sentences (the app's display name, permission strings,
-  README prose).
+  README prose). Check it against `TRADEMARKS.md` first: "Vibe With Me,"
+  "VWM," and "Vibe Tags" are reserved, and a "[Something] With Me" name
+  is allowed only with the non-affiliation disclaimer that file gives.
+  If the user keeps the pattern, put that disclaimer in the README in
+  step 3, and remind them it belongs on store listings too.
 - Accent color for light and dark mode, each with an on-accent ink color.
   Required contrast (WCAG AA): accent vs. accent-ink ≥ 4.5:1 in both
   modes — verify with any WCAG contrast checker before editing. If the
@@ -46,6 +50,10 @@ verified. Run it first, then fill this list from the sheet.
   tags" link — step 7.
 - Optional: your fork's repository URL, for the root README's CI badge —
   step 3.
+- Where people report a vulnerability in your app, and who reviews your
+  pull requests: a GitHub repository with private vulnerability reporting
+  turned on, or a security email; and your GitHub handle or team. Step 8's
+  contact-points pass uses them.
 
 Also do this now (a fresh clone ships only `.example` files, and the
 final boot check needs the real ones):
@@ -105,9 +113,9 @@ design system. Keep the WCAG notes in `tokens.css` honest: accent/accent-ink
 cite four ratios in the comments: the accent pair (accent vs. accent-ink)
 in each theme, and the input border against the surface in each theme.
 Don't leave stale numbers. The
-starter's shipped light `--color-border-input` measures 2.97:1 (ENG-753):
-until that is fixed upstream, raise it in both files, e.g. opacity
-0.46 → 0.47 (3.06:1).
+starter's shipped light `--color-border-input` measures 2.97:1, just
+under the 3:1 minimum: until that is fixed upstream, raise it in both
+files, e.g. opacity 0.46 → 0.47 (3.06:1).
 
 **Checkpoint:**
 
@@ -209,10 +217,16 @@ names no brand, so there only the title and badge change):
   the starter app — tags resolve at `/t/<uid>`." It names no brand, so
   no sweep catches it, but your fork is no longer the starter app:
   rewrite it in your voice, or delete the `<p className="hint">`.
-- The demo seed identity: `supabase/seed/index.ts` hardcodes the demo
-  emails (`*@demo.withme.local`) and password (`withme-demo-1`), which
-  surface in the seed's console output, the README, and the
-  `VITE_DEMO_CREDENTIALS` landing-page hint. Rebrand them or keep them —
+- `apps/site/src/brand.ts`, only in a fork that ran `add-marketing-site`:
+  `WORDMARK`, `DISPLAY_NAME`, `PROMISE` (the landing line above). The
+  site's colors and fonts come from `tokens.css` and `app.css` on its
+  next build; nothing to edit there, but redeploy the site.
+- The demo seed identity: `supabase/seed/demo.ts` holds the demo emails
+  (`*@demo.withme.local`) and `supabase/seed/index.ts` the local-only
+  password (`withme-demo-1`; a hosted project needs its own
+  `SEED_DEMO_PASSWORD`, see go-live), which surface in the seed's console
+  output, the README, and the `VITE_DEMO_CREDENTIALS` landing-page hint.
+  Rebrand them or keep them —
   but whatever the seed creates is what the README and
   `VITE_DEMO_CREDENTIALS` must say. That hint has a commented example
   line in `apps/web/.env.example` AND in the `apps/web/.env` you copied
@@ -226,6 +240,10 @@ names no brand, so there only the title and badge change):
   line which must match the seed (previous bullet).
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
+- `LICENSE` — line 3 names the starter's copyright holder,
+  `Vibe With Me LLC`. MIT requires you to keep that notice for the code you
+  inherited; add your own line under it for your changes
+  (`Copyright (c) <year> <your name or org>`) rather than replacing it.
 
 **Wordmark treatment.** Set the weight and tracking from the sheet's
 Wordmark row, the same on web and mobile. Case is the wordmark string
@@ -343,6 +361,9 @@ ends with that new projectId.
   (web) renders the landing-page demo hint — unset it or keep it in sync
   with your seed identity (step 3).
 
+- `apps/site/wrangler.jsonc` → `name` (e.g. `acme-site`), only in a fork
+  that ran `add-marketing-site`.
+
 **Checkpoint:** `grep -n 'withme' apps/api/wrangler.jsonc apps/web/wrangler.jsonc`
 returns nothing, and the web `services` entry matches the api `name`.
 
@@ -391,6 +412,35 @@ The web app ships no favicon — and no `public/`
 directory; `mkdir -p apps/web/public` and drop a `favicon.ico` there if
 you want one.
 
+### Contact points
+
+A fork's users report its bugs and vulnerabilities through these files,
+and as shipped they all point at the upstream starter, which does not run
+your app and cannot fix it. Rewrite each one with your own contacts, or
+delete it:
+
+- `SECURITY.md`: keep the "What counts" list (your app keeps the same
+  promises) and replace "How to report" and "What to expect" with your
+  own channel and response time. Turn on private vulnerability reporting
+  in your repository's Settings → Code security, or name a security email.
+  Drop "forks pick up fixes by merging from upstream" unless you do.
+- `.github/ISSUE_TEMPLATE/config.yml`: both `contact_links` URLs go to
+  your repository (`…/<your-repo>/discussions`, or delete that entry if
+  Discussions are off, and `…/<your-repo>/security/advisories/new`).
+- `.github/ISSUE_TEMPLATE/bug.yml`, `feature.yml` and
+  `.github/PULL_REQUEST_TEMPLATE.md`: the `docs/…` and `CONTRIBUTING` links
+  point at your repository's copy (bug.yml's demo sign-in follows the seed
+  identity, step 3).
+- `.github/CODEOWNERS`: your own handle or team, not `@alex-eisele`.
+  Leaving the upstream maintainer there asks them to review your pull
+  requests, and fails to request your own reviewers.
+- `CONTRIBUTING.md`: your issues link, or delete the file if the fork does
+  not take outside contributions.
+- `.github/workflows/release.yml` publishes `@withme/nfc` and runs only in
+  `vibe-with-me/withme-starter` (its `if:`), so a fork never publishes it
+  by accident. Leave it, or delete the file; a fork that publishes the SDK
+  under its own name changes the `if:` to its own repository.
+
 Then run the full verification gate from `docs/the-slice.md`:
 
 ```sh
@@ -400,13 +450,16 @@ bun run lint && bun run typecheck && bun run test
 all green, plus the final brand sweep — with the identity steps done,
 this now covers everything step 3's checkpoint deferred. It also looks
 for the upstream org, `vibe-with-me` (hyphenated, so `withme` alone
-misses it), and reads your `.env` files under `apps/` (printed as
-`file:line` only, as in step 3):
+misses it), and the upstream maintainer, `alex-eisele`, in the contact
+points above as well as the app, and reads your `.env` files under `apps/`
+(printed as `file:line` only, as in step 3):
 
 ```sh
 grep -rniE --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
-  'withme|vibe-with-me' apps/ packages/ supabase/ README.md \
+  'withme|vibe-with-me|alex-eisele' apps/ packages/ supabase/ .github/ \
+  README.md SECURITY.md CONTRIBUTING.md \
   | grep -v '@withme/' \
+  | grep -v "^\.github/workflows/release\.yml:[0-9]*:.*github\.repository == 'vibe-with-me/withme-starter'" \
   | grep -v '^supabase/migrations/' \
   | grep -v '^packages/nfc-sdk/' \
   | grep -viE '<wordmark>|<display name>' \
@@ -421,6 +474,9 @@ drop, and why a fork leaves it:
 
 - `supabase/migrations/` — the first migration's header comment names
   `withme-starter`. Migrations are history: never edit an applied one.
+- `release.yml`'s `if:` line — the guard that keeps a fork from
+  publishing `@withme/nfc` (Contact points, above). It names the
+  upstream on purpose.
 - `packages/nfc-sdk/` — the SDK (`@withme/nfc`) names the upstream in
   its `package.json` `repository.url` and in doc comments. A fork that
   does not publish the SDK leaves them. If you publish it under your

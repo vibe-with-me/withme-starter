@@ -19,15 +19,18 @@ handful of things that go wrong on a fresh install.
 ## First run
 
 ```sh
+git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
+cd withme-starter
 bun install
-bun run db:start        # Supabase local: Postgres, Auth, Storage, PostgREST
-bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
+bun run db:start        # Supabase local: Postgres, Auth, Storage, PostgREST
+bun run db:seed         # demo users + tags
 bun run dev             # api on :8786, web on :3000
 ```
 
-The `.example` files hold the local stack's shared defaults. They are not
+The first `db:start` pulls the Supabase images, which takes a few
+minutes and a few GB of Docker disk. The `.example` files hold the local stack's shared defaults. They are not
 secrets; copying them is all the configuration local work needs.
 
 ### Ports
@@ -47,10 +50,19 @@ secrets; copying them is all the configuration local work needs.
 | Who / what | Details |
 | --- | --- |
 | Ada | `ada@demo.withme.local` / `withme-demo-1`. Hosts "Rooftop listening session"; has a pending request from Lin. |
-| Lin | `lin@demo.withme.local` / `withme-demo-1`. Joined Ada's gathering. |
+| Lin | `lin@demo.withme.local` / `withme-demo-1`. Joined Ada's gathering; hosts a second one, "Vinyl swap in the park", listed to the domain. |
 | `04BBBBBBBBBBBB` | Ada's claimed tag, pointed at her gathering. Tap it: `/t/04BBBBBBBBBBBB`. |
 | `04AAAAAAAAAAAA` | Unclaimed. Tap it to walk the claim flow. |
 | `04CCCCCCCCCCCC` | Disabled. Tap it to see the inactive card. |
+
+Phone sign-in works locally with no Twilio account: use
+`+1 555 555 0100` and the code `123456` (set in `[auth.sms.test_otp]` in
+`supabase/config.toml`). Any other number fails to send, because the
+Twilio credentials are unset. To text real phones, put
+`SUPABASE_AUTH_SMS_TWILIO_VERIFY_ACCOUNT_SID`,
+`SUPABASE_AUTH_SMS_TWILIO_VERIFY_SERVICE_SID` and
+`SUPABASE_AUTH_SMS_TWILIO_VERIFY_AUTH_TOKEN` in `supabase/.env` and
+restart the stack.
 
 Re-running the seed is safe. `bun run db:reset` rebuilds the database
 from the migrations; run `db:seed` again after it.
@@ -125,6 +137,20 @@ cd apps/web && bun run preview  # the production build locally (needs the API Wo
 images from previous CLI versions accumulate in the Docker VM. Prune
 them (`docker image prune -a` removes every unused image; check what else
 you have first) and start again.
+
+**`db:start` fails with "port is already allocated".** Something else
+holds one of the stack's ports (553xx). The usual culprit is another
+project's Supabase stack: `docker ps --format '{{.Names}} {{.Ports}}' | grep 553`
+names it (`supabase_db_<project_id>`), and
+`supabase stop --project-id <project_id>` stops it. Any other container
+in that list: `docker stop <name>`. If no container shows,
+`lsof -nP -iTCP:<port> -sTCP:LISTEN` names the host process; quit it.
+Then start again. To run
+both side by side instead, give this one other ports: change every
+`553xx` port in `supabase/config.toml` (e.g. to 556xx), the URLs in
+`apps/web/.env` and `apps/api/.dev.vars`, and export
+`SUPABASE_URL=http://127.0.0.1:<new API port>` before `db:seed` and the
+tests, which default to 55321.
 
 **Sign-in works, then the next request fails with `PGRST303`.** Your
 Supabase CLI is older than 2.118. Upgrade it, then `bun run db:stop &&

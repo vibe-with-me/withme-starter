@@ -1,6 +1,7 @@
 -- @withme/nfc initial schema.
--- Single-tenant by design: no tenant_id, no row-level security.
--- RLS is a multi-tenant concern out of scope for this SDK.
+-- Single-tenant by design: no tenant_id. 0002_lock_down.sql turns on
+-- row-level security with no policies, so only a server-side client can
+-- read or write; apply both files.
 
 create table tags (
   id uuid primary key default gen_random_uuid(),

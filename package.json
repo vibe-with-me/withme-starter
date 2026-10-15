@@ -20,6 +20,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:seed": "bun run supabase/seed/index.ts",
+    "db:unseed": "bun run supabase/seed/unseed.ts",
     "db:types": "supabase gen types typescript --local > packages/db/src/types/supabase.ts",
     "db:provision": "bun run supabase/seed/provision.ts"
   },
@@ -30,6 +31,8 @@
   "overrides": {
     "expo": "56.0.9",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "seroval": "^1.6.9",
+    "seroval-plugins": "^1.6.9"
   }
 }
