@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { normalizePhone, OTP_CODE_LENGTH } from '@withme/contract';
 import { useState } from 'react';
 import { safeReturnTo } from '../lib/auth-guard.ts';
 import { getSupabase } from '../lib/supabase.ts';
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/login')({
 function LoginPage() {
   const { returnTo } = Route.useSearch();
   const navigate = useNavigate();
+  const [method, setMethod] = useState<'email' | 'phone'>('email');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +88,16 @@ function LoginPage() {
       ? 'to join the gathering you were invited to'
       : null;
 
+  if (method === 'phone') {
+    return (
+      <PhoneSignIn
+        context={context}
+        onSignedIn={() => navigate({ href: destination })}
+        onUseEmail={() => setMethod('email')}
+      />
+    );
+  }
+
   return (
     <main className="page">
       <form className="card" onSubmit={submit}>
@@ -127,11 +139,162 @@ function LoginPage() {
           Continue with Google
         </button>
         <button
+          className="btn"
+          type="button"
+          onClick={() => {
+            setError(null);
+            setMethod('phone');
+          }}
+        >
+          Use phone instead
+        </button>
+        <button
           className="btn btn--quiet"
           type="button"
           onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
         >
           {mode === 'signin' ? 'New here? Create an account' : 'Have an account? Sign in'}
+        </button>
+      </form>
+    </main>
+  );
+}
+
+/**
+ * Passwordless: a number, then the code texted to it. Supabase creates the
+ * account on first verify, so there is no separate sign-up here.
+ */
+function PhoneSignIn({
+  context,
+  onSignedIn,
+  onUseEmail,
+}: {
+  context: string | null;
+  onSignedIn: () => void;
+  onUseEmail: () => void;
+}) {
+  const [phone, setPhone] = useState('');
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function sendCode(event?: React.FormEvent) {
+    event?.preventDefault();
+    const e164 = normalizePhone(phone);
+    if (!e164) {
+      setError('Include your country code, like +1 555 555 0100.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const { error: authError } = await getSupabase().auth.signInWithOtp({ phone: e164 });
+    setBusy(false);
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+    setCode('');
+    setSentTo(e164);
+  }
+
+  async function verify(event: React.FormEvent) {
+    event.preventDefault();
+    if (!sentTo) return;
+    setBusy(true);
+    setError(null);
+    const { error: authError } = await getSupabase().auth.verifyOtp({
+      phone: sentTo,
+      token: code,
+      type: 'sms',
+    });
+    setBusy(false);
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+    onSignedIn();
+  }
+
+  const errorText = error ? (
+    <p className="form-error" role="alert">
+      {error}
+    </p>
+  ) : null;
+
+  if (sentTo) {
+    return (
+      <main className="page">
+        <form className="card" onSubmit={verify}>
+          <p className="hint">withme</p>
+          <h1>Enter your code</h1>
+          <p className="bio" role="status">
+            We texted a {OTP_CODE_LENGTH}-digit code to {sentTo}.
+          </p>
+          <div className="field">
+            <label htmlFor="code">Code</label>
+            <input
+              id="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern={`\\d{${OTP_CODE_LENGTH}}`}
+              maxLength={OTP_CODE_LENGTH}
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            />
+          </div>
+          {errorText}
+          <button className="btn" type="submit" disabled={busy || code.length !== OTP_CODE_LENGTH}>
+            {busy ? 'One moment…' : 'Sign in'}
+          </button>
+          <button
+            className="btn btn--quiet"
+            type="button"
+            disabled={busy}
+            onClick={() => sendCode()}
+          >
+            Send a new code
+          </button>
+          <button
+            className="btn btn--quiet"
+            type="button"
+            onClick={() => {
+              setError(null);
+              setSentTo(null);
+            }}
+          >
+            Use a different number
+          </button>
+        </form>
+      </main>
+    );
+  }
+
+  return (
+    <main className="page">
+      <form className="card" onSubmit={sendCode}>
+        <p className="hint">withme</p>
+        <h1>Sign in with phone</h1>
+        {context ? <p className="bio">{context}</p> : null}
+        <div className="field">
+          <label htmlFor="phone">Phone number</label>
+          <input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="+1 555 555 0100"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
+        {errorText}
+        <button className="btn" type="submit" disabled={busy}>
+          {busy ? 'One moment…' : 'Text me a code'}
+        </button>
+        <button className="btn btn--quiet" type="button" onClick={onUseEmail}>
+          Use email instead
         </button>
       </form>
     </main>

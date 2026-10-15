@@ -232,7 +232,9 @@ runbook; the short version is:
 
 1. Create a Supabase project, `supabase link`, `supabase db push`.
 2. In the Supabase dashboard, set your site URL and
-   `https://<your-web-domain>/auth/callback` as a redirect URL.
+   `https://<your-web-domain>/auth/callback` as a redirect URL. For
+   phone sign-in, turn on the Phone provider with your Twilio Verify
+   credentials ([docs/stack.md](docs/stack.md#twilio-verify-phone-sign-in-codes)).
 3. Put the API's config in as Worker **secrets** (`SUPABASE_URL`,
    `SUPABASE_PUBLISHABLE_KEY`, `CORS_ORIGIN`), so a deploy can never
    clobber them.

@@ -92,6 +92,13 @@ Supabase SMTP only delivers to org members — seeded demo credentials are
 the path for anyone else unless you configure SMTP or flip confirmations
 off in the dashboard.
 
+Phone sign-in is off on a new hosted project until you turn it on. Ask
+the owner for their Twilio Account SID, Verify Service SID (`VA…`) and
+Auth Token, then have them enter these under Authentication → Sign In /
+Providers → Phone → Twilio Verify. Secrets go into the dashboard, never
+the repo. Do not add the local test number there. A Twilio trial account
+texts verified numbers only.
+
 ## 2. API worker (first — the web worker's service binding needs it)
 
 ```sh
@@ -194,6 +201,8 @@ OK. Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 | `wrangler deploy` 502/504/524 | Cloudflare API blip — retry with backoff |
 | Web resolver errors only in production SSR | Service binding name ≠ api worker name |
 | Signups never confirm | Default SMTP delivers to org members only |
+| Phone sign-in: "Unsupported phone provider" | The Phone provider is off in the dashboard |
+| Phone sign-in texts some numbers only | Twilio trial account: verify the number or upgrade |
 | `eas update` fails non-interactively | Missing `--environment` |
 | Published app seems to point at localhost | You byte-grepped Hermes bytecode — use `--no-bytecode` to verify |
 | Demo DB unreachable weeks later | Free-tier project paused — wake it in the dashboard |

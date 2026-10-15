@@ -52,6 +52,15 @@ secrets; copying them is all the configuration local work needs.
 | `04AAAAAAAAAAAA` | Unclaimed. Tap it to walk the claim flow. |
 | `04CCCCCCCCCCCC` | Disabled. Tap it to see the inactive card. |
 
+Phone sign-in works locally with no Twilio account: use
+`+1 555 555 0100` and the code `123456` (set in `[auth.sms.test_otp]` in
+`supabase/config.toml`). Any other number fails to send, because the
+Twilio credentials are unset. To text real phones, put
+`SUPABASE_AUTH_SMS_TWILIO_VERIFY_ACCOUNT_SID`,
+`SUPABASE_AUTH_SMS_TWILIO_VERIFY_SERVICE_SID` and
+`SUPABASE_AUTH_SMS_TWILIO_VERIFY_AUTH_TOKEN` in `supabase/.env` and
+restart the stack.
+
 Re-running the seed is safe. `bun run db:reset` rebuilds the database
 from the migrations; run `db:seed` again after it.
 

@@ -83,7 +83,8 @@ fingerprint policy (`apps/mobile/README.md` explains why).
 
 **What it buys.** Postgres with row-level security, so the privacy
 promises live in the database and hold no matter which client is
-talking. Auth with email and OAuth providers. Storage for photos, with
+talking. Auth with email, phone (a texted code, through Twilio), and
+OAuth providers. Storage for photos, with
 bucket-level limits. And a local stack in Docker, so the RLS suite and
 the e2e harnesses run against the real database on your machine and in
 CI.
@@ -102,6 +103,28 @@ CI.
 - Hosted signups require email confirmation, and the default SMTP only
   delivers to org members. Configure SMTP or seed demo credentials.
 
+## Twilio Verify (phone sign-in codes)
+
+**What it buys.** Phone sign-in without passwords: Supabase Auth asks
+Twilio Verify to text a 6-digit code and to check it. Verify owns the
+codes, the rate limits and the SMS fraud guard, and it sends from
+Twilio's own numbers, so there is no number to buy and, in the US, no
+A2P 10DLC registration.
+
+**Constraints.**
+
+- The provider stays enabled in `supabase/config.toml` even locally,
+  because the CLI turns phone login off without one. Locally the
+  credentials are unset placeholders: the test number +1 555-555-0100
+  takes code `123456` without reaching Twilio, and any other number fails
+  to send.
+- On a hosted project, phone sign-in is configured in the dashboard
+  (Authentication → Sign In / Providers → Phone): Twilio Verify, the
+  Account SID, the Verify Service SID (`VA…`), the Auth Token. Leave the
+  test number out there.
+- A new Twilio account is a trial: it texts only verified numbers until
+  you upgrade it.
+
 ## What it costs to run
 
 For a club-sized fork:
@@ -110,6 +133,7 @@ For a club-sized fork:
 | --- | --- | --- |
 | Cloudflare Workers (API + web) | 100k requests/day | Beyond that, a few dollars a month. |
 | Supabase | Two projects per free org, paused after ~1 week idle | ~$10/month for an always-on project. |
+| Twilio Verify | Trial credit, verified numbers only | About $0.05 per successful sign-in, plus the SMS fee. Only if you turn phone sign-in on. |
 | Expo EAS | Updates and a limited number of builds | Builds beyond the free allotment. |
 | A domain | — | Required. The domain you encode on tags is forever. |
 
