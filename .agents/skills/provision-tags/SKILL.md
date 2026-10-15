@@ -12,7 +12,8 @@ rows in a batch, writes the URL each tag must carry, and prints a sheet to
 encode from. It pairs with the Merch pointer (`VITE_STORE_URL`): the store
 sells tags; this is how they come to exist.
 
-Distilled from golf-with-me `bee9c9d`, whose script ships in the starter as
+Distilled from the provisioning script a real fork (golf-with-me) built and
+used; that script ships in the starter as
 `supabase/seed/provision.ts` (`bun run db:provision`). The skill adds no
 code: every step runs the shipped script against the shipped schema.
 
@@ -171,10 +172,11 @@ logs into `$OUT` so §4's retirement deletes them.
   vertical field, "First, your card" (Name plus the required fields) when
   it made one required; fill it in, or use a second seeded user.
   If `/t/<UID>` hangs after the claim under `vite dev` (a known dev-server
-  SSR hang), restart `apps/web`'s dev server: stop the running
-  `bun run dev` (Ctrl-C in its shell, or kill the `vite` process and its
-  `bun` parent), start it again the same way (an agent appends to the same
-  log: `>> "$OUT/web-dev.log" 2>&1`), and load the page again.
+  SSR hang, not a fault in the tag or the claim), restart `apps/web`'s dev
+  server: stop the running `bun run dev` (Ctrl-C in its shell, or kill the
+  `vite` process and its `bun` parent), start it again the same way (an
+  agent appends to the same log: `>> "$OUT/web-dev.log" 2>&1`), and load
+  the page again.
 
 ## 2. Provision the real batch
 
