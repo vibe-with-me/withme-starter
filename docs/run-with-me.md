@@ -183,12 +183,13 @@ working.
    `apps/web/e2e/gatherings.spec.ts`, `supabase/seed/index.ts` (Ada's
    gathering becomes "Saturday long run, 10K").
 
-*What must not move (§3).* The four mechanisms the gatherings migration
-depends on, each re-stated by a test: membership read through a definer
-function, the single `shares_gathering` bridge in `profiles_select`,
-block-created eviction, and the byte-identical `'gathering not found'`
-for a missing id and a blocked joiner. The skill lists them; the tests
-enforce them.
+*What must not move (§3).* The mechanisms the gatherings migrations
+depend on, each re-stated by a test: the listing admits the whole tenant
+minus a block either way with the host; the member list admits only the
+viewer's own row and their connections' rows; the headcount is a definer
+read that restates the listing's visibility; and `'gathering not found'`
+is byte-identical for a missing id and a blocked joiner in either
+direction. The skill lists them; the tests enforce them.
 
 **Done when.** The verification gate, then `cd apps/web && bunx
 playwright test`. Tap Ada's tag: the card reads "Saturday long run · 10K

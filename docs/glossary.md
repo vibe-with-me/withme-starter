@@ -45,9 +45,10 @@ checked inside database policies and functions, never in UI code.
 
 **Gathering.** The one feature beyond the handshake: an event a host
 creates (a listening session, a run, a round, a tailgate) and can point a
-tag at. Tapping that tag is the invitation. Only members see a gathering
-or each other through it. Forks rename it (`customize-gathering`); the
-internal name stays `gathering`.
+tag at. Everyone signed in to the domain sees it in the Events tab, with
+a headcount; who is going shows only the people you have connected with.
+Tapping a member's tag is still the invitation. Forks rename it
+(`customize-gathering`); the internal name stays `gathering`.
 
 **Card tier / connections tier.** The two kinds of profile field. Card
 tier rides the card (a pace, a handicap, a team). Connections tier is

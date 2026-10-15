@@ -116,8 +116,11 @@ without containing "gathering"; rewrite it for your vertical too:
   label `Title`; the start label, one `Starts` field on web, two fields
   `Date` and `Time` on mobile; `Location (optional)`, and the location
   placeholder `"Where to find it"` (create forms only);
-- the members heading `Who's coming` on the detail screen
-  (web `_app.gatherings_.$id.tsx`, mobile `gathering/[id].tsx`);
+- the members heading `Who's going` and the hint under it on the detail
+  screen (web `_app.gatherings_.$id.tsx`, mobile `gathering/[id].tsx`),
+  the `Happening` / `Yours` section titles and their empty states on the
+  list, the `Hosting` / `Going` marks, and the `N going` / `With …` lines
+  (`lib/going.ts` on both platforms);
 - the seed's gathering, in `supabase/seed/index.ts`: its `p_title`
   (`'Rooftop listening session'`), its `p_location`
   (`'The roof, 14 Loom St'`), and the console text it prints
