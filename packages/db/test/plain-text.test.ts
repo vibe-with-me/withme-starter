@@ -9,11 +9,12 @@ import { assertStackRunning, createTestUser } from '../src/test-utils/index.ts';
 beforeAll(assertStackRunning);
 
 const SPOOFS = [
-  'Ad‮a', // right-to-left override
-  'Ad⁧a', // right-to-left isolate
-  'Ad‏a', // right-to-left mark
-  'A​da', // zero-width space
-  'A﻿da', // zero-width no-break space
+  'Ad\u202Ea', // right-to-left override
+  'Ad\u2067a', // right-to-left isolate
+  'Ad\u200Fa', // right-to-left mark
+  'Ad\u061Ca', // Arabic letter mark
+  'A\u200Bda', // zero-width space
+  'A\uFEFFda', // zero-width no-break space
   'Ada\u001b[31m', // terminal escape
   'Ada\tLovelace',
 ];
@@ -39,7 +40,7 @@ describe('plain text at the database boundary', () => {
   it('a bio keeps its line breaks, a name does not; emoji joiners pass', async () => {
     const alice = await createTestUser('Alice');
     const bio = 'line one\nline two';
-    const name = 'Ada 👩‍💻';
+    const name = 'Ada 👩\u200D💻';
     const { error } = await alice.client
       .from('profiles')
       .update({ display_name: name, bio })

@@ -12,9 +12,10 @@
 --
 -- Text (private.is_plain_text): profiles.display_name and bio, gatherings.title
 -- and location refuse control characters, bidi embeddings, overrides and
--- isolates, direction marks, and the invisible U+200B, U+2060 and U+FEFF. They
--- let one person's name read as another's. U+200C and U+200D stay allowed:
--- Persian and Indic scripts need the non-joiner, emoji sequences the joiner.
+-- isolates, direction marks (U+061C, U+200E, U+200F), and the invisible
+-- U+200B, U+2060 and U+FEFF. They let one person's name read as another's.
+-- U+200C and U+200D stay allowed: Persian and Indic scripts need the
+-- non-joiner, emoji sequences the joiner.
 -- A bio keeps its line feeds.
 --
 -- Existing rows. The constraints below are added VALID, so every row must pass
@@ -42,8 +43,8 @@ as $$
   select p_value is null
     or p_value !~ case
       when p_multiline
-        then '[\u0001-\u0009\u000B-\u001F\u007F-\u009F​‎‏‪-‮⁠⁦-⁩﻿]'
-      else '[\u0001-\u001F\u007F-\u009F​‎‏‪-‮⁠⁦-⁩﻿]'
+        then '[\u0001-\u0009\u000B-\u001F\u007F-\u009F\u061C\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]'
+      else '[\u0001-\u001F\u007F-\u009F\u061C\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]'
     end
 $$;
 
@@ -85,7 +86,7 @@ set
     nullif(
       regexp_replace(
         display_name,
-        '[\u0001-\u001F\u007F-\u009F​‎‏‪-‮⁠⁦-⁩﻿]',
+        '[\u0001-\u001F\u007F-\u009F\u061C\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]',
         '',
         'g'
       ),
@@ -96,7 +97,7 @@ set
   bio = nullif(
     regexp_replace(
       bio,
-      '[\u0001-\u0009\u000B-\u001F\u007F-\u009F​‎‏‪-‮⁠⁦-⁩﻿]',
+      '[\u0001-\u0009\u000B-\u001F\u007F-\u009F\u061C\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]',
       '',
       'g'
     ),
@@ -110,7 +111,7 @@ set
     nullif(
       regexp_replace(
         title,
-        '[\u0001-\u001F\u007F-\u009F​‎‏‪-‮⁠⁦-⁩﻿]',
+        '[\u0001-\u001F\u007F-\u009F\u061C\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]',
         '',
         'g'
       ),
@@ -121,7 +122,7 @@ set
   location = nullif(
     regexp_replace(
       location,
-      '[\u0001-\u001F\u007F-\u009F​‎‏‪-‮⁠⁦-⁩﻿]',
+      '[\u0001-\u001F\u007F-\u009F\u061C\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]',
       '',
       'g'
     ),

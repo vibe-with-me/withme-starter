@@ -514,6 +514,8 @@ describe('plain text', () => {
       'Ad\u202Ea', // right-to-left override
       'Ad\u2067a', // right-to-left isolate
       'Ad\u200Fa', // right-to-left mark
+      'Ad\u061Ca', // Arabic letter mark
+      'Ad\u061Ca', // Arabic letter mark
       'A\u200Bda', // zero-width space
       'A\uFEFFda', // zero-width no-break space
       'A\u0000da',
