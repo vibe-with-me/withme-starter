@@ -337,14 +337,17 @@ DB: new migrations via `supabase db push`; reseed only with the owner's
 OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
 
-The starter's own demo DB is not pushed by hand:
-`.github/workflows/demo-migrate.yml` runs `supabase db push` after
-migrations merge to `main`, waiting in the `demo` GitHub Environment until
-its required reviewer approves (migrations can delete data). It only
-runs in `vibe-with-me/withme-starter`. A fork deletes it, or points its
-`if:` at its own repository and gives its own `demo` environment the
+The starter's own demo DB is migrated by
+`.github/workflows/demo-migrate.yml`, which runs `supabase db push`
+against the `demo` GitHub Environment. While the repository is private it
+runs only when the owner starts it from the Actions tab (migrations can
+delete data, and a private repository gets no required reviewer). Once
+the repository is public it runs after migrations merge to `main`, gated
+by a required reviewer on `demo`. It only runs in
+`vibe-with-me/withme-starter`. A fork deletes it, or points its `if:` at
+its own repository and gives its own `demo` environment the
 `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF`
-secrets plus a required reviewer.
+secrets.
 
 The marketing site, the privacy and support URLs the store listings ask
 for, and the hostname split between site and app are

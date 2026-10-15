@@ -1,15 +1,20 @@
 name: Demo migrate
 
-# Applies new migrations to the hosted starter demo after they merge.
-# Migrations can delete data, so the job waits in the `demo` environment
-# until its required reviewer approves the run. It never seeds, never runs
+# Applies new migrations to the hosted starter demo. Migrations can delete
+# data, so a person decides when they run. It never seeds, never runs
 # `supabase config push` (supabase/config.toml holds local-only auth
 # values), and never deploys Workers.
+#
+# While the repository is private, GitHub offers no required reviewer on
+# the `demo` environment, so this runs only when started from the Actions
+# tab: starting the run is the approval. When the repository goes public,
+# restore the trigger below and add a required reviewer on `demo`:
+#
+#   push:
+#     branches: [main]
+#     paths:
+#       - 'supabase/migrations/**'
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/migrations/**'
   workflow_dispatch:
 
 # Two runs must never push at once; a newer run waits for the older one.
@@ -27,7 +32,8 @@ jobs:
     # environment, or deletes the file.
     if: github.repository == 'vibe-with-me/withme-starter'
     runs-on: ubuntu-latest
-    # Required reviewer and the three secrets below live on this environment.
+    # The three secrets below live on this environment (and, once the
+    # repository is public, its required reviewer).
     environment: demo
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -58,7 +64,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # The environment approval is the confirmation; --yes answers the
+      # Starting the run is the confirmation; --yes answers the
       # CLI's own prompt. No --include-seed: the demo is never reseeded here.
       - name: Push migrations
         run: supabase db push --yes

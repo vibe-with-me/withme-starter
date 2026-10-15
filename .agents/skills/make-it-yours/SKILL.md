@@ -444,7 +444,10 @@ delete it:
   starter's hosted demo and runs only in `vibe-with-me/withme-starter`
   (its `if:`). Delete it, or migrate your own hosted project with it:
   change the `if:` to your repository and create a `demo` environment
-  with a required reviewer and the three secrets it names (`go-live`,
+  with the three secrets it names. It starts by hand from the Actions
+  tab; to run it on every merge, restore the commented `push` trigger
+  and give `demo` a required reviewer, which GitHub offers on public
+  repositories; a private one needs GitHub Enterprise (`go-live`,
   Redeploys).
 
 Then run the full verification gate from `docs/the-slice.md`:
