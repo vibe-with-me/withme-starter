@@ -12,9 +12,11 @@ the "Get tags" link can live. This skill adds `apps/site`, a static Astro
 site deployed as its own Worker on the same Cloudflare account.
 
 Built once in a throwaway fork of the starter, then written down from what
-worked: the build, the type check, the CI sequence, the turbo cache, and
-the served routes (`wrangler dev`, the same asset handling a deploy uses)
-were all run. The pages ship as working files in `site/` next to this
+worked: the build, the type check, the CI sequence, the turbo cache, the
+served routes, and a real deploy to `workers.dev` (the starter's own,
+2026-10-15) were all run. The custom-domain route in step 7 has been
+config-checked (`wrangler deploy --dry-run`) but not yet attached to a
+real zone. The pages ship as working files in `site/` next to this
 document; you copy them and rewrite the words.
 
 **REQUIRED BACKGROUND:** `docs/nfc-tags.md` § "The domain is forever"
@@ -136,7 +138,10 @@ bun install
 ```
 
 `site/package.json` pins `astro` with `~` to the minor this was built on.
-Take a newer minor only by re-running the checkpoints below.
+Take a newer minor only by re-running the checkpoints below. It also
+declares `vite`, which `astro.config.mjs` imports for `loadEnv`: Bun's
+isolated linker does not let the config reach Astro's own copy. Keep its
+range in step with `apps/web`'s `vite`.
 
 **Checkpoint:** from the repo root, `bun run lint`, `bun run typecheck`,
 and `bun run build` all pass, the CI sequence. `apps/site/dist/` holds
@@ -313,7 +318,8 @@ blog, a sitemap, and anything that sells (the store stays a link, per
 | `bun run lint` fails on `apps/site/.astro/types.d.ts` | `.astro` missing from `.oxlintrc.json` `ignorePatterns` and `.gitignore` |
 | `/privacy` answers 307 to `/privacy/` | `build.format: 'file'` was removed from `astro.config.mjs` |
 | Canonical link says `/index` or `.html` | The `canonical` line in `Base.astro` was changed |
-| Canonical link says `localhost` in production | `PUBLIC_SITE_URL` missing from `apps/site/.env.production` |
+| Canonical link says `localhost` in production | `PUBLIC_SITE_URL` missing from `apps/site/.env.production`, or `astro.config.mjs` reads `process.env` directly (the config runs before Astro loads `.env` files; keep the `loadEnv` call) |
+| `Cannot find module 'vite' imported from …/astro.config.mjs` | `vite` dropped from `apps/site/package.json` devDependencies |
 | Taps on old tags 404 after the site took their hostname | The site took the tags' hostname without `public/_redirects` (step 1) |
 | "Open the app" or "Get tags" missing | The button is dormant: set `PUBLIC_APP_URL` / `PUBLIC_STORE_URL` and rebuild |
 | Deploy lands on another account | No `account_id` pinned in `apps/site/wrangler.jsonc` |

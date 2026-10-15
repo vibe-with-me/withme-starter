@@ -255,6 +255,11 @@ account-deletion section for Google Play, and a 404.
   file forwarding `/t/*` and `/claim/*` covers a fork that wants the site
   on a hostname its tags already encode, at one 302 per tap.
 
-Not yet run live: the deploy (step 7) was checked with `wrangler deploy
---dry-run` and served locally by `wrangler dev`; the first fork to deploy
-it confirms the custom-domain route.
+Deployed live the same day as `withme-site` on the starter's Cloudflare
+account (`withme-site.vibe-with-me.workers.dev`), which found one more
+pothole: the canonical URLs said `localhost`, because `astro.config.mjs`
+runs before Astro loads `.env.production`. The config now reads it with
+Vite's `loadEnv`, and the site declares `vite` itself, since Bun's
+isolated linker hides Astro's copy from the config. Not yet exercised:
+the custom-domain route, which was config-checked with `wrangler deploy
+--dry-run`; the first fork with its own domain confirms it.
