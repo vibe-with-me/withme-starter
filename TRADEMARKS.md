@@ -22,9 +22,15 @@ sponsorship, or endorsement:
 - The Vibe With Me logos, wordmarks, icons, and brand assets
 - Any confusingly similar name, mark, or visual treatment
 
-No brand assets are included in this repository. If you find one, it is a
-mistake: please open an issue so we can remove it, and do not
+No Vibe With Me brand assets are included in this repository. If you find
+one, it is a mistake: please open an issue so we can remove it, and do not
 redistribute it.
+
+The starter's own app icon (two dots joined by signal arcs, in
+`docs/brand/` and the files rendered from it) is not one of these marks.
+It is placeholder artwork, MIT licensed with the code: keep it, change it,
+or replace it. Section 4 still asks each fork to brand itself, so plan to
+swap it before you ship.
 
 ## 2. The "[Something] With Me" naming pattern: allowed, with a disclaimer
 
