@@ -74,8 +74,10 @@ decides what they can see.
 Hono on Cloudflare Workers, implementing the contract with
 `implement(contract)`.
 
-- `src/routers/public.ts` and `src/routers/app.ts`: thin handlers.
-  `requireUser` where auth is required, then either a typed query from
+- `src/routers/public.ts` and `src/routers/app.ts`: thin handlers. Every
+  `app.*` procedure requires a signed-in caller through `appProcedure`'s
+  middleware, which hands the handler `context.userId`; `public.ts` calls
+  `requireUser` where it needs one. Then either a typed query from
   `packages/db` or an RPC call, with Postgres error codes mapped to oRPC
   codes.
 - JWT verification is ES256 against Supabase's JWKS. Every handler runs on

@@ -88,6 +88,21 @@ const { data: bobSession } = await bob.client.auth.getSession();
 const bobApp = appClientFor(bobSession.session?.access_token ?? '');
 const aliceApp = appClientFor(session.session?.access_token ?? '');
 
+// 8a. every app.* procedure refuses an anonymous caller, before its handler runs
+const anonApp: AppClient = createORPCClient(new RPCLink({ url: `${API_URL}/rpc/app` }));
+for (const [label, call] of [
+  ['profile.get', () => anonApp.profile.get()],
+  ['gatherings.list', () => anonApp.gatherings.list()],
+  ['requests.send', () => anonApp.requests.send({ recipient_id: alice.id })],
+  ['links.replace', () => anonApp.links.replace({ links: [] })],
+] as const) {
+  const code = await call().then(
+    () => 'succeeded',
+    (e: { code?: string }) => e.code ?? 'error',
+  );
+  assert(code === 'UNAUTHORIZED', `anon app.${label} rejected (got ${code})`);
+}
+
 // 8. profile get/update round-trip
 const me = await bobApp.profile.get();
 assert(me.profile?.display_name === 'E2E Bob', 'profile.get returns own profile');

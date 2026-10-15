@@ -31,6 +31,8 @@
   "overrides": {
     "expo": "56.0.9",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "seroval": "^1.6.9",
+    "seroval-plugins": "^1.6.9"
   }
 }

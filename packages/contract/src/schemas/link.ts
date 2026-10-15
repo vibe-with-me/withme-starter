@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isPlainText } from './text.ts';
 
 /**
  * Profile links: the places a person can be reached, one per platform.
@@ -138,19 +139,28 @@ export const LINK_VALUE_MAX = 200;
 const SHAPE: Record<LinkKind, RegExp> = {
   handle: /^[A-Za-z0-9._-]{1,64}$/,
   phone: /^\+?[0-9]{7,15}$/,
-  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  url: /^https?:\/\/[^\s/]+\.[^\s/]+/,
+  // No character that means something in a mailto: URL (`?bcc=…`, `&body=…`,
+  // a second recipient after `,` or `;`), and nothing that breaks out of markup.
+  email: /^[^\s@?&=#%/<>",;]+@[^\s@?&=#%/<>",;]+\.[^\s@?&=#%/<>",;]+$/,
+  // Anchored at both ends. The host runs to the first / ? or #, and may not
+  // hold an @ (userinfo: `https://google.com@evil.example` is evil.example),
+  // a backslash, or a percent escape.
+  url: /^https?:\/\/[^\s/?#@\\%]+\.[^\s/?#@\\%]+(?:[/?#]\S*)?$/,
 };
 
 /** True when `value` is already in the stored form for its platform. */
 export function isCanonicalLinkValue(platform: LinkPlatformId, value: string): boolean {
   if (value.length === 0 || value.length > LINK_VALUE_MAX) return false;
   const { kind } = LINK_PLATFORMS[platform];
-  if (!SHAPE[kind].test(value)) return false;
+  if (!SHAPE[kind].test(value) || !isPlainText(value)) return false;
   if (kind === 'url') {
     try {
       const url = new URL(value);
-      return url.protocol === 'https:' || url.protocol === 'http:';
+      return (
+        (url.protocol === 'https:' || url.protocol === 'http:') &&
+        url.username === '' &&
+        url.password === ''
+      );
     } catch {
       return false;
     }

@@ -16,6 +16,9 @@ permissions:
 
 jobs:
   release:
+    # Only upstream publishes @withme/nfc: a fork that pushes an nfc-v* tag
+    # skips this job instead of trying (and failing) to publish it.
+    if: github.repository == 'vibe-with-me/withme-starter'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

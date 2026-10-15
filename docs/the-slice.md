@@ -37,10 +37,12 @@ unknown variants must fail to parse.
   columns stay immutable even through RLS-passing rows;
 - helpers live in the `private` schema; anything `security definer` also
   sets `search_path = ''`;
-- function grants are explicit: `revoke execute ... from public, anon`
-  (Supabase grants anon EXECUTE on new `public` functions directly, so
-  revoking from `public` alone leaves it), then grant to exactly `anon` /
-  `authenticated` as intended. `grants.test.ts` pins what anon can execute;
+- function grants are explicit: `revoke execute ... from public, anon`,
+  then grant to exactly `anon` / `authenticated` as intended. Since
+  `20261015140000_default_function_privileges.sql` a new function starts
+  closed to anon and public anyway (and a new `private` helper to
+  authenticated too, so a policy helper needs its grant); the explicit
+  revoke keeps the intent readable where defaults differ. `grants.test.ts` pins what anon can execute;
   a new anon-facing function joins its list on purpose;
 - storage follows the same rules (`20261011120000_avatars.sql`): per-user
   folder policies on `storage.objects`, a CHECK-shaped path column instead
@@ -61,8 +63,12 @@ client, and give every negative case a positive control so it cannot pass
 red.
 
 **4. API handlers.** `apps/api/src/routers/{public,app}.ts` implement the
-contract via `implement(contract)` (`src/lib/orpc.ts`). Handlers are thin:
-`requireUser` where auth is required, then either a typed query from
+contract via `implement(contract)` (`src/lib/orpc.ts`). Every `app.*`
+procedure is signed-in only: `appProcedure`'s middleware refuses an
+anonymous caller with UNAUTHORIZED and hands the handler a typed
+`context.userId`, so a new handler cannot forget the check (the one
+signed-in `public.*` procedure, `claim`, calls `requireUser` itself).
+Handlers are thin: a typed query from
 `packages/db/src/queries/` or an `rpc()` call, with `throwFromDbError`
 mapping PG error codes to oRPC codes. Every handler runs on `context.db`,
 a per-request client carrying the caller's JWT — the API never bypasses

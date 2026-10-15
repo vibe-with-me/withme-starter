@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PLAIN_TEXT_MESSAGE, isPlainText } from './text.ts';
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
@@ -29,11 +30,21 @@ export function avatarPublicUrl(supabaseUrl: string, path: string): string {
   return `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${AVATARS_BUCKET}/${path}`;
 }
 
+const DisplayNameSchema = z
+  .string()
+  .min(1)
+  .max(80)
+  .refine((v) => isPlainText(v), PLAIN_TEXT_MESSAGE);
+const BioSchema = z
+  .string()
+  .max(280)
+  .refine((v) => isPlainText(v, { multiline: true }), PLAIN_TEXT_MESSAGE);
+
 export const ProfileSchema = z.object({
   id: z.uuid(),
-  display_name: z.string().min(1).max(80),
+  display_name: DisplayNameSchema,
   avatar_path: AvatarPathSchema.nullable(),
-  bio: z.string().max(280).nullable(),
+  bio: BioSchema.nullable(),
   created_at: z.iso.datetime({ offset: true }),
   updated_at: z.iso.datetime({ offset: true }),
 });
@@ -55,8 +66,8 @@ export const PublicProfileSchema = ProfileSchema.pick({
  * input has no avatar key at all (unknown keys are stripped).
  */
 export const UpdateProfileInputSchema = z.object({
-  display_name: z.string().min(1).max(80).optional(),
-  bio: z.string().max(280).nullable().optional(),
+  display_name: DisplayNameSchema.optional(),
+  bio: BioSchema.nullable().optional(),
 });
 
 /**

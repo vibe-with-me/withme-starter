@@ -28,7 +28,7 @@ import {
 } from '@withme/db/queries';
 import { sniffAvatar } from '../lib/avatar.ts';
 import { throwFromDbError } from '../lib/errors.ts';
-import { appProcedure, requireUser } from '../lib/orpc.ts';
+import { appProcedure } from '../lib/orpc.ts';
 import type { ApiContext } from '../lib/orpc.ts';
 
 function isDbError(error: unknown): error is { code: string; message?: string } {
@@ -92,19 +92,19 @@ async function removeQuietly(context: ApiContext, path: string): Promise<void> {
 }
 
 const getProfile = appProcedure.profile.get.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const profile = await run(context, () => getOwnProfile(context.db, userId));
   return { profile: profile as Profile | null };
 });
 
 const updateProfile = appProcedure.profile.update.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const profile = await run(context, () => upsertOwnProfile(context.db, userId, input));
   return { profile: profile as Profile };
 });
 
 const profileUploadAvatar = appProcedure.profile.uploadAvatar.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const { file } = input;
   // z.file() already checked this at runtime. Under workers-types zod's File
   // type carries only size and type (File is a global class there, not a
@@ -136,7 +136,7 @@ const profileUploadAvatar = appProcedure.profile.uploadAvatar.handler(async ({ i
 });
 
 const profileRemoveAvatar = appProcedure.profile.removeAvatar.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const existing = await run(context, () => getOwnProfile(context.db, userId));
   if (!existing) throw new ORPCError('BAD_REQUEST', { message: 'Profile required' });
   const profile = await run(context, () => setOwnAvatarPath(context.db, userId, null));
@@ -145,7 +145,7 @@ const profileRemoveAvatar = appProcedure.profile.removeAvatar.handler(async ({ c
 });
 
 const profileDeleteAccount = appProcedure.profile.deleteAccount.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   // 1. Clear the pointer first, so a failure in a later step never leaves the
   //    card pointing at a file that is gone. No pointer, nothing to clear.
   const existing = await run(context, () => getOwnProfile(context.db, userId));
@@ -171,19 +171,17 @@ const profileDeleteAccount = appProcedure.profile.deleteAccount.handler(async ({
 // Profile → Links. The database stores only canonical values (the CHECK),
 // and the contract admits only those, so a value here is already in shape.
 const linksListMine = appProcedure.links.listMine.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const links = await run(context, () => listOwnLinks(context.db, userId));
   return { links: links as ProfileLink[] };
 });
 
 const linksReplace = appProcedure.links.replace.handler(async ({ input, context }) => {
-  requireUser(context);
   const links = await run(context, () => replaceOwnLinks(context.db, input.links));
   return { links: links as ProfileLink[] };
 });
 
 const sendRequest = appProcedure.requests.send.handler(async ({ input, context }) => {
-  requireUser(context);
   const { error } = await context.db.rpc('send_connect_request', {
     p_recipient: input.recipient_id,
   });
@@ -192,7 +190,6 @@ const sendRequest = appProcedure.requests.send.handler(async ({ input, context }
 });
 
 const listPending = appProcedure.requests.listPending.handler(async ({ context }) => {
-  requireUser(context);
   const rows = await run(context, () => listPendingRequests(context.db));
   return {
     requests: rows.map((row) => ({
@@ -206,7 +203,6 @@ const listPending = appProcedure.requests.listPending.handler(async ({ context }
 });
 
 const acceptRequest = appProcedure.requests.accept.handler(async ({ input, context }) => {
-  requireUser(context);
   const { data, error } = await context.db.rpc('accept_connect_request', {
     p_request_id: input.id,
   });
@@ -215,45 +211,41 @@ const acceptRequest = appProcedure.requests.accept.handler(async ({ input, conte
 });
 
 const declineRequest = appProcedure.requests.decline.handler(async ({ input, context }) => {
-  requireUser(context);
   const { error } = await context.db.rpc('decline_connect_request', { p_request_id: input.id });
   if (error) throwFromDbError(error, context.logger);
   return { ok: true as const };
 });
 
 const connectionsList = appProcedure.connections.list.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const connections = await run(context, () => listConnections(context.db, userId));
   return { connections: connections as Connection[] };
 });
 
 const connectionsRemove = appProcedure.connections.remove.handler(async ({ input, context }) => {
-  requireUser(context);
   await run(context, () => removeConnection(context.db, input.id));
   return { ok: true as const };
 });
 
 const block = appProcedure.blocks.block.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   await run(context, () => blockUser(context.db, userId, input.user_id));
   context.logger.info('user blocked');
   return { ok: true as const };
 });
 
 const unblock = appProcedure.blocks.unblock.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   await run(context, () => unblockUser(context.db, userId, input.user_id));
   return { ok: true as const };
 });
 
 const blocksList = appProcedure.blocks.list.handler(async ({ context }) => {
-  requireUser(context);
   const blocks = await run(context, () => listBlocks(context.db));
   return { blocks };
 });
 
 const gatheringsCreate = appProcedure.gatherings.create.handler(async ({ input, context }) => {
-  requireUser(context);
   const { data, error } = await context.db.rpc('create_gathering', {
     p_title: input.title,
     p_starts_at: input.starts_at,
@@ -265,7 +257,6 @@ const gatheringsCreate = appProcedure.gatherings.create.handler(async ({ input, 
 });
 
 const gatheringsGet = appProcedure.gatherings.get.handler(async ({ input, context }) => {
-  requireUser(context);
   const gathering = await run(context, () => getGathering(context.db, input.id));
   if (!gathering) {
     // invisible (blocked either way with the host) and nonexistent are the same answer
@@ -280,32 +271,30 @@ const gatheringsGet = appProcedure.gatherings.get.handler(async ({ input, contex
 });
 
 const gatheringsJoin = appProcedure.gatherings.join.handler(async ({ input, context }) => {
-  requireUser(context);
   const { error } = await context.db.rpc('join_gathering', { p_gathering_id: input.id });
   if (error) throwFromDbError(error, context.logger);
   return { ok: true as const };
 });
 
 const gatheringsLeave = appProcedure.gatherings.leave.handler(async ({ input, context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   await run(context, () => leaveGathering(context.db, input.id, userId));
   return { ok: true as const };
 });
 
 const gatheringsList = appProcedure.gatherings.list.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const gatherings = await run(context, () => listUpcomingGatherings(context.db, userId));
   return { gatherings };
 });
 
 const gatheringsListMine = appProcedure.gatherings.listMine.handler(async ({ context }) => {
-  const userId = requireUser(context);
+  const { userId } = context;
   const gatherings = await run(context, () => listMyGatherings(context.db, userId));
   return { gatherings };
 });
 
 const gatheringsUpdate = appProcedure.gatherings.update.handler(async ({ input, context }) => {
-  requireUser(context);
   const { id, ...patch } = input;
   const gathering = await run(context, () => updateGathering(context.db, id, patch));
   if (!gathering) {
@@ -316,19 +305,16 @@ const gatheringsUpdate = appProcedure.gatherings.update.handler(async ({ input, 
 });
 
 const gatheringsRemove = appProcedure.gatherings.remove.handler(async ({ input, context }) => {
-  requireUser(context);
   await run(context, () => deleteGathering(context.db, input.id));
   return { ok: true as const };
 });
 
 const tagsListMine = appProcedure.tags.listMine.handler(async ({ context }) => {
-  requireUser(context);
   const tags = await run(context, () => listOwnTags(context.db));
   return { tags: tags as Tag[] };
 });
 
 const tagsUpdate = appProcedure.tags.update.handler(async ({ input, context }) => {
-  requireUser(context);
   const { uid, ...patch } = input;
   const tag = await run(context, () => updateOwnTag(context.db, uid, patch));
   if (!tag) {

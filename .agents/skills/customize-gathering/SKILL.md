@@ -193,11 +193,11 @@ In slice order:
    re-issue the grants for the new signature:
    `revoke execute on function public.create_gathering(text, timestamptz, text, text) from public, anon;`
    `grant execute on function public.create_gathering(text, timestamptz, text, text) to authenticated;`.
-   Revoke from `anon` by name: Supabase's default privileges grant `anon`
-   execute on every new function directly, so a revoke from `public`
-   alone leaves it callable by anon (core's own older RPCs have the same
-   gap, tracked as ENG-754; the body's `'authentication required'` still
-   refuses, but the grant should say so too).
+   Core's default privileges (`20261015140000_default_function_privileges.sql`)
+   already keep a new function closed to `anon` and `public`, so the revoke
+   is belt and braces; keep it, so the grant says who may call the function
+   even on a database whose defaults differ. The body's
+   `'authentication required'` check stays as the second gate.
    If the summary carries the field, also
    `create or replace function public.resolve_tag(p_uid text) returns jsonb`
    (copy the whole body of its **newest** definition,
