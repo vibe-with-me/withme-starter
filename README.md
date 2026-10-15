@@ -82,11 +82,13 @@ below does one of these end to end.
 No cloud accounts needed. Prerequisites: [Bun](https://bun.sh),
 [Docker](https://www.docker.com/products/docker-desktop/), and the
 [Supabase CLI](https://supabase.com/docs/guides/cli) version 2.118 or
-newer.
+newer. Start Docker before you begin.
 
 ```sh
+git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
+cd withme-starter
 bun install
-bun run db:start        # Supabase local on ports 553xx (Postgres, Auth, Storage)
+bun run db:start        # Supabase local on ports 553xx; the first run downloads images
 bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
@@ -101,6 +103,11 @@ Then play the demo:
   and claim it.
 - Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
   gathering, her pending request from Lin, and her tags.
+
+If `db:start` says a port is already allocated, another project's
+Supabase stack holds 553xx: stop it first
+([Local development](docs/local-development.md#when-something-goes-wrong)
+has the commands).
 
 Mobile, tests, ports, and the fixes for the two or three things that go
 wrong on a fresh machine are in [Local development](docs/local-development.md).

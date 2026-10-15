@@ -46,7 +46,7 @@ What it holds:
   the background, because the token files use rgba borders). It
   recomputed the proof run's pairs to the cent and showed the starter's
   own `tokens.css` comment is stale (it says 4.8:1; the pair is 5.18:1)
-  and its light input border is 2.97:1 (ENG-753).
+  and its light input border is 2.97:1 (the input-border issue).
 - An optional last step: `/design-sync` the fork's tokens to a
   claude.ai design-system project, so later `/design` runs in that fork
   (customize-gathering screens, extend-profile fields, a marketing site)

@@ -322,7 +322,7 @@ done
 Expect `status=307 location=<your url>` for the link tag (the loader
 branch from §7 throws that redirect), and a normal
 profile tag still returns 200 (if it hangs under `vite dev`, restart the
-web dev server as provision-tags §1 describes, ENG-751). Link taps are
+web dev server as provision-tags §1 describes). Link taps are
 logged as scans like any tap. The variables keep UIDs out of shared
 output; never print them. Afterwards `rm -rf "$OUT"`; the next
 `db:reset` clears the tags.

@@ -190,7 +190,7 @@ build-gathering §1 plus the `resolve_tag` replacement), `avatars.sql`
   or an accepted connection with no block either way) and its own RLS
   tests, proven narrower than `profiles_select`, which stays
   byte-identical. *Amended 2026-10-12, approved by Alex 2026-10-11
-  (ENG-749): this line first said the tier "touches `profiles_select`".
+  (the decisions log): this line first said the tier "touches `profiles_select`".
   RLS decides rows, not columns, so a connections-only column on
   `profiles` would reach every viewer that policy admits (the
   pending-request recipient, the gathering co-member, the blocker).*
@@ -235,7 +235,7 @@ Five PRs, in order, each passing the gate:
    locally, timed, no go-live; and Golf with Me, a fork rebuilt on a fresh
    starter tree through the skills and a real go-live. No single run was a
    fresh clone through go-live. Deferred: the tailgate
-   rebuild (ENG-756), physical tags, an EAS build.*
+   rebuild, physical tags, an EAS build.*
 
 **Precondition.** The Playwright web smoke is out of CI (dev-SSR stall,
 `ci.yml` note). PR 1 rewrites every web route. Spend a bounded hour on the

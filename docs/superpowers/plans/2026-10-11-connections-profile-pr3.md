@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Finish the last two tabs the spec calls for (Linear ENG-746).
+**Goal:** Finish the last two tabs the spec calls for (Milestone 3).
 - **Connections:** in-page segments (Connections, Requests with a count badge, Blocked). Every list goes loading → error with retry → typed empty → content. The mobile row no longer overflows.
 - **Profile:**
   - An avatar upload replaces the URL field. Storage is on locally, there is an `avatars` bucket with per-user folders, and `profiles.avatar_url` becomes `avatar_path`, guarded by a regex CHECK. Clients resize to 512px. The API writes with the caller's JWT.
@@ -89,7 +89,7 @@
      - Expo's winter runtime patches RN `FormData` with `set` and gives the part a name. This is `expo/src/winter/FormData.ts`.
      - `expo/fetch`, installed as global `fetch`, converts that `FormData` to multipart via `FileReader.readAsArrayBuffer`, which RN implements. This is `expo/src/winter/fetch/convertFormData.ts`.
      - So the Worker receives a `File`.
-   - **Task 10b proves this chain early,** right after the API e2e and before any web or mobile UI: it installs the two modules and `squareAvatar`, then a temporary button on the simulator uploads through the real chain and is reverted. The API e2e cannot prove it, because it sends a Bun `File`. **If it fails there (a BAD_REQUEST "Input validation failed" means the blob part arrived as a string), stop and report. Do not improvise a base64 contract:** that would be a spec deviation that needs Alex's call (ENG-749).
+   - **Task 10b proves this chain early,** right after the API e2e and before any web or mobile UI: it installs the two modules and `squareAvatar`, then a temporary button on the simulator uploads through the real chain and is reverted. The API e2e cannot prove it, because it sends a Bun `File`. **If it fails there (a BAD_REQUEST "Input validation failed" means the blob part arrived as a string), stop and report. Do not improvise a base64 contract:** that would be a spec deviation that needs Alex's call (the decisions log).
 
 6. **Account deletion.**
    - **The database function.** `public.delete_my_account()` (security definer, `set search_path = ''`) raises `authentication required` (42501) for anon. It deletes the caller's rows from `private.connect_request_attempts` (that ledger has no FK, so they would otherwise linger forever), then deletes `auth.users where id = auth.uid()`. The existing cascades do the rest:
@@ -185,7 +185,7 @@
 
 ## Ground rules for every task
 
-- Work in the worktree `/Users/alexeisele/dev/withme-starter/.claude/worktrees/with-me-derivation-starter-1f2c69` on branch `claude/connections-profile` (from `main` at `4fa6c98`, Milestones 1 and 2 merged). Use absolute paths or `bun run --cwd`; never `cd` into the main checkout.
+- Work in the worktree `~/dev/withme-starter/.claude/worktrees/with-me-derivation-starter-1f2c69` on branch `claude/connections-profile` (from `main` at `4fa6c98`, Milestones 1 and 2 merged). Use absolute paths or `bun run --cwd`; never `cd` into the main checkout.
 - **The gate** is `bun run lint`, `bun run typecheck`, `bun run test`. Lint stays green at every commit. These red windows are expected and stated per task:
   - `apps/api` typecheck: red from Task 1 until Task 9 (contract shape and new optional fields, before the queries and handlers catch up).
   - `apps/web` typecheck: red from Task 1 until Task 2.
@@ -2196,7 +2196,7 @@ console.log(JSON.stringify(data));
 
 prints `{"avatar_path":"<ada-id>/<uuid>.jpg"}`.
 
-**Fail:** a `BAD_REQUEST` with "Input validation failed" means the multipart transport is broken: the blob part arrived as a string. **Stop here and report** with the spike line, the API log, and a screenshot (`xcrun simctl io booted screenshot ~/Desktop/m3-spike.png`). Do not improvise a base64 contract: that is a spec deviation that needs Alex (Decision 5, ENG-749). A 413 means the Worker counted (or was told) more than `AVATAR_MAX_BYTES` + 64 KiB, so the client sent an encode far over the cap (Task 9's `bodyLimit` accepts a missing `Content-Length` and counts the streamed bytes instead): report it with the API log and the encoded size rather than loosening the limit, since that is the same spec-level call. Any other failure is worth a short debug first (sign-in, API not running, Metro stale: `bunx agent-device metro reload`), still without changing the transport.
+**Fail:** a `BAD_REQUEST` with "Input validation failed" means the multipart transport is broken: the blob part arrived as a string. **Stop here and report** with the spike line, the API log, and a screenshot (`xcrun simctl io booted screenshot ~/Desktop/m3-spike.png`). Do not improvise a base64 contract: that is a spec deviation that needs Alex (Decision 5, the decisions log). A 413 means the Worker counted (or was told) more than `AVATAR_MAX_BYTES` + 64 KiB, so the client sent an encode far over the cap (Task 9's `bodyLimit` accepts a missing `Content-Length` and counts the streamed bytes instead): report it with the API log and the encoded size rather than loosening the limit, since that is the same spec-level call. Any other failure is worth a short debug first (sign-in, API not running, Metro stale: `bunx agent-device metro reload`), still without changing the transport.
 
 **Step 6:** Revert the temporary button and leave the tree clean:
 
@@ -5041,7 +5041,7 @@ Paste the summary lines into the PR body.
 **Step 2:** Push `claude/connections-profile` and open the PR against `main`.
 - **Title:** `Connections and Profile made whole: segments, avatars through Storage, My tags, account deletion`.
 - **The body must include:**
-  - the spec link and ENG-746;
+  - the spec link and Milestone 3;
   - the avatars design: path not URL, the public-but-unlistable bucket, per-user folder policies, no update policy, MIME and size limits, the API writing with the caller's JWT, the sniffed bytes;
   - the avatars boundary: the bucket's MIME and size limits plus `profiles_avatar_path_shape` are the real boundary (sniffing is a first gate), the insert policy needs a live profile, and uploads cache for an hour;
   - **the breaking public-contract change:** `avatar_url` → `avatar_path`, mirrored in `@withme/nfc`'s `PublicProfileCard`. No release in this PR: publishing `@withme/nfc` is a separate, owner-approved step;

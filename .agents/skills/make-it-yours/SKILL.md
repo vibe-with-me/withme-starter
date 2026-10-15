@@ -105,8 +105,8 @@ design system. Keep the WCAG notes in `tokens.css` honest: accent/accent-ink
 cite four ratios in the comments: the accent pair (accent vs. accent-ink)
 in each theme, and the input border against the surface in each theme.
 Don't leave stale numbers. The
-starter's shipped light `--color-border-input` measures 2.97:1 (ENG-753):
-until that is fixed upstream, raise it in both files, e.g. opacity
+starter's shipped light `--color-border-input` measures 2.97:1, a known
+issue: until that is fixed upstream, raise it in both files, e.g. opacity
 0.46 → 0.47 (3.06:1).
 
 **Checkpoint:**
@@ -228,6 +228,10 @@ names no brand, so there only the title and badge change):
   line which must match the seed (previous bullet).
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
+- `LICENSE` — line 3 names the starter's copyright holder,
+  `Vibe With Me`. MIT requires you to keep that notice for the code you
+  inherited; add your own line under it for your changes
+  (`Copyright (c) <year> <your name or org>`) rather than replacing it.
 
 **Wordmark treatment.** Set the weight and tracking from the sheet's
 Wordmark row, the same on web and mobile. Case is the wordmark string

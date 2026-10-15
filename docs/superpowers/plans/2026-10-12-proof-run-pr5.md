@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Take a fresh clone of `main` (after Milestone 4) through every derivation skill and then go-live, as a fake derivation, and time each skill. The result is "runclub-with-me", a run club fork. Every place where a skill and reality disagree gets fixed in the skill and re-run. The acceptance report is the program's acceptance test: spec "Delivery" item 5, "Fresh clone → make-it-yours → customize-gathering → extend-profile → go-live, as a fake derivation, timed. This is the acceptance test for 'derivations are no longer barebones.'" The merged PR contains only skill fixes (`.agents/skills/**`), the report and this plan (`docs/**`), and, only if a fix requires it, `README.md`. Linear: ENG-748 (project P-ENG-39, decisions in ENG-749).
+**Goal:** Take a fresh clone of `main` (after Milestone 4) through every derivation skill and then go-live, as a fake derivation, and time each skill. The result is "runclub-with-me", a run club fork. Every place where a skill and reality disagree gets fixed in the skill and re-run. The acceptance report is the program's acceptance test: spec "Delivery" item 5, "Fresh clone → make-it-yours → customize-gathering → extend-profile → go-live, as a fake derivation, timed. This is the acceptance test for 'derivations are no longer barebones.'" The merged PR contains only skill fixes (`.agents/skills/**`), the report and this plan (`docs/**`), and, only if a fix requires it, `README.md`. Tracked privately: the Milestone 5 issue in the build-out project, decisions in the decisions log.
 
 **Architecture:** The binding spec is `docs/superpowers/specs/2026-09-22-app-shell-and-tabs-design.md` ("Delivery" item 5). The program is `docs/superpowers/program.md` milestone 5. The method is a copy of Milestone 4's fresh-clone re-runs (`plans/2026-10-11-derivation-skills-pr4.md` Tasks 7b–7d): clone, follow literally, time, log deviations, fix the skill, repeat. Two things are new here. First, the skills run **in sequence on one clone**, so their order-dependence shows up. Second, go-live comes last, behind an explicit stop for Alex.
 
@@ -10,8 +10,8 @@
 
 **Scope guard:**
 - No app code in the PR. `git diff --name-only origin/main...HEAD` lists only `.agents/skills/**` and `docs/**` (plus `README.md` if a fix needs it, with the reason in the PR body).
-- An **app** defect found by the run (as opposed to a skill-text defect) becomes a Linear issue under P-ENG-39, like ENG-750/751/752. It is not fixed here unless Alex says so.
-- Derivation code lives only in clones under `/Users/alexeisele/dev/withme-scratch/`, with `origin` removed. Those clones are never pushed and are deleted at the end.
+- An **app** defect found by the run (as opposed to a skill-text defect) becomes a tracker issue in the build-out project, like the known issues below. It is not fixed here unless Alex says so.
+- Derivation code lives only in clones under `~/dev/withme-scratch/`, with `origin` removed. Those clones are never pushed and are deleted at the end.
 - Nothing billable, outward-facing, or credentialed happens without Alex's go-ahead at Task 9 (Phase B).
 
 ---
@@ -41,7 +41,7 @@
    - In Milestone 5 nothing else is in flight. The run therefore stops the shared `withme-starter` stack **once, at Task 2**, and runs the clone on its own `runclub` stack until Task 13 restores `withme-starter`.
    - Precondition: the program manager confirms that no other session (including the `determined-bell-b12635` and `exciting-noyce-50c543` worktrees) needs the stack during Phase A. If that cannot be confirmed, skip the rename, record it as skipped, and the whole run uses the shared stack inside a normal stack window.
    - **Answered 2026-10-12: skipped — the shared stack stays up for another session; the rename is recorded as not run (the M4 order bug stays a known follow-up).** The whole run uses the shared `withme-starter` stack, and nothing in the run stops it (`db:stop`).
-7. **One clone, many skills.** The line clone is `/Users/alexeisele/dev/withme-scratch/proof-runclub`.
+7. **One clone, many skills.** The line clone is `~/dev/withme-scratch/proof-runclub`.
    - Each skill's result is a local commit in the clone, tagged `pre-<next-skill>`.
    - A re-run after a skill fix starts from a fresh clone of the line **at that skill's `pre-` tag**, with the fixed skill texts copied in (the deviation procedure, below). If the re-run is clean, it becomes the line.
 8. **Literal following is done by a fresh subagent per skill run.** It gets only the Follower brief of its task (inputs, environment notes, logging rules) and never this plan, the Milestone 4 plan, or earlier logs. The program manager reviews its log against the task's Watch list afterwards. The Watch list holds predicted deviations and must not leak into the brief.
@@ -49,21 +49,21 @@
    - provision-tags runs after extend-profile, so its claim check also shows the new card tier.
    - add-destination-type is not run: a run club needs no new destination type, and the spec's sequence does not name it. The report says so.
 10. **Go-live is Alex's call** (Task 9): option 1, a real throwaway production run approved step by step and torn down after; or option 2, a dry run with the production leg recorded as not run. There is no default. Phase A does not depend on the answer, so ask at the start of the milestone and collect the answer by Task 9.
-11. **The report** is committed as `docs/superpowers/reports/<completion-date>-proof-run.md`, a new folder. It is summarized in the PR body and the Linear updates.
+11. **The report** is committed as `docs/superpowers/reports/<completion-date>-proof-run.md`, a new folder. It is summarized in the PR body and the tracker updates.
 
 ---
 
 ## Ground rules for every task
 
 - **Branch and worktree.**
-  - Work in `/Users/alexeisele/dev/withme-starter/.claude/worktrees/proof-run` on branch `claude/proof-run`, created from `origin/main` after PR #10 merges (Task 0). The shell variable is `WT`.
+  - Work in `~/dev/withme-starter/.claude/worktrees/proof-run` on branch `claude/proof-run`, created from `origin/main` after PR #10 merges (Task 0). The shell variable is `WT`.
   - Never work in, or write to, any other worktree: `with-me-derivation-starter-1f2c69` (the program manager), `derivation-skills` (M4, merged), `determined-bell-b12635`, `exciting-noyce-50c543`.
   - Local `main` is stale: always base on `origin/main` after `git fetch origin`.
 - **Variables used below:**
 
   ```bash
-  WT=/Users/alexeisele/dev/withme-starter/.claude/worktrees/proof-run
-  S=/Users/alexeisele/dev/withme-scratch
+  WT=~/dev/withme-starter/.claude/worktrees/proof-run
+  S=~/dev/withme-scratch
   LINE="$S/proof-runclub"          # reassigned when a clean re-run becomes the line; log every reassignment
   NOTES="$S/notes/m5"
   ```
@@ -77,10 +77,10 @@
 - **Playwright:** always `CI=1 bunx playwright test`. With other checkouts on this machine, `reuseExistingServer: !process.env.CI` could attach to their workers. This is an environment rule, not a skill deviation, so log it once.
 - **The simulator** follows the memory note `ios-simulator-driving-technique.md`: agent-device + Expo Go + simctl, never `expo start --ios`, never `keyboard dismiss`, and type in chunks that never start with `-`. A skill that says `bunx expo start --ios` gets this substitution, logged once as an environment note.
 - **Known local issues that are not skill defects:** log them when they bite, do not "fix" the skill for them, and leave the time they cost in the timing with a note.
-  - **ENG-750.** A brand-new sign-up's first API calls can get `PGRST303` ("JWT issued at future"). The completion gate fails open (the account lands on Runs, not Profile). Relaunch, and it lands on Profile.
-  - **ENG-751.** On a clone's first `vite dev` session, a server-side load of a claimed card (`/t/<claimed UID>`) can hang with 0 bytes after sign-in and claim. Restart `apps/web`'s `bun run dev`.
+  - **The PGRST303 issue.** A brand-new sign-up's first API calls can get `PGRST303` ("JWT issued at future"). The completion gate fails open (the account lands on Runs, not Profile). Relaunch, and it lands on Profile.
+  - **The `vite dev` hang.** On a clone's first `vite dev` session, a server-side load of a claimed card (`/t/<claimed UID>`) can hang with 0 bytes after sign-in and claim. Restart `apps/web`'s `bun run dev`.
   - **Supabase CLI upgrade mid-run (2026-10-12).** Homebrew upgraded the `supabase` CLI 2.116.0 → 2.120.0 at 22:04:13Z, during customize-gathering run 2 (no one in this program ran brew). Resets under 2.120.0 write a newer storage schema (storage migration 72, `drop-bucketid-objname-index`) than the running `storage-api:v1.70.3` container expects, so every Storage upload fails with `42P10` until the stack is restarted under the new CLI. That restart is Alex's (an environment fix; `db:stop` is off-limits to the run). `db:reset` also stopped printing "… on branch main". `db:types` under 2.120.0 reformats `packages/db/src/types/supabase.ts` wholesale.
-  - **ENG-752.** The db package's test utils have no remote guard, so a shell with `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` exported would run the RLS suite against production. Never source `.env.demo-seed` outside a subshell, and never run `bun run test` / `bun test` in a shell or terminal tab that ever held production keys. Phase B checks `env | grep -c SUPABASE_SERVICE_ROLE_KEY` prints `0` before any local test.
+  - **The remote-guard gap.** The db package's test utils have no remote guard, so a shell with `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` exported would run the RLS suite against production. Never source `.env.demo-seed` outside a subshell, and never run `bun run test` / `bun test` in a shell or terminal tab that ever held production keys. Phase B checks `env | grep -c SUPABASE_SERVICE_ROLE_KEY` prints `0` before any local test.
 - **No remote services in Phase A.** No `supabase link` / `projects` / `orgs`, no `wrangler deploy` or `login`, no `eas`.
   - Package installs (`bun install`, `bun add`) and the GitHub clone are fine: they are what a forker does.
   - Claude never types a credential into anything except the local stack's test accounts: the seed identity, and sign-ups on `localhost` / `127.0.0.1` with generated `@rls.test` / `@demo.runclub.local` addresses.
@@ -141,9 +141,9 @@
 **Files:** Create `docs/superpowers/plans/2026-10-12-proof-run-pr5.md` (this plan).
 
 ```bash
-git -C /Users/alexeisele/dev/withme-starter fetch origin
-git -C /Users/alexeisele/dev/withme-starter log --oneline -1 origin/main     # expect the merge of PR #10
-git -C /Users/alexeisele/dev/withme-starter worktree add "$WT" -b claude/proof-run origin/main
+git -C ~/dev/withme-starter fetch origin
+git -C ~/dev/withme-starter log --oneline -1 origin/main     # expect the merge of PR #10
+git -C ~/dev/withme-starter worktree add "$WT" -b claude/proof-run origin/main
 cd "$WT"
 cp /private/tmp/claude-501/-Users-alexeisele-dev-withme-starter--claude-worktrees-with-me-derivation-starter-1f2c69/6460d7d3-0c45-4a17-95f1-8861d7fd65ba/scratchpad/m5-proof-run-plan.md docs/superpowers/plans/2026-10-12-proof-run-pr5.md
 git add docs/superpowers/plans/2026-10-12-proof-run-pr5.md
@@ -182,7 +182,7 @@ No other commit.
 rm -rf "$LINE"
 git clone https://github.com/vibe-with-me/withme-starter.git "$LINE"
 git -C "$LINE" remote remove origin                                    # nothing in the fork can be pushed
-test "$(git -C "$LINE" rev-parse HEAD)" = "$(git -C /Users/alexeisele/dev/withme-starter rev-parse origin/main)" && echo "line = origin/main"
+test "$(git -C "$LINE" rev-parse HEAD)" = "$(git -C ~/dev/withme-starter rev-parse origin/main)" && echo "line = origin/main"
 git -C "$LINE" tag pre-make-it-yours
 (cd "$LINE" && time bun install)
 ```
@@ -190,8 +190,8 @@ git -C "$LINE" tag pre-make-it-yours
 If the GitHub clone needs credentials the shell does not have, fall back to the local object store at the same commit. Do not enter credentials.
 
 ```bash
-git clone --no-checkout /Users/alexeisele/dev/withme-starter "$LINE"
-git -C "$LINE" fetch /Users/alexeisele/dev/withme-starter refs/remotes/origin/main
+git clone --no-checkout ~/dev/withme-starter "$LINE"
+git -C "$LINE" fetch ~/dev/withme-starter refs/remotes/origin/main
 git -C "$LINE" checkout -B main FETCH_HEAD
 git -C "$LINE" remote remove origin
 ```
@@ -202,7 +202,7 @@ git -C "$LINE" remote remove origin
 - No `.env` / `.dev.vars` files exist yet (`ls "$LINE"/apps/web/.env 2>&1` says no such file).
 - `$NOTES/1-setup.md` records the SHA, the clone source, and the `bun install` time.
 
-**Done 2026-10-12.** `LINE=/Users/alexeisele/dev/withme-scratch/proof-runclub`, cloned from GitHub over anonymous HTTPS (no credentials; the local fallback was not needed). `origin` removed. HEAD 511a26c on `main`, equal to `origin/main`: `line = origin/main`. Tagged `pre-make-it-yours`. `bun install`: 1529 packages, 6.78 s wall (bun 1.3.10). `git status --porcelain` empty; no `.env` / `.dev.vars` files. Log: `$NOTES/1-setup.md`. No deviations.
+**Done 2026-10-12.** `LINE=~/dev/withme-scratch/proof-runclub`, cloned from GitHub over anonymous HTTPS (no credentials; the local fallback was not needed). `origin` removed. HEAD 511a26c on `main`, equal to `origin/main`: `line = origin/main`. Tagged `pre-make-it-yours`. `bun install`: 1529 packages, 6.78 s wall (bun 1.3.10). `git status --porcelain` empty; no `.env` / `.dev.vars` files. Log: `$NOTES/1-setup.md`. No deviations.
 
 ---
 
@@ -224,7 +224,7 @@ git -C "$LINE" remote remove origin
 >
 > Do every step except step 5 (EAS). It creates a project on Expo's servers, so skip it and say so.
 >
-> Environment notes, which are not part of the skill: run Playwright as `CI=1 bunx playwright test`. Do not run any command against a remote service (supabase link/projects/orgs, wrangler deploy/login, eas). Do not touch any other directory under `/Users/alexeisele/dev/withme-starter`. The Supabase stack is yours for this task.
+> Environment notes, which are not part of the skill: run Playwright as `CI=1 bunx playwright test`. Do not run any command against a remote service (supabase link/projects/orgs, wrangler deploy/login, eas). Do not touch any other directory under `~/dev/withme-starter`. The Supabase stack is yours for this task.
 >
 > Log to `$NOTES/2-make-it-yours-r<k>.md`: START/END/PAUSE/RESUME stamps (`date -u +%FT%TZ`), every command and its trimmed output, and every deviation. A deviation is any place you had to guess, or where the text and reality disagree; for each, give the step, what the text says, what happened, and what you did. Do not fix the skill. Finish with the skill's step 8 checks and a list of the deviations.
 
@@ -256,8 +256,8 @@ git -C "$LINE" remote remove origin
 **Then:** the reviewer checks above, the deviation procedure, and a commit in the clone tagged `pre-customize-gathering`.
 
 **Run 1 (2026-10-12).** On `$LINE` at `pre-make-it-yours` (511a26c). START 21:23:36Z, END 21:31:49Z: about 8 min wall, no pauses. Log: `$NOTES/2-make-it-yours-r1.md`. Step 5 skipped per the brief; `project_id` rename and `db:stop`/`db:start` also skipped (the shared stack, Decision 6), so the Watch list's step 6 item was not exercised. Every checkpoint run was green: lint, typecheck, test at the baseline counts (db 72, contract 31, nfc 48), Playwright 14/14, API e2e all passed, the visual check showed the accent only on "Join this gathering" in both modes. The result is uncommitted in `$LINE`'s working tree. Deviations:
-- D1, step 1: the shipped light `--color-border-input` measures 2.97:1, below the 3:1 the skill requires. The follower raised the opacity from 0.46 to 0.47 (3.06:1). App defect, filed as ENG-753; the skill now says to raise it until the fix lands upstream (b160d58).
-- D2, step 1: the token comments say the accent is for Connect and Accept only; the skill's rule lists five actions. App defect, part of ENG-753; no skill change.
+- D1, step 1: the shipped light `--color-border-input` measures 2.97:1, below the 3:1 the skill requires. The follower raised the opacity from 0.46 to 0.47 (3.06:1). App defect, filed as the input-border issue; the skill now says to raise it until the fix lands upstream (b160d58).
+- D2, step 1: the token comments say the accent is for Connect and Accept only; the skill's rule lists five actions. App defect, part of the input-border issue; no skill change.
 - D3, step 2: the copied font file's name was unspecified. Now it is `<font>-var-latin.woff2`, with `format('woff2')` and the `wght` file only (Archivo also ships `wdth`) (b160d58).
 - D4, step 3: the README title's target was unspecified. It is now the wordmark (b160d58).
 - D5, steps 3/6/8: `apps/web/.env` is copied before step 3 edits the example demo-credentials line, and step 8's sweep reads `.env`. Step 3 now says to edit the line in both files, and its checkpoint greps both (b160d58).
@@ -268,7 +268,7 @@ git -C "$LINE" remote remove origin
 
 The step 8 sweep command changed, so a re-run is required (run 2, from a fresh `pre-make-it-yours` clone with b160d58's skills).
 
-**Run 2 — Done 2026-10-12.** On `/Users/alexeisele/dev/withme-scratch/proof-runclub-make-it-yours-r2` (a fresh `pre-make-it-yours` clone with b160d58's skills). START 21:36:15Z, END 21:44:09Z: about 8 min wall. Log: `$NOTES/2-make-it-yours-r2.md`. Green: every checkpoint, lint, typecheck, test at the baseline counts, Playwright 14/14, API e2e all passed. The step 8 sweep prints exactly the two lines of the skipped sub-steps (`app.json` `owner`, step 5; `config.toml` `project_id`, Decision 6). The remaining notes were wording-only and are fixed in 77ec5f1: which ratios the token comments cite (the accent pair and the input border, each theme), and that the starter README's prose names no brand, so only the title and badge change. The other notes were input gaps (no copy or artwork supplied) or already known (ENG-753). Run 2 reached the final checkpoint green and the fixes are wording only, so no re-run is needed. Reviewer checks passed. The line is now `LINE=/Users/alexeisele/dev/withme-scratch/proof-runclub-make-it-yours-r2`, committed as 9a58a9a ("make-it-yours: runclub") and tagged `pre-customize-gathering`.
+**Run 2 — Done 2026-10-12.** On `~/dev/withme-scratch/proof-runclub-make-it-yours-r2` (a fresh `pre-make-it-yours` clone with b160d58's skills). START 21:36:15Z, END 21:44:09Z: about 8 min wall. Log: `$NOTES/2-make-it-yours-r2.md`. Green: every checkpoint, lint, typecheck, test at the baseline counts, Playwright 14/14, API e2e all passed. The step 8 sweep prints exactly the two lines of the skipped sub-steps (`app.json` `owner`, step 5; `config.toml` `project_id`, Decision 6). The remaining notes were wording-only and are fixed in 77ec5f1: which ratios the token comments cite (the accent pair and the input border, each theme), and that the starter README's prose names no brand, so only the title and badge change. The other notes were input gaps (no copy or artwork supplied) or already known (the input-border issue). Run 2 reached the final checkpoint green and the fixes are wording only, so no re-run is needed. Reviewer checks passed. The line is now `LINE=~/dev/withme-scratch/proof-runclub-make-it-yours-r2`, committed as 9a58a9a ("make-it-yours: runclub") and tagged `pre-customize-gathering`.
 
 ---
 
@@ -328,7 +328,7 @@ The step 8 sweep command changed, so a re-run is required (run 2, from a fresh `
 - D4, §2.1: a required field broke four existing contract fixtures and expectations. The text now says to update them, and how to find them (`grep -n starts_at`).
 - D5, §2.1/§2.2: the rule for rows that predate the column. Inputs require `min(1)`; `GatheringSchema` accepts `''` (max only); the `default ''` stays. This is the fork's choice.
 - D6, §2.2: `db:seed` ran before §2.7 edited the seed (PGRST202). The seed edit now comes before the first `db:seed`.
-- D7, §2.2: `revoke … from public` left anon able to execute the new `create_gathering`, through Supabase's default privileges. The text now revokes `from public, anon`, and `docs/the-slice.md`'s grant rule says the same. Core's older RPCs have the same gap: ENG-754.
+- D7, §2.2: `revoke … from public` left anon able to execute the new `create_gathering`, through Supabase's default privileges. The text now revokes `from public, anon`, and `docs/the-slice.md`'s grant rule says the same. Core's older RPCs have the same gap: the anon-execute gap.
 - D8, §2.3: the anon call in 'anon can neither create nor join' needs the new argument. The text now names the argument-only changes and keeps the safety sentence for everything else.
 - D9, map/§2.3: `account.test.ts` calls `create_gathering`. The map now carries a caller grep, and §2.3 and §2.7 use it.
 - D10, §2.7: `handshake.e2e.ts` creates in §17 too, and the e2e reads the built SDK. The caller grep covers §17, and §2.5 now says to run the root `bun run typecheck`.
@@ -337,7 +337,7 @@ The step 8 sweep command changed, so a re-run is required (run 2, from a fresh `
 
 Safety reviewer checks passed: no §3 mechanism touched, the original 17 tests changed only by the new argument (plus one added `route_name` assertion), and the summary carries `route_name` only. Commands and steps changed, so a re-run is required (run 2, from a fresh `pre-customize-gathering` clone with 77ec5f1's skills).
 
-**Run 2 (2026-10-12).** On `/Users/alexeisele/dev/withme-scratch/proof-runclub-customize-gathering-r2` (a fresh `pre-customize-gathering` clone with 77ec5f1's skills; HEAD 9b9ec75). START 21:59:52Z, END 22:12:03Z: about 12 min wall. Log: `$NOTES/3-customize-gathering-r2.md`. The result is uncommitted in that clone's working tree, with `supabase/migrations/20261012220349_add_gathering_route_name.sql` untracked.
+**Run 2 (2026-10-12).** On `~/dev/withme-scratch/proof-runclub-customize-gathering-r2` (a fresh `pre-customize-gathering` clone with 77ec5f1's skills; HEAD 9b9ec75). START 21:59:52Z, END 22:12:03Z: about 12 min wall. Log: `$NOTES/3-customize-gathering-r2.md`. The result is uncommitted in that clone's working tree, with `supabase/migrations/20261012220349_add_gathering_route_name.sql` untracked.
 - Green, for everything the run touched: the §1 checkpoint (lint, typecheck, Playwright 14/14 after a reset and seed); contract 34; db 73/73 at step 3, before the CLI upgrade; API e2e §1–§17, including the new route checks (`gathering carries its route`, `… summary, route included`); typecheck 8/8; Playwright's `gatherings.spec.ts` (route on the detail header and on the anonymous resolver) and `profile.spec.ts`'s create-a-run.
 - Red, environment, not skill: Homebrew upgraded the Supabase CLI 2.116.0 → 2.120.0 at 22:04:13Z, mid-run (see the known local issues). The gate's reset under 2.120.0 left the running storage container on an older schema, so every upload failed with Storage `42P10`: 7 db tests (6 in the avatars bucket suite, plus `delete_my_account`'s avatar upload; db 66/73 at the gate), API e2e from §18 on (the first `uploadAvatar`), and Playwright's `a photo replaces the initial` (13/14). Nothing gathering- or route-related failed.
 - Deviations, fixed in 94361f8 except where noted:
@@ -353,7 +353,7 @@ Safety reviewer checks passed: no §3 mechanism touched, the original 17 tests c
 
 Safety reviewer checks: no §3 mechanism touched; of the original 17 tests only the anon test changed (the argument, plus the create expectation now written into §2.3). Fixes D1 and D3 change an expectation and a command, so a third run (the last allowed) is required, from a fresh `pre-customize-gathering` clone with 94361f8's skills, once Alex has restarted the stack under the new CLI.
 
-**Run 3 — Done 2026-10-12.** Before it, Alex restarted the shared stack under CLI 2.120.0 (PostgREST 16.4, storage-api v1.79.36, gotrue v2.197.0) and cleaned up stale images (Docker disk 99% → 77%). On `/Users/alexeisele/dev/withme-scratch/proof-runclub-customize-gathering-r3` (a fresh `pre-customize-gathering` clone with 40b8e70's skills; HEAD d8307db). START 22:24:35Z, END 22:34:12Z: about 10 min wall. Log: `$NOTES/3-customize-gathering-r3.md`. Every checkpoint and the gate were fully green: the §1 checkpoint (lint, typecheck 8/8, reset and seed, Playwright 14/14); contract 32, db 73, nfc 48; API e2e 59 `ok` lines ending "all checks passed" (including `gathering carries its route`); Playwright 14; typecheck 8/8. Deviations D1–D5 are fixed in b5772ed, all wording or paths:
+**Run 3 — Done 2026-10-12.** Before it, Alex restarted the shared stack under CLI 2.120.0 (PostgREST 16.4, storage-api v1.79.36, gotrue v2.197.0) and cleaned up stale images (Docker disk 99% → 77%). On `~/dev/withme-scratch/proof-runclub-customize-gathering-r3` (a fresh `pre-customize-gathering` clone with 40b8e70's skills; HEAD d8307db). START 22:24:35Z, END 22:34:12Z: about 10 min wall. Log: `$NOTES/3-customize-gathering-r3.md`. Every checkpoint and the gate were fully green: the §1 checkpoint (lint, typecheck 8/8, reset and seed, Playwright 14/14); contract 32, db 73, nfc 48; API e2e 59 `ok` lines ending "all checks passed" (including `gathering carries its route`); Playwright 14; typecheck 8/8. Deviations D1–D5 are fixed in b5772ed, all wording or paths:
 - D1, §1: the seed's `p_location` ('The roof, 14 Loom St') is vertical copy the sweep cannot catch; now listed next to `p_title` and the console text.
 - D2, §2.2: `db:types` prints "Generated TypeScript is unformatted" and CLI 2.120.0 adds `ComputedFields: never` to each of the 8 tables. Both are now named as expected (no formatter in the repo).
 - D3, §1 mobile URLs: `git mv … round/[id].tsx` needs `mkdir -p` first and leaves an empty `app/gathering/`; both commands are in the text now.
@@ -365,9 +365,9 @@ The run reached the gate green and the fixes are wording and paths only, so no r
 - O2: the web "Join this run?" preview and mobile `gatheringHref` hints carry title and time only (from search params), so the route is not on that pre-join screen; the resolver card the tapper sees first does show it. The skill does not list these surfaces.
 - O3: comments still say "Events tab" / "Open gathering", left per "replace only inside string literals and JSX text". Environment: Playwright run as `CI=1 bunx playwright test`.
 
-Safety reviewer checks passed: the migration diff adds only the column, the column grant, the rebuilt `create_gathering`, and `resolve_tag` (its body differs from the avatars migration's only by the `'route_name'` key), so no §3 mechanism is touched; the new `create_gathering` carries `revoke execute … from public, anon` and `grant … to authenticated`; of the original 17 RLS tests only the anon test changed (the argument and the `42501` expectation §2.3 prescribes). The result is committed in that clone as 226c7ad ("customize-gathering: runclub") and tagged `pre-extend-profile`. The line is now `LINE=/Users/alexeisele/dev/withme-scratch/proof-runclub-customize-gathering-r3` at 226c7ad.
+Safety reviewer checks passed: the migration diff adds only the column, the column grant, the rebuilt `create_gathering`, and `resolve_tag` (its body differs from the avatars migration's only by the `'route_name'` key), so no §3 mechanism is touched; the new `create_gathering` carries `revoke execute … from public, anon` and `grant … to authenticated`; of the original 17 RLS tests only the anon test changed (the argument and the `42501` expectation §2.3 prescribes). The result is committed in that clone as 226c7ad ("customize-gathering: runclub") and tagged `pre-extend-profile`. The line is now `LINE=~/dev/withme-scratch/proof-runclub-customize-gathering-r3` at 226c7ad.
 
-Meanwhile PR #11 (5bdd81d) merged into `main`: ENG-750 is fixed by requiring PostgREST 16.3+. The forks are based on 511a26c and do not carry it.
+Meanwhile PR #11 (5bdd81d) merged into `main`: the PGRST303 issue is fixed by requiring PostgREST 16.3+. The forks are based on 511a26c and do not carry it.
 
 ---
 
@@ -387,7 +387,7 @@ Meanwhile PR #11 (5bdd81d) merged into `main`: ENG-750 is fixed by requiring Pos
 >
 > Environment notes:
 > - Playwright as `CI=1 bunx playwright test`.
-> - §7's simulator pass: drive Expo Go with agent-device and simctl per `/Users/alexeisele/.claude/projects/-Users-alexeisele-dev-withme-starter/memory/ios-simulator-driving-technique.md`, not `expo start --ios`. Start Metro with `cd apps/mobile && bunx expo start --port 8081 --clear` (no `CI=1`).
+> - §7's simulator pass: drive Expo Go with agent-device and simctl per `the simulator-driving notes (agent-device + Expo Go + simctl)`, not `expo start --ios`. Start Metro with `cd apps/mobile && bunx expo start --port 8081 --clear` (no `CI=1`).
 > - Known local issues, not skill defects: a brand-new sign-up may land on Runs because of `PGRST303` (relaunch the app). A claimed card's SSR may hang in `vite dev` (restart `apps/web`'s dev server).
 > - No remote services. The stack is yours. Sign in only with the fork's seed identity or fresh `@rls.test` addresses on the local stack.
 >
@@ -415,7 +415,7 @@ Meanwhile PR #11 (5bdd81d) merged into `main`: ENG-750 is fixed by requiring Pos
   Expected: no code change, but a "(renamed if you ran customize-gathering's URL step)" note.
 - **O4.** §8's "the grep finds twelve" profile-creating fills: record the count after customize-gathering.
 - **The pattern field.** The length test (`profiles_affiliation_length`, 81 characters) becomes a format test (`profiles_pace_format`, e.g. `'fast'`). Record whether the text made that adaptation obvious. Also check that `isProfileComplete` and the two claim forms' `disabled` condition handle `pace`.
-- **ENG-750 and ENG-751:** note it if either appears.
+- **the PGRST303 issue and the `vite dev` hang:** note it if either appears.
 - **Safety reviewer checks:**
 
   ```bash
@@ -462,7 +462,7 @@ Deviations, fixed in f319943 except where noted:
 
 D16 changes the order of the steps, so a re-run is required: run 2 of at most 3, from a fresh `pre-extend-profile` clone with f319943's skills.
 
-**Run 2 — Done 2026-10-12.** On `/Users/alexeisele/dev/withme-scratch/proof-runclub-extend-profile-r2` (a fresh `pre-extend-profile` clone with f319943's skills; HEAD 4e532e5). START 23:02:22Z, END 23:27:44Z: about 25 min wall, including the simulator pass. Log: `$NOTES/4-extend-profile-r2.md`. Every predicted count matched:
+**Run 2 — Done 2026-10-12.** On `~/dev/withme-scratch/proof-runclub-extend-profile-r2` (a fresh `pre-extend-profile` clone with f319943's skills; HEAD 4e532e5). START 23:02:22Z, END 23:27:44Z: about 25 min wall, including the simulator pass. Log: `$NOTES/4-extend-profile-r2.md`. Every predicted count matched:
 - contract 32 → 4 red → 37;
 - db 73 → 17 red at §2 (14 × `PGRST205`, 2 × `PGRST204`, and the format test) → 87 at §3;
 - typecheck after §3 red only in `@withme/api` and `@withme/nfc`; after §4 only nfc; `nfc-sdk` typecheck clean after §5;
@@ -475,7 +475,7 @@ Deviations 1–8: the wording ones are fixed in 6ea5df3. That covers 2 (the SQL 
 
 Incident (the simulator driver, not the app or the skill): a mis-tap on the Profile tab hit "Delete account". It was dismissed with "Keep my account" and nothing was deleted.
 
-The fixes are wording only and the run was green end to end, so no re-run is needed. The line is now `LINE=/Users/alexeisele/dev/withme-scratch/proof-runclub-extend-profile-r2`, committed as 8929ce9 ("extend-profile: runclub") and tagged `pre-provision-tags`.
+The fixes are wording only and the run was green end to end, so no re-run is needed. The line is now `LINE=~/dev/withme-scratch/proof-runclub-extend-profile-r2`, committed as 8929ce9 ("extend-profile: runclub") and tagged `pre-provision-tags`.
 
 ---
 
@@ -513,7 +513,7 @@ The fixes are wording only and the run was green end to end, so no re-run is nee
 - §5: the insert returned the UID (`INSERT 0 1`); a re-run returned `(0 rows)` / `INSERT 0 0`; the row is `unclaimed`; `/t/<chip>` gave `307` to `/claim/<chip>`.
 - §4's retirement: the batch directory (CSV, HTML, dev-server logs) deleted, and its empty parent. Then a reset and seed; the fork's tree clean.
 
-One ENG-751 hang: the signed-out SSR of the newly claimed card never returned under `vite dev`; a restart of `apps/web`'s dev server fixed it (1.7 s after). Because of it the stale-claim race was repeated on the second batch UID.
+One `vite dev` hang: the signed-out SSR of the newly claimed card never returned under `vite dev`; a restart of `apps/web`'s dev server fixed it (1.7 s after). Because of it the stale-claim race was repeated on the second batch UID.
 
 App observation for the report (not the skill): vite logged a React hydration mismatch on `/login?returnTo=/claim/…`. The server rendered the loading `div` (`aria-busy`), the client the form.
 
@@ -522,7 +522,7 @@ Deviations, fixed in d81acb5 except where noted:
 - D10, §5: the `307` to `/claim` proves nothing, since unknown UIDs redirect the same way. §5 now checks a count of the `unclaimed` row (`1`).
 - D2/D3, §1: the local command prints the UIDs, and so do the `psql` checkpoint, the pages and the dev-server logs. An agent now sends stdout to `provision.log`, reads a redacted view, and puts the dev-server logs in `$OUT` so the retirement deletes them.
 - D6, §1: a brand-new account meets "First, your card" (with the required profile fields) before "Claim this tag". Now said; the seeded identity is complete.
-- D4, §1: the ENG-751 hang and its restart are now named in the end-to-end check.
+- D4, §1: the `vite dev` hang and its restart are now named in the end-to-end check.
 - D11, §4: removing the batch directory's empty parent is now allowed in one phrase.
 - D1 (the reset before seeding), D5 (the race repeated on another UID), D7 (the fork's identity, covered by "or your rebranded identity"), D9 (the chip UID came from the brief): follower choices or environment, no change.
 
@@ -534,11 +534,11 @@ Deviations, fixed in d81acb5 except where noted:
 - §5: the insert returned one row, the count check printed `1`, and a re-insert returned 0 rows.
 - §4: the batch directory (dev-server logs included) deleted. The follower's own search found no batch UID left in wrangler state, the vite cache, `supabase/.temp`, the notes, or its scratchpad.
 
-One ENG-751 hang, cleared by a restart of `apps/web`'s dev server.
+One `vite dev` hang, cleared by a restart of `apps/web`'s dev server.
 
 Deviations 1–9. D2 (§1 hard-coded `$HOME/withme-tags`), D3 (how to restart the web dev server under the agent's log redirect) and D4 (stop the dev servers before §4 deletes `$OUT`) are fixed by wording in d220c5c. The rest are follower choices or observations: D1 the required background read late, D5–D6 how the second and the brand-new accounts were exercised, D7 a signed-out "Connect" is a link (the skill's text does not imply a button, so no change), D8 the `/login` hydration mismatch (an app observation for the report, as in run 1), D9 screenshot names. Wording only, so no re-run is needed.
 
-Final fork: `/Users/alexeisele/dev/withme-scratch/proof-runclub-provision-tags-r2` at 3d472db, tagged `pre-provision-tags` and `pre-gate` (provisioning changes no files).
+Final fork: `~/dev/withme-scratch/proof-runclub-provision-tags-r2` at 3d472db, tagged `pre-provision-tags` and `pre-gate` (provisioning changes no files).
 
 ---
 
@@ -573,8 +573,8 @@ The container is `supabase_db_withme-starter`, not `supabase_db_runclub`: the `p
 
 Write `$NOTES/6-gate.md`.
 
-**Done 2026-10-12.** On `$LINE` = `/Users/alexeisele/dev/withme-scratch/proof-runclub-provision-tags-r2` at `pre-gate` (3d472db), tree clean before and after, on the shared `withme-starter` stack (container `supabase_db_withme-starter`; rename skipped). `env | grep -c SUPABASE_SERVICE_ROLE_KEY` printed `0` in the shell before any test (ENG-752), and the six ports were free. START 23:46:10Z, END 23:48:18Z (about 2 min wall, per `6-raw/times.txt`). Log: `$NOTES/6-gate.md`, raw output in `$NOTES/6-raw/`.
-- Gate all green: reset and seed (the runclub identity); lint; typecheck 8/8; **db 87, contract 37, nfc 48**, as Tasks 3–4 predicted; API e2e **67** `ok` lines ending "handshake e2e: all checks passed"; Playwright **14** passed. The API dev server was stopped before Playwright (which starts its own worker), so two `runclub-api` workers were never registered at once. No ENG-751 hang (Playwright uses `vite preview`).
+**Done 2026-10-12.** On `$LINE` = `~/dev/withme-scratch/proof-runclub-provision-tags-r2` at `pre-gate` (3d472db), tree clean before and after, on the shared `withme-starter` stack (container `supabase_db_withme-starter`; rename skipped). `env | grep -c SUPABASE_SERVICE_ROLE_KEY` printed `0` in the shell before any test (the remote-guard gap), and the six ports were free. START 23:46:10Z, END 23:48:18Z (about 2 min wall, per `6-raw/times.txt`). Log: `$NOTES/6-gate.md`, raw output in `$NOTES/6-raw/`.
+- Gate all green: reset and seed (the runclub identity); lint; typecheck 8/8; **db 87, contract 37, nfc 48**, as Tasks 3–4 predicted; API e2e **67** `ok` lines ending "handshake e2e: all checks passed"; Playwright **14** passed. The API dev server was stopped before Playwright (which starts its own worker), so two `runclub-api` workers were never registered at once. No the `vite dev` hang hang (Playwright uses `vite preview`).
 - Brand sweep (make-it-yours step 8's current command): exactly the two expected lines, `apps/mobile/app.json` `owner` (EAS step 5 skipped) and `supabase/config.toml` `project_id` (rename skipped).
 - "gathering" residue: 17 lines, all identifiers (the `gathering` variable, `gatheringLine()`, `describeTag(tag, gatherings)`, the `'gathering'` destination type). No user-visible string.
 - `resolve_tag('04BBBBBBBBBBBB')`: `"pace": "5:30/km"` and `"route_name": "River loop, 8 km"`, no `strava`. The plan's original pattern printed nothing because jsonb text has a space after each colon; the command above now allows it (a plan-text fix, not a skill or app defect).
@@ -586,13 +586,13 @@ Write `$NOTES/6-gate.md`.
 Use the memory-note technique. Boot by UDID if `simctl` reports a phantom boot. Run Metro from `$LINE/apps/mobile` (`bunx expo start --port 8081 --clear`, with `EXPO_PUBLIC_STORE_URL` set by make-it-yours), plus `cd apps/api && bun run dev`. Then `xcrun simctl openurl booted exp://127.0.0.1:8081`. Screenshots go to `$NOTES/7-sim-<n>.png`.
 
 1. **Brand.** The header wordmark reads `runclub` in Archivo. The tabs are Runs / Connections / Merch / Profile. Merch shows the store card. The accent appears only on primary actions.
-2. **Completion gate.** A new local account (`sim-<stamp>@rls.test`) lands on Profile. Save is disabled until Name and Pace are both filled. `fast` is refused and `5:30/km` saves. A relaunch with Pace emptied returns to "Finish your profile". (ENG-750 may land the first try on Runs.)
+2. **Completion gate.** A new local account (`sim-<stamp>@rls.test`) lands on Profile. Save is disabled until Name and Pace are both filled. `fast` is refused and `5:30/km` saves. A relaunch with Pace emptied returns to "Finish your profile". (the PGRST303 issue may land the first try on Runs.)
 3. **Runs.** Create a run with Route "Harbor 5k". The row and the detail header show the Route. Point my tags at it, then open the tag (`exp://127.0.0.1:8081/--/t/<uid>`) signed out. The summary shows the title, the time, and "Harbor 5k".
 4. **Connections tier.** Two connected accounts each see the other's Strava handle in Connections. A resolve of either card shows Pace and no Strava.
 5. **Cold Join.** Signed out, open `04BBBBBBBBBBBB`, choose Join, then sign up. The app lands on "Join this run?" (the renamed copy), and Join opens Profile. Save returns to "Join this run?".
 6. **A provisioned tag.** One UID from Task 5 lands on the claim screen.
 
-**Expected:** all six pass. Any failure goes through the deviation procedure for the skill whose step it traces to, or becomes a Linear issue if it is an app defect. Write `$NOTES/7-sim.md`.
+**Expected:** all six pass. Any failure goes through the deviation procedure for the skill whose step it traces to, or becomes a tracker issue if it is an app defect. Write `$NOTES/7-sim.md`.
 
 **Done 2026-10-12.** On the same fork at `pre-gate` (3d472db), tree clean throughout, iPhone 17 Pro (iOS 26.5) with Expo Go, Metro and the API dev server from the fork. START 23:48:24Z, END 2026-10-13T00:01:23Z: about 13 min wall. Log: `$NOTES/7-sim.md`, screenshots `$NOTES/7-sim-*.png`. All six checks pass:
 1. Brand: the `runclub` wordmark in Archivo; tabs Runs / Connections / Merch / Profile; Merch shows the store card; the accent only on the connect-kind actions ("Join this run", "Claim tag").
@@ -602,7 +602,7 @@ Use the memory-note technique. Boot by UDID if `simctl` reports a phantom boot. 
 5. Cold Join: signed out, Join → sign-in → a new account → "Join this run?"; Join opened Profile, and Save returned to "Join this run?".
 6. A provisioned tag: Task 5's batch had been retired, so one fresh local tag was provisioned (`$HOME/runclub-tags/local-<stamp>`, files `-rw-------`, the fork's tree clean); it landed on "Claim this tag" as Lin, was then claimed for check 4, and the batch directory and its parent were deleted. No UID in any note; the one screenshot of the claim screen is redacted.
 
-No `PGRST303` (ENG-750) and no ENG-751 hang. The stack was reset and seeded from the fork at the end; ports free; the simulator driver's servers stopped. Observations, none of them failures:
+No `PGRST303` and no `vite dev` hang. The stack was reset and seeded from the fork at the end; ports free; the simulator driver's servers stopped. Observations, none of them failures:
 - The route is not on the "Join this run?" preview (title and time only). The preview reads hints the tag screen passes, not the gathering; customize-gathering §2 step 6 now names them (9343b62).
 - The pace error does not name the field or the format. Covered by extend-profile's format-rule note (a malformed value gets the generic save error; the input has a format placeholder).
 - The run's member list shows bio, not pace: extend-profile says that display is optional.
@@ -619,7 +619,7 @@ No `PGRST303` (ENG-750) and no ENG-751 hang. The stack was reset and seeded from
 4. Send the program manager a five-line Phase A summary for Alex. It goes with the Task 9 stop message, if Alex has not yet answered it.
 5. Leave the `runclub` stack and the line clone in place: Phase B uses them, and Task 13 cleans them up.
 
-**Phase A — Done 2026-10-12.** `git -C "$WT" status --porcelain` empty and `bun run lint` green in `$WT` after the close-out commits. The line is `/Users/alexeisele/dev/withme-scratch/proof-runclub-provision-tags-r2` at 3d472db (`pre-gate`), on the shared `withme-starter` stack (there is no `runclub` stack: the rename was skipped).
+**Phase A — Done 2026-10-12.** `git -C "$WT" status --porcelain` empty and `bun run lint` green in `$WT` after the close-out commits. The line is `~/dev/withme-scratch/proof-runclub-provision-tags-r2` at 3d472db (`pre-gate`), on the shared `withme-starter` stack (there is no `runclub` stack: the rename was skipped).
 
 **Runs per skill.** Minutes are wall time from the logs' START/END stamps; none had pauses. "Clean" means green at the final checkpoint with wording-only notes, so no re-run.
 
@@ -656,12 +656,12 @@ The extend-profile minutes include its own simulator pass. Plan records: 31a5b11
 The order the skills ran in (make-it-yours → customize-gathering → extend-profile → provision-tags) is the order a forker should use.
 
 **Known issues that bit.**
-- ENG-751 (the claimed-card SSR hang under `vite dev`): twice, once in each provision-tags run; a restart of `apps/web`'s dev server cleared it each time.
-- ENG-750 (`PGRST303`): never seen after Alex's restart onto PostgREST 16.4; PR #11 (5bdd81d) fixed it on `main` by requiring PostgREST 16.3+.
-- ENG-752: guarded, not hit (`SUPABASE_SERVICE_ROLE_KEY` count 0 before the gate's tests).
+- The `vite dev` hang (the claimed-card SSR hang under `vite dev`): twice, once in each provision-tags run; a restart of `apps/web`'s dev server cleared it each time.
+- The PGRST303 issue (`PGRST303`): never seen after Alex's restart onto PostgREST 16.4; PR #11 (5bdd81d) fixed it on `main` by requiring PostgREST 16.3+.
+- the remote-guard gap: guarded, not hit (`SUPABASE_SERVICE_ROLE_KEY` count 0 before the gate's tests).
 - Environment, both fixed by Alex: the Homebrew Supabase CLI upgrade (2.116.0 → 2.120.0) mid customize-gathering r2, which broke Storage until the stack restarted; and the Docker disk cleanup (99% → 77%) before r3.
 
-**App issues filed:** ENG-753 (the light input border at 2.97:1, and the token comments naming only Connect and Accept for the accent), ENG-754 (core's older RPCs revoke execute from `public` but not `anon`). App observations for the report, not filed: the `/login` hydration mismatch on `returnTo=/claim/…`, and `provision.ts`'s "Provisioned 1 unclaimed tags".
+**App issues filed:** the input-border issue (the light input border at 2.97:1, and the token comments naming only Connect and Accept for the accent), the anon-execute gap (core's older RPCs revoke execute from `public` but not `anon`). App observations for the report, not filed: the `/login` hydration mismatch on `returnTo=/claim/…`, and `provision.ts`'s "Provisioned 1 unclaimed tags".
 
 **Skipped:** make-it-yours step 5 (EAS: it creates an Expo project, so Phase B); the `project_id` rename (Decision 6, the shared stack); provision-tags §2–§4 (production provisioning and physical tags); icon artwork (none supplied).
 
@@ -673,7 +673,7 @@ The order the skills ran in (make-it-yours → customize-gathering → extend-pr
 
 Superseded 2026-10-13 by the amendment below: not run
 
-Nothing in this task creates anything. The program manager sends Alex the message below, after Phase A is done. The decision is recorded in ENG-749.
+Nothing in this task creates anything. The program manager sends Alex the message below, after Phase A is done. The decision is recorded in the decisions log.
 
 **What go-live would create.** These are the skills' own commands, applied to the fork:
 
@@ -726,7 +726,7 @@ No timer runs during this stop.
 
 Superseded 2026-10-13 by the amendment below: not run
 
-Run it in a **dedicated terminal tab**, from `$LINE`, after Task 6's tests: no `bun test` runs in this tab afterwards (ENG-752). Every **[approve]** line means: show Alex exactly what the next command creates and wait for a clear yes. Timing covers Claude's steps only; Alex's logins and approvals are PAUSE.
+Run it in a **dedicated terminal tab**, from `$LINE`, after Task 6's tests: no `bun test` runs in this tab afterwards (the remote-guard gap). Every **[approve]** line means: show Alex exactly what the next command creates and wait for a clear yes. Timing covers Claude's steps only; Alex's logins and approvals are PAUSE.
 
 1. **Alex:** `supabase login`, `bunx wrangler login`, `bunx eas-cli login`. **Claude verifies** (read-only): `supabase orgs list`, `bunx wrangler whoami`, `bunx eas-cli whoami`.
 2. **[approve] make-it-yours step 5 (EAS)**, literally, in `apps/mobile`: remove `owner`, `extra.eas.projectId`, and `updates.url`; then `bunx eas init`; then `bunx eas update:configure`.
@@ -828,7 +828,7 @@ The production leg is recorded as **not run**: every "needs an account" line goe
    - Free: the safety core and its RLS suite (the counts), the resolver, claim, consent, blocks, runs with membership and tag pointers, Connections, avatars, My tags, account deletion, the Merch pointer, provisioning, e2e and Playwright, CI.
    - Hand work the skills guided: the inventory of edits per skill (`git diff --stat` per tag range).
    - Hand work no skill covers: icon artwork, README prose, the store itself, a domain, SMTP, the Supabase Auth URLs (if found), EAS builds and store submission, physical encoding, a numeric gathering field (the static list from Decision 3).
-7. **Known issues.** ENG-750, ENG-751, and ENG-752: did each one bite, and where. Plus any new Linear issues filed during the run.
+7. **Known issues.** the PGRST303 issue, the `vite dev` hang, and the remote-guard gap: did each one bite, and where. Plus any new tracker issues filed during the run.
 8. **Go-live.** Which option Alex chose. Option 1: each checkpoint's result, the teardown evidence, and the cost incurred. Option 2: the labeled command list and the open items.
 9. **Not covered.** add-destination-type, `readTagUid` on a physical chip, physical encoding, app-store builds, multi-tenant.
 
@@ -871,7 +871,7 @@ git push -u origin claude/proof-run
 ```
 
 PR against `main`, titled `Proof run: a fresh clone through every skill and go-live (milestone 5)`. The body has:
-- the spec link, ENG-748, and the report link;
+- the spec link, Milestone 5, and the report link;
 - the fork's inputs;
 - the timing table;
 - the deviations and their fix commits, per skill;
@@ -886,10 +886,10 @@ PR against `main`, titled `Proof run: a fresh clone through every skill and go-l
 
 1. Run `superpowers:requesting-code-review` over the diff (skills and docs), and handle the findings with `superpowers:receiving-code-review`. Resolve CodeRabbit's comments on their merits, pushing back where a suggestion contradicts a documented decision.
 2. Merge with a **merge commit** once CI and CodeRabbit are clean.
-3. Update Linear:
-   - ENG-748 → Done, with the report link;
-   - a project status update on P-ENG-39: the timings, the fixes, go-live's outcome, and "program complete";
-   - ENG-749 gets the recorded decisions: the vertical, the field choice, the go-live option.
+3. Update the tracker:
+   - Milestone 5 → Done, with the report link;
+   - a project status update on the build-out project: the timings, the fixes, go-live's outcome, and "program complete";
+   - the decisions log gets the recorded decisions: the vertical, the field choice, the go-live option.
 4. Post the milestone report to Alex (by push notification) with the verdict paragraph and the open items.
 5. Commit program.md's "Program complete" line (Task 12) on a follow-up branch, or include it before the merge if the merge SHA is not needed. The program manager decides.
 6. Update the memory notes: the app-shell direction note's resume point, plus a new technique note if the run taught one.
@@ -900,7 +900,7 @@ PR against `main`, titled `Proof run: a fresh clone through every skill and go-l
 
 - **add-destination-type**: not in the spec's sequence; a run club needs no new destination type.
 - **add-marketing-site**: the spec lists it as a candidate after the proof run.
-- **Fixing app defects** the run finds: each becomes a Linear issue under P-ENG-39.
+- **Fixing app defects** the run finds: each becomes a tracker issue under the build-out project.
 - **A numeric gathering field**: covered as a static gap list in the report, unless Alex swaps it in (Decision 3).
 - **EAS builds, store submission, a custom domain, encoding physical tags**: go-live and provision-tags do not cover them, or they need hardware.
 - **A second proof run in another vertical.** If this report changes skills substantially, a follow-up run is a later decision.
@@ -952,7 +952,7 @@ PR against `main`, titled `Proof run: a fresh clone through every skill and go-l
 - **Commit 1 replaces the tree** with withme-starter `origin/main` at a recorded sha. That removes golf's tracked `.supabase-demo-db-password` and its eight `supabase/.temp/*` files.
 - **Program manager's refinement:** commit 1 is made with `git commit-tree` from the starter's tree, with **two parents**: `legacy-2026-06` first, the starter sha second.
   - Its tree is byte-identical to the starter's, which can be checked by tree hash.
-  - The starter becomes an ancestor, so later starter fixes (ENG-753, ENG-754, M5's skill texts) arrive in the fork with a plain `git merge` instead of a conflict across the whole tree.
+  - The starter becomes an ancestor, so later starter fixes (the input-border and anon-execute fixes, M5's skill texts) arrive in the fork with a plain `git merge` instead of a conflict across the whole tree.
   - Alex chose two parents (answered 2026-10-13). The single-parent fallback (`git rm -r .`, `git archive | tar -x`, a normal commit) is not used.
 - Commit 2 syncs the skill texts from `claude/proof-run`, because `origin/main` does not yet carry Phase A's fixes.
 - Then one commit per skill. A fork-specific fix goes into its skill's commit.
@@ -1014,12 +1014,12 @@ PR against `main`, titled `Proof run: a fresh clone through every skill and go-l
 **A7. Hosting per app, free plans.**
 - **Supabase:**
   - The org "Golf With Me" exists. The new project `golfwithme` is created fresh in it, in `us-east-1` unless Alex says otherwise.
-  - Golf's old project `oszinjbbwzztqeqkhoof` is paused. Alex deletes it after go-live (answered 2026-10-13). That retires the database password committed in its history; there is no history rewrite.
+  - Golf's old project `<golf-project-ref>` is paused. Alex deletes it after go-live (answered 2026-10-13).
   - Tailgate's org "Tailgate With Me" and its paused staging project `wntdmgxmrinagmqrefpt` are left as they are until the tailgate rebuild.
 - **Cloudflare:**
   - Account "Golf With Me".
   - Wrangler is logged in to three accounts, so the fork pins its account with `"account_id"` in both `wrangler.jsonc` files. Committing it is fine: the id is not a secret. `CLOUDFLARE_ACCOUNT_ID` must be unset in the deploy shell.
-  - Why it matters: golf's legacy workers with the same names (`golfwithme-api`, `-web`, `-public`) are live on `vibe-with-me.workers.dev`, which is another account. A deploy to the wrong account would silently replace them.
+  - Why it matters: golf's legacy workers with the same names (`golfwithme-api`, `-web`, `-public`) are live on `<legacy-subdomain>.workers.dev`, which is another account. A deploy to the wrong account would silently replace them.
 - **Expo:**
   - Owner `vibe-with-me`. The EAS project is reused, not created: golf `6a004be3-f3b4-4ec5-be7d-ff58a61fc77a` (`@vibe-with-me/golfwithme`, committed in legacy `67f8bc0`).
   - The reuse means make-it-yours step 5 links rather than creates: `eas init --id <projectId>`.
@@ -1055,11 +1055,11 @@ PR against `main`, titled `Proof run: a fresh clone through every skill and go-l
 - **Variables:**
 
   ```bash
-  WT=/Users/alexeisele/dev/withme-starter/.claude/worktrees/proof-run   # skill fixes land here, as in Phase A
-  STARTER=/Users/alexeisele/dev/withme-starter
-  S=/Users/alexeisele/dev/withme-scratch
+  WT=~/dev/withme-starter/.claude/worktrees/proof-run   # skill fixes land here, as in Phase A
+  STARTER=~/dev/withme-starter
+  S=~/dev/withme-scratch
   NOTES="$S/notes/m5"
-  GOLF=/Users/alexeisele/dev/golf-with-me;      G="$GOLF/.claude/worktrees/rebuild";  GN="$NOTES/golf"
+  GOLF=~/dev/golf-with-me;      G="$GOLF/.claude/worktrees/rebuild";  GN="$NOTES/golf"
   # TAIL, T and TN (tailgate) return with the deferred Phase B″
   ```
 
@@ -1071,12 +1071,12 @@ PR against `main`, titled `Proof run: a fresh clone through every skill and go-l
 - **Tags.** The `pre-<skill>` tags are local only and are deleted at G12. Only `legacy-2026-06` is pushed. Never `git push --tags`.
 - **The stack window** (A8):
   - Ports 55320–55324, 8786, 3000, 8796, 9456, 3010, and 8081 are free.
-  - `env | grep -c SUPABASE_SERVICE_ROLE_KEY` prints `0` before any local test (ENG-752).
+  - `env | grep -c SUPABASE_SERVICE_ROLE_KEY` prints `0` before any local test (the remote-guard gap).
   - Use `CI=1 bunx playwright test`.
   - Drive the simulator per the memory note.
 - **The go-live tab:**
   - G10 runs in a dedicated terminal tab, opened after the gate.
-  - No `bun test` or `bun run test` ever runs in that tab (ENG-752).
+  - No `bun test` or `bun run test` ever runs in that tab (the remote-guard gap).
   - Every block that sources `.env.demo-seed` runs in a subshell.
 - **Credentials.** Claude never types, pastes, or reads aloud a password, key or token. Exceptions:
   - the local stack's test accounts;
@@ -1114,7 +1114,7 @@ Every deviation is logged as in Phase A: the step, what the text says, what happ
    - Fix it in the fork, in that skill's commit, and log it as a fork choice with the reason.
    - If another fork would hit the same gap, also write an S note.
 3. **App defect in core (A).**
-   - File a Linear issue under P-ENG-39, as Phase A did with ENG-753 and ENG-754.
+   - File a tracker issue under the build-out project, as Phase A did with the input-border and anon-execute issues.
    - Fix it in the fork only if it blocks go-live, with the issue linked in the commit body.
    - Never fix it in `claude/proof-run`, because the M5 PR carries no app code.
 4. **Environment (E).** Log only.
@@ -1161,8 +1161,8 @@ for f in apps/api/.dev.vars apps/web/.env apps/mobile/.env; do [ -f "$G/$f" ] &&
    13. Optionally, open the update in Expo Go on your phone.
 6. **G11 [approve]:** push `rebuild` and open the PR into `main`. Claude merges with a merge commit after CI, and after CodeRabbit if it reviews this repo. If CodeRabbit is not installed on the repo, Claude asks you whether CI plus the code review suffices.
 7. **G12, teardown** (both deletes answered yes on 2026-10-13):
-   1. Delete the old Supabase project `oszinjbbwzztqeqkhoof` (permanent).
-   2. Delete the legacy workers `golfwithme-api`, `golfwithme-web` and `golfwithme-public` from the account behind `vibe-with-me.workers.dev`, after the new ones are verified.
+   1. Delete the old Supabase project `<golf-project-ref>` (permanent).
+   2. Delete the legacy workers `golfwithme-api`, `golfwithme-web` and `golfwithme-public` from the account behind `<legacy-subdomain>.workers.dev`, after the new ones are verified.
    3. Optionally, remove the legacy local Docker volumes named `golf-with-me`.
    4. Optionally, say yes to fast-forwarding the golf main checkout.
 
@@ -1189,9 +1189,9 @@ for f in apps/api/.dev.vars apps/web/.env apps/mobile/.env; do [ -f "$G/$f" ] &&
    - Mark Tasks 9, 10a and 10b with one line: "Superseded 2026-10-13 by the amendment below: not run".
    - Commit: `Plan: amendment 2026-10-13, the golf rebuild (tailgate deferred)`.
    - Push `claude/proof-run`.
-3. **Linear.**
-   - Append A1–A11 and the 2026-10-13 answers to ENG-749, including the tailgate deferral.
-   - Create one issue under P-ENG-39: "Golf rebuild and go-live".
+3. **Tracker.**
+   - Append A1–A11 and the 2026-10-13 answers to the decisions log, including the tailgate deferral.
+   - Create one issue under the build-out project: "Golf rebuild and go-live".
 4. ~~Collect Alex's answers to the open questions.~~ Done 2026-10-13.
 
 **Expected:** `git -C "$WT" status --porcelain` is empty and `bun run lint` is green in `$WT`.
@@ -1231,7 +1231,7 @@ git -C "$STARTER" fetch origin && git -C "$STARTER" rev-parse origin/main   # th
    | `0605229`, `f35d6c3` `apps/public` | dropped (A4) |
    | `98c65b7` README | starter README + make-it-yours step 3 |
 
-3. **Check the critique's P0 and P1 findings statically against the starter tree at `STARTER_SHA`.** One line each: present in core / missing (a Linear issue if it is core's) / the fork's to do.
+3. **Check the critique's P0 and P1 findings statically against the starter tree at `STARTER_SHA`.** One line each: present in core / missing (a tracker issue if it is core's) / the fork's to do.
    - Malformed `/t/<uid>` and unknown routes land on a calm card (`__root.tsx` `errorComponent` / `notFoundComponent`; UID normalization in the web loader).
    - The tap moment has a loading state.
    - A wordmark footer on the resolver.
@@ -1326,7 +1326,7 @@ git -C "$STARTER" fetch origin && git -C "$STARTER" rev-parse origin/main   # th
 - Dew in the sheet `$GN/design/brand-direction.md`: accent pair 6.49:1 light and 9.13:1 dark, border-input 3.25:1 and 4.58:1 (legacy: 5.02/8.55 and 3.08 light). Archivo and Inter kept: `@fontsource-variable/*` 5.3.0, `@expo-google-fonts/*` 0.4.2.
 - Art rendered in `$GN/design/art/`: `icon.png` 1024×1024 with `hasAlpha: no`; the Android foreground, with the mark in the accent on transparent inside the 66% safe zone; `favicon.ico` 48/32/16.
 - Deviations 1–16 in the log. Fixed in the skill by `a06b607` (`design-direction: fixes from the golf run`): `contrast.ts` reads only the table under `## Colors` and the template's Copy header is now `copy` (D14, the bug: a verbatim sheet exited 1). Also fixed: the uplift paragraph (D1); the HTML-and-Artifact fallback for `/design` (D3); the brief matched to what the starter renders, with vertical card content as an extend-profile proposal and new card treatments flagged as code changes (D4, D5, D7, D9); the vertical's nouns and the order-dependence (D6); the wordmark weight as one setting (D8); the render commands, the checks and the Android foreground rule in §3 (D12, D13); owner changes to the boards (D15). D2, D10, D11 and D16 were the brief's own setup and needed no text change.
-- No re-run. The design output is the owner's choice and stands, and the fixes are text and script only. Self-checks on `a06b607`: the golf sheet gives 12 `ok`, exit 0; the template filled with the starter's own tokens fails only the light border-input at 2.97:1 (ENG-753).
+- No re-run. The design output is the owner's choice and stands, and the fixes are text and script only. Self-checks on `a06b607`: the golf sheet gives 12 `ok`, exit 0; the template filled with the starter's own tokens fails only the light border-input at 2.97:1 (the input-border issue).
 
 ---
 
@@ -1449,7 +1449,7 @@ The copied env files are deleted again before G4: make-it-yours copies them itse
   Expected fix (S): a "fork in the same org" filter, acceptable when `projectId` ≠ `cf56d2f1…` and the badge names the fork's repo.
 - **`golfwithme` contains `withme`.** The skill's extra filter (`grep -viE 'golfwithme|golf with me'`) must be found and used, at step 3 and step 8.
 - **Fonts.** The step 2 checkpoint holds for whatever the sheet names. If it keeps Archivo, Phase A's naming fixes apply.
-- **ENG-753.** The sheet's input border already passes 3:1 (`contrast.ts`), so step 1's "raise it until the fix lands" sentence should be a no-op. Record whether the follower raised it anyway.
+- **The input-border issue.** The sheet's input border already passes 3:1 (`contrast.ts`), so step 1's "raise it until the fix lands" sentence should be a no-op. Record whether the follower raised it anyway.
 - **Step 8 artwork.** `icon.png` and the Android foreground replace the template files. Expect no `favicon` wiring (the web app ships none; `mkdir -p apps/web/public` for `favicon.ico`). `sips -g hasAlpha apps/mobile/assets/icon.png` → `no`.
 - **Reviewer checks after the run:**
   - `git -C "$G" diff pre-make-it-yours --stat` touches no `supabase/migrations/`, `packages/db/test/` or `packages/contract/src/`.
@@ -1557,7 +1557,7 @@ The copied env files are deleted again before G4: make-it-yours copies them itse
 >
 > Environment notes:
 > - Playwright as `CI=1 bunx playwright test`.
-> - §7's simulator pass: drive Expo Go with agent-device and simctl per `/Users/alexeisele/.claude/projects/-Users-alexeisele-dev-withme-starter/memory/ios-simulator-driving-technique.md`, not `expo start --ios`. Start Metro with `cd apps/mobile && bunx expo start --port 8081 --clear`, without `CI=1`.
+> - §7's simulator pass: drive Expo Go with agent-device and simctl per `the simulator-driving notes (agent-device + Expo Go + simctl)`, not `expo start --ios`. Start Metro with `cd apps/mobile && bunx expo start --port 8081 --clear`, without `CI=1`.
 > - A known local issue, not a skill defect: a claimed card's SSR may hang in `vite dev`; restart `apps/web`'s dev server.
 > - No remote services. The stack is yours. Sign in only with the fork's seed identity, or with fresh `@rls.test` addresses on the local stack.
 >
@@ -1650,14 +1650,14 @@ The copied env files are deleted again before G4: make-it-yours copies them itse
 - §3: `resolve_tag` untouched (0 mentions in the migration).
 - §4: db 78 → 80 (+2). §6: `nfc-sdk` typecheck clean.
 - Gate: lint clean, typecheck 8/8, contract 44, db 80, nfc 48; API e2e 67/67 with "link destination round-trips through claim and resolve"; Playwright 14.
-- §9 runtime: the link tag curls `307 → https://example.com/menu`; the profile tag 200 after one ENG-751 web dev restart. Link taps are logged as scans.
+- §9 runtime: the link tag curls `307 → https://example.com/menu`; the profile tag 200 after one web dev restart (the `vite dev` hang). Link taps are logged as scans.
 - The tag was claimed as a link by a seeded-user script (the db package's local client, `claim_tag` with a link destination) against two tags provisioned locally per provision-tags §1; the output directory was deleted afterwards.
 - Incident: while appending to its log, the follower used an unquoted heredoc whose backticks ran the provision command twice from the repo root. That made 20 local tags and gitignored `provisioned-tags.*` files in the repo root (mode 644). The files were deleted and the stack reset and seeded; UIDs are only in the local log; nothing was committed.
 - Deviations 1–7 in the log. Fixed in the skill by `e8bc46d` (`add-destination-type: fixes from the golf run`):
   - The claim-as-link path (2): §9 now gives the seeded-user script against tags provisioned per provision-tags §1, UIDs kept in variables, the output deleted afterwards.
   - `db:provision` (3): it resolves only from the repo root, so §9 calls the script file directly, as provision-tags §1 does. The brief's environment note was wrong here; T7 reuses G7's brief, so drop that note there.
   - The heredoc incident (7): §9 warns never to paste provisioning commands into an unquoted heredoc or log append.
-  - The ENG-751 hang (1): §9 points at provision-tags §1's restart.
+  - The the `vite dev` hang hang (1): §9 points at provision-tags §1's restart.
   - Observations: §1 names `destination.ts`'s stale header comment; §2's reset line may end ` on branch …`; §8 says the mobile fallback card is minimal and typecheck-only, so the hand-off and card belong to the simulator pass; §9 names the API dev port, 8786.
   - No fix: 4 (an empty parent removed with `rmdir`), 5 (one e2e capture written to `/tmp`, deleted, no UIDs), 6 (the length reject, within "a reject case per validation rule").
 - No re-run: the fork is correct, and the fixes are text only.
@@ -1690,11 +1690,11 @@ The copied env files are deleted again before G4: make-it-yours copies them itse
 - A brand-new account gets "First, your name" (no required vertical field in this fork), then "Claim this tag" with the UID.
 - §5 (local): the insert returned 1 row, the count printed 1, and a re-insert returned 0 rows.
 - §4 retirement after stopping both dev servers: the batch directory and its empty parent removed, the repo clean. The stack was reset and seeded afterwards.
-- One ENG-751 hang (a full load of the claimed `/t/<UID>`), cleared by the skill's restart as written.
+- One `vite dev` hang (a full load of the claimed `/t/<UID>`), cleared by the skill's restart as written.
 - Deviations 1–3 in the log. Fixed in the skill by `f081728` (`provision-tags: fixes from the golf run`):
   - The profile-step heading (1): the skill now says "First, your name" without a required vertical field, "First, your card" with one.
   - Dev-server log modes (2): the logs in `$OUT` were 0644 because `umask 077` covered only the provisioning subshell (the 0700 directory kept them private); the skill now starts the dev servers under `umask 077`, with the one-line form.
-  - The ENG-751 hang (3): a known issue; the restart text worked, no change.
+  - The the `vite dev` hang hang (3): a known issue; the restart text worked, no change.
 - For the report: `web-dev.log` held a React hydration-mismatch warning on `/login` (server `<div class="card" aria-busy>` vs client `<form class="card">`), unrelated to the hang.
 - No re-run: the fixes are text only.
 - No fork commit; tag `pre-gate` at `e15a850`.
@@ -1757,7 +1757,7 @@ docker exec supabase_db_golfwithme psql -U postgres -tAc "select public.resolve_
   - For the report (core): the malformed-tag card's copy ("Give it another tap in a moment" / "…live link…") is also the network-failure copy, so it reads as transient.
   - "Join this round?" shows no course: by the brief (the preview reads the hints the tag screen passes).
   - Players and request rows show the bio, not the handicap: extend-profile makes that display optional.
-  - The ENG-751 dev hang reproduced (a full `load` of the claimed `/t/<UID>` in `vite dev`), even right after a restart. A note for ENG-751.
+  - The the `vite dev` hang dev hang reproduced (a full `load` of the claimed `/t/<UID>` in `vite dev`), even right after a restart. A note for the `vite dev` hang issue.
   - One provisioned UID reached the subagent's session transcript only (local; the batch was deleted and the stack reset). It is in no log, raw file or screenshot.
 - No re-run: the gate and the simulator passed, and the fork fix is one class name, re-gated above.
 
@@ -1770,7 +1770,7 @@ The follower is the program manager: go-live is approval-gated throughout, so it
 0. **Pre-flight** (read-only):
    - `env | grep -cE 'SUPABASE_SERVICE_ROLE_KEY|CLOUDFLARE_ACCOUNT_ID'` prints `0`.
    - `supabase orgs list` shows "Golf With Me"; record its id.
-   - `supabase projects list` shows `oszinjbbwzztqeqkhoof` paused.
+   - `supabase projects list` shows `<golf-project-ref>` paused.
    - `bunx wrangler whoami` lists three accounts; record the "Golf With Me" account id.
    - `bunx eas-cli whoami` names Alex's user, a member of `vibe-with-me`.
    - If any login fails: PAUSE, and Alex logs in.
@@ -1806,7 +1806,7 @@ The follower is the program manager: go-live is approval-gated throughout, so it
    - Expected fix (S): go-live §2 gains "if `wrangler whoami` lists more than one account, pin `account_id` in both configs before the first deploy", plus the subdomain note.
 5. **[approve] go-live §2, the API Worker:**
    - `cd apps/api && bunx wrangler deploy`, retrying on 5xx.
-   - The printed URL must be `https://golfwithme-api.<gsub>.workers.dev`. **If it is on `vibe-with-me.workers.dev`, stop:** the wrong account was used.
+   - The printed URL must be `https://golfwithme-api.<gsub>.workers.dev`. **If it is on `<legacy-subdomain>.workers.dev`, stop:** the wrong account was used.
    - The secrets subshell, with `CORS_ORIGIN=https://golfwithme-web.<gsub>.workers.dev`. `bunx wrangler secret list` names the three.
    - Checkpoints:
      - `curl -s https://golfwithme-api.<gsub>.workers.dev/health` returns `{"ok":true}`;
@@ -1845,7 +1845,7 @@ Deviations go through the procedure. Re-running a production step needs a new ap
 
 **G10 progress 2026-10-13** (not Done; the owner's checks are pending):
 - EAS linked (`9c15802`).
-- DB: the existing project `oszinjbbwzztqeqkhoof`, reset by Alex (`db reset --linked`), with all 7 migrations; no new project.
+- DB: the existing project `<golf-project-ref>`, reset by Alex (`db reset --linked`), with all 7 migrations; no new project.
 - Keys fetched (`.env.demo-seed` 0600; legacy `anon`, no publishable key). The `avatars` bucket verified via the API. Seed done.
 - Cloudflare pin `5d36727`; the subdomain `golfwithme` registered by Alex.
 - API `https://golfwithme-api.golfwithme.workers.dev`: `/health` ok after ~2 min; the anonymous SDK resolve of `04BB…` returns Ada, handicap 8.4, Pebble Creek GC, the round and its course.
@@ -1854,7 +1854,7 @@ Deviations go through the procedure. Re-running a production step needs a new ap
 - go-live text fixed from the run (`1dc8508`).
 - **Pending:** the Auth URL configuration, the authed check, and the throwaway sign-up + delete.
 
-**Done 2026-10-14.** Live at `https://golfwithme-web.golfwithme.workers.dev` and `https://golfwithme-api.golfwithme.workers.dev`; EAS update group `16e2daa9-474b-47e5-a0c8-8c7dafc85964` on `demo`. Alex's checks done: the Auth URLs set in the dashboard, the authed check returned Ada's profile through JWKS, the throwaway sign-up confirmed at the workers.dev origin. The delete check found ENG-759 (the web shell's profile gate loops `/profile` ↔ `/login` for a profile-less session; the server-side deletion succeeded): fixed in starter PR 15 (`776e26e`), golf web redeployed with the fix. Open: the hosted project's PostgREST is 14.5, below the 16.3 floor the local guard enforces (report §7). Not cleanly timed: the step spread over 2026-10-13/14 around Alex's logins, dashboard steps and checks. Cost so far $0: no new project, worker account or build. Log: `$GN/10-go-live.md`; the report's §4 has the step-by-step.
+**Done 2026-10-14.** Live at `https://golfwithme-web.golfwithme.workers.dev` and `https://golfwithme-api.golfwithme.workers.dev`; EAS update group `16e2daa9-474b-47e5-a0c8-8c7dafc85964` on `demo`. Alex's checks done: the Auth URLs set in the dashboard, the authed check returned Ada's profile through JWKS, the throwaway sign-up confirmed at the workers.dev origin. The delete check found the profile-less delete loop (the web shell's profile gate loops `/profile` ↔ `/login` for a profile-less session; the server-side deletion succeeded): fixed in starter PR 15 (`776e26e`), golf web redeployed with the fix. Open: the hosted project's PostgREST is 14.5, below the 16.3 floor the local guard enforces (report §7). Not cleanly timed: the step spread over 2026-10-13/14 around Alex's logins, dashboard steps and checks. Cost so far $0: no new project, worker account or build. Log: `$GN/10-go-live.md`; the report's §4 has the step-by-step.
 
 ---
 
@@ -1889,8 +1889,8 @@ Deviations go through the procedure. Re-running a production step needs a new ap
 ### G12: Teardown and local cleanup (Alex for the deletes; about 15 min)
 
 **Alex** (permanent; Claude prints the exact list and verifies afterwards):
-- `supabase projects delete oszinjbbwzztqeqkhoof`, or in the dashboard. This retires the database password in the legacy history.
-- The legacy workers in the account behind `vibe-with-me.workers.dev`, once the new ones are verified (answered 2026-10-13). With that account selected, per command: `bunx wrangler delete --name golfwithme-public`, then `golfwithme-web`, then `golfwithme-api`.
+- `supabase projects delete <golf-project-ref>`, or in the dashboard.
+- The legacy workers in the account behind `<legacy-subdomain>.workers.dev`, once the new ones are verified (answered 2026-10-13). With that account selected, per command: `bunx wrangler delete --name golfwithme-public`, then `golfwithme-web`, then `golfwithme-api`.
 - Optional: the legacy local volumes, `docker volume ls --format '{{.Name}}' | grep golf-with-me`, then `docker volume rm …`.
 
 **Claude:**
@@ -1910,8 +1910,8 @@ After the merge: `git -C "$GOLF" worktree remove "$G"`. The `.env.production` fi
 Optional, with Alex's yes: fast-forward the main checkout, `git -C "$GOLF" merge --ff-only origin/main && (cd "$GOLF" && bun install)`. It deletes the working-tree copy of `.supabase-demo-db-password`, which is harmless once the project is gone.
 
 **Verify:**
-- `supabase projects list` has no `oszinjbbwzztqeqkhoof`.
-- `curl -s -o /dev/null -w '%{http_code}\n' https://golfwithme-web.vibe-with-me.workers.dev/` is not 200, if the legacy workers were deleted.
+- `supabase projects list` has no `<golf-project-ref>`.
+- `curl -s -o /dev/null -w '%{http_code}\n' https://golfwithme-web.<legacy-subdomain>.workers.dev/` is not 200, if the legacy workers were deleted.
 - The new URLs still answer 200.
 
 **Done YYYY-MM-DD.** (to write)
@@ -2104,7 +2104,7 @@ The staging worktrees stay as they are (A4).
    - Free: Phase A's list.
    - Hand work: icon rendering, the EAS link, the Cloudflare account pin, the Auth URLs, the workers.dev subdomain, `PRODUCT.md`, the handicap convention.
    - Still not covered: SMTP, a custom domain, physical encoding, EAS builds and store submission, the marketing site, `release.yml` in a fork, and the unclaimed demo tag in production.
-7. **Known issues.** ENG-750, -751, -752, -753 and -754, and any new issues, with where each one bit.
+7. **Known issues.** the known issues (PGRST303, the `vite dev` hang, the remote guard, the input border, anon execute), and any new issues, with where each one bit.
 8. **Go-live.** Golf: each checkpoint, the URLs, the cost incurred (expected $0), the teardown of the old project and workers, and the Auth Site URL finding. The superseded Run Club options are named in one line.
 9. **Not covered.** `readTagUid` on a physical chip; encoding; app-store builds; multi-tenant; add-marketing-site; golf's legacy staging branch (the tab bar, EAS staging builds); the tailgate rebuild (deferred).
 
@@ -2116,7 +2116,7 @@ Commit `Docs: the proof-run report (milestone 5)`.
 
 As originally written. Status also links the golf PR and its live URLs, and notes tailgate as deferred.
 
-**Done 2026-10-14.** `program.md` Status: Milestone 4 reads merged (PR #10, `511a26c`, 2026-10-12); Milestone 5 reads done, PR pending, with Run Club (local, timed), golf rebuilt and live (the PR at `c64b4db` and the two URLs), the tailgate deferral (ENG-756) and the report path. The spec's Delivery item 5 gained a dated italic note in the style of the 2026-10-12 amendment, pointing at the report, naming what was proven (Run Club, golf) and what was deferred (tailgate, physical tags, an EAS build). `docs/skills-roadmap.md` gained a five-line "Proven 2026-10-14" section pointing at the report. The "Program complete" line waits for the merge (Task 15).
+**Done 2026-10-14.** `program.md` Status: Milestone 4 reads merged (PR #10, `511a26c`, 2026-10-12); Milestone 5 reads done, PR pending, with Run Club (local, timed), golf rebuilt and live (the PR at `c64b4db` and the two URLs), the tailgate deferral and the report path. The spec's Delivery item 5 gained a dated italic note in the style of the 2026-10-12 amendment, pointing at the report, naming what was proven (Run Club, golf) and what was deferred (tailgate, physical tags, an EAS build). `docs/skills-roadmap.md` gained a five-line "Proven 2026-10-14" section pointing at the report. The "Program complete" line waits for the merge (Task 15).
 
 ---
 
@@ -2151,11 +2151,11 @@ As originally written, with these changes:
 ### Task 15 (revised): Review, merge, report
 
 As originally written, with these changes:
-- **Linear:**
-  - ENG-748 Done;
+- **Tracker:**
+  - Milestone 5 Done;
   - the golf rebuild issue Done, with its PR link;
-  - ENG-749 gains A1–A11 and Alex's answers, including the tailgate deferral;
-  - the P-ENG-39 status update.
+  - the decisions log gains A1–A11 and Alex's answers, including the tailgate deferral;
+  - the build-out project status update.
 - **Memory notes:**
   - update the app-shell direction note's resume point, naming the tailgate deferral;
   - add a technique note (fork rebuild mechanics, a two-parent commit 1, `eas init --id`, the wrangler account pin, the workers.dev subdomain, the Auth Site URL);
@@ -2194,7 +2194,7 @@ Alex accepted every default, and deferred tailgate.
 3. **Handicap.** `numeric(3,1)`, a plus handicap stored negative, with the plus shown and no minus on any screen (`parseHandicap` / `formatHandicap`).
 4. **Store URLs.** None: no Merch tab, no "Get tags" link; make-it-yours step 7 is skipped.
 5. **Production demo data.** Seed production and show the demo credentials on the landing page. No SMTP; SMTP is an open item in the report.
-6. **Golf's legacy workers.** Alex deletes `golfwithme-api`, `-web` and `-public` on `vibe-with-me.workers.dev` after the new ones are verified (G12).
-7. **Golf's old Supabase project.** Alex deletes `oszinjbbwzztqeqkhoof` after go-live (G12).
+6. **Golf's legacy workers.** Alex deletes `golfwithme-api`, `-web` and `-public` on `<legacy-subdomain>.workers.dev` after the new ones are verified (G12).
+7. **Golf's old Supabase project.** Alex deletes `<golf-project-ref>` after go-live (G12).
 8. **Commit 1's shape.** Two parents: `legacy-2026-06` first, the starter sha second.
 9. **Tailgate.** Deferred: it will be rebuilt around real sporting events once Alex decides how to source event data. The tailgate EAS project question (`fe37d421-…`) returns with that run. Batching (A11) no longer applies.

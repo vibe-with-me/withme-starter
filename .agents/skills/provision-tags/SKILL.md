@@ -171,7 +171,7 @@ logs into `$OUT` so §4's retirement deletes them.
   vertical field, "First, your card" (Name plus the required fields) when
   it made one required; fill it in, or use a second seeded user.
   If `/t/<UID>` hangs after the claim under `vite dev` (a known dev-server
-  SSR hang, ENG-751), restart `apps/web`'s dev server: stop the running
+  SSR hang), restart `apps/web`'s dev server: stop the running
   `bun run dev` (Ctrl-C in its shell, or kill the `vite` process and its
   `bun` parent), start it again the same way (an agent appends to the same
   log: `>> "$OUT/web-dev.log" 2>&1`), and load the page again.

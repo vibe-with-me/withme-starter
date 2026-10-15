@@ -19,6 +19,8 @@ handful of things that go wrong on a fresh install.
 ## First run
 
 ```sh
+git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
+cd withme-starter
 bun install
 bun run db:start        # Supabase local: Postgres, Auth, Storage, PostgREST
 bun run db:seed         # demo users + tags
@@ -27,7 +29,8 @@ cp apps/web/.env.example apps/web/.env
 bun run dev             # api on :8786, web on :3000
 ```
 
-The `.example` files hold the local stack's shared defaults. They are not
+The first `db:start` pulls the Supabase images, which takes a few
+minutes and a few GB of Docker disk. The `.example` files hold the local stack's shared defaults. They are not
 secrets; copying them is all the configuration local work needs.
 
 ### Ports
@@ -47,7 +50,7 @@ secrets; copying them is all the configuration local work needs.
 | Who / what | Details |
 | --- | --- |
 | Ada | `ada@demo.withme.local` / `withme-demo-1`. Hosts "Rooftop listening session"; has a pending request from Lin. |
-| Lin | `lin@demo.withme.local` / `withme-demo-1`. Joined Ada's gathering. |
+| Lin | `lin@demo.withme.local` / `withme-demo-1`. Joined Ada's gathering; hosts a second one, "Vinyl swap in the park", listed to the domain. |
 | `04BBBBBBBBBBBB` | Ada's claimed tag, pointed at her gathering. Tap it: `/t/04BBBBBBBBBBBB`. |
 | `04AAAAAAAAAAAA` | Unclaimed. Tap it to walk the claim flow. |
 | `04CCCCCCCCCCCC` | Disabled. Tap it to see the inactive card. |
@@ -134,6 +137,17 @@ cd apps/web && bun run preview  # the production build locally (needs the API Wo
 images from previous CLI versions accumulate in the Docker VM. Prune
 them (`docker image prune -a` removes every unused image; check what else
 you have first) and start again.
+
+**`db:start` fails with "port is already allocated".** Another
+project's Supabase stack is running on the same ports (553xx).
+`docker ps --format '{{.Names}}' | grep supabase_db` names it
+(`supabase_db_<project_id>`); stop it with
+`supabase stop --project-id <project_id>`, then start again. To run
+both side by side instead, give this one other ports: change every
+`553xx` port in `supabase/config.toml` (e.g. to 556xx), the URLs in
+`apps/web/.env` and `apps/api/.dev.vars`, and export
+`SUPABASE_URL=http://127.0.0.1:<new API port>` before `db:seed` and the
+tests, which default to 55321.
 
 **Sign-in works, then the next request fails with `PGRST303`.** Your
 Supabase CLI is older than 2.118. Upgrade it, then `bun run db:stop &&

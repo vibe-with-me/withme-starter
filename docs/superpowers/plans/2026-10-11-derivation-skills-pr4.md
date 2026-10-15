@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Ship three things. Two new agent-executable skills: `provision-tags` (Tier 3, item 7) and `extend-profile` (Tier 2, item 3, the roadmap's "onboarding", with its two visibility tiers and the completion gate). The third is an update to `make-it-yours` covering the store URL, the shell height tokens, and the brand surfaces the shell and Profile work added. Each skill is first executed for real in a throwaway worktree. The skill is then written down from what actually worked and re-run literally against a fresh clone (the skill-rot check). The merged PR contains only `.agents/skills/**`, docs (`docs/**`, `README.md`), and one `.gitignore` addition (a comment and two names). Linear: ENG-747.
+**Goal:** Ship three things. Two new agent-executable skills: `provision-tags` (Tier 3, item 7) and `extend-profile` (Tier 2, item 3, the roadmap's "onboarding", with its two visibility tiers and the completion gate). The third is an update to `make-it-yours` covering the store URL, the shell height tokens, and the brand surfaces the shell and Profile work added. Each skill is first executed for real in a throwaway worktree. The skill is then written down from what actually worked and re-run literally against a fresh clone (the skill-rot check). The merged PR contains only `.agents/skills/**`, docs (`docs/**`, `README.md`), and one `.gitignore` addition (a comment and two names). Tracked privately as Milestone 4.
 
 **Architecture:** The binding spec is `docs/superpowers/specs/2026-09-22-app-shell-and-tabs-design.md`, in particular "Skills changes" and "Delivery" item 4. The program is `docs/superpowers/program.md` milestone 4. The roadmap is `docs/skills-roadmap.md`, both the original Tier 2/3 entries and the 2026-09-22 revision. The skills follow the existing skills in form: frontmatter `name`/`description` with "Use when…", a map of where things live, numbered steps in slice order, checkpoints with exact commands, a "what must not move" section, and scope notes. Every skill cites `docs/the-slice.md` and ends on its verification gate. References:
 
@@ -13,7 +13,7 @@
 
 **Scope guard:**
 - No app code in the PR. `git diff --name-only origin/main...HEAD` must list only `.agents/skills/**`, `docs/**`, `README.md`, and `.gitignore` (Task 1's comment and two ignore lines, nothing else in it).
-- App code is written only in scratch worktrees and clones under `/Users/alexeisele/dev/withme-scratch/`. These are never pushed and are deleted at the end.
+- App code is written only in scratch worktrees and clones under `~/dev/withme-scratch/`. These are never pushed and are deleted at the end.
 - No new endpoint, RPC, or policy in the starter. No enumeration surface: no "list unclaimed tags" and no "provision" endpoint.
 - `profiles_select` is never edited.
 - Nothing vertical-specific: the worked examples are generic (`affiliation`, `contact_handle`).
@@ -40,7 +40,7 @@
      - the blocker
    - customize-gathering §3b already binds that policy to stay byte-identical except the gathering bridge.
    - Task 2 proves the leak with a red test against a naive `profiles.contact_handle` column before the real design is built. Flag this reading in the PR body.
-   - **This is a spec deviation, and it is signed off.** The binding spec says the tier "touches `profiles_select`"; this plan adds `profile_details` instead. Approved by Alex 2026-10-11 (ENG-749); no stop needed. Task 2 Step 3's naive-leak output is still produced, as the evidence the PR body cites.
+   - **This is a spec deviation, and it is signed off.** The binding spec says the tier "touches `profiles_select`"; this plan adds `profile_details` instead. Approved by Alex 2026-10-11 (the decisions log); no stop needed. Task 2 Step 3's naive-leak output is still produced, as the evidence the PR body cites.
    - Task 6 amends the spec's Skills-changes line to describe the sibling table, with a dated note, so the binding spec and the shipped skill agree.
 4. **Worked example.**
    - Card tier: `affiliation` (text 1–80, required for completion).
@@ -68,8 +68,8 @@
    - `program.md` gets a status section.
 10. **`add-marketing-site` is not in this milestone.** The spec lists it as "Candidate, after the proof below", and Delivery PR 4 names only the three skills.
 11. **Scratch and the shared stack.**
-    - Scratch worktrees live in `/Users/alexeisele/dev/withme-scratch/<name>` (`git worktree add … -b scratch/<name> origin/main`).
-    - Fresh clones live in `/Users/alexeisele/dev/withme-scratch/fresh-<skill>`, with `origin` removed right after cloning so nothing can be pushed.
+    - Scratch worktrees live in `~/dev/withme-scratch/<name>` (`git worktree add … -b scratch/<name> origin/main`).
+    - Fresh clones live in `~/dev/withme-scratch/fresh-<skill>`, with `origin` removed right after cloning so nothing can be pushed.
     - All of them share the one local Supabase stack (`project_id = "withme-starter"`, ports 553xx), and `db:reset` from any checkout replaces the database with that checkout's migrations. Scratch work therefore runs only inside a declared stack window (ground rules).
 12. **Phasing against Milestone 3.**
     - Phase A runs alongside M3, in stack windows the program manager grants:
@@ -98,7 +98,7 @@
 ## Ground rules for every task
 
 - **Branch.**
-  - Work in `/Users/alexeisele/dev/withme-starter/.claude/worktrees/derivation-skills` on branch `claude/derivation-skills`, created from `origin/main` in Task 0. (`.claude/worktrees/with-me-derivation-starter-1f2c69` holds Milestone 3's finished branch; never work or write there.)
+  - Work in `~/dev/withme-starter/.claude/worktrees/derivation-skills` on branch `claude/derivation-skills`, created from `origin/main` in Task 0. (`.claude/worktrees/with-me-derivation-starter-1f2c69` holds Milestone 3's finished branch; never work or write there.)
   - Do not reuse `claude/connections-profile`, which is the name in use for Milestone 3.
   - Local `main` is stale (`02147a7`): always base on `origin/main` after `git fetch origin`.
 - **Stack windows.**
@@ -111,7 +111,7 @@
   - Always run Playwright as `CI=1 bunx playwright test`. `reuseExistingServer: !process.env.CI` would otherwise attach to another checkout's API worker on 8796.
 - **Scratch rules.**
   - Scratch branches may hold local commits, so Task 4a can cherry-pick Task 2. They are never pushed.
-  - Keep a running log of commands and outputs at `/Users/alexeisele/dev/withme-scratch/notes/<skill>.md`. It feeds the SKILL.md corrections and the PR body.
+  - Keep a running log of commands and outputs at `~/dev/withme-scratch/notes/<skill>.md`. It feeds the SKILL.md corrections and the PR body.
 - **The skill text below is the target, not gospel.** Where the scratch run disagrees (a command, an output line, an error code), the SKILL.md written to the repo matches what actually happened. Note each correction in the log.
 - **Gate on the M4 branch:** `bun run lint && bun run typecheck && bun run test`. It stays green; no app code changes.
 - **Commit messages:** imperative subject, the why in the body, ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -124,7 +124,7 @@
 **Files:** none.
 
 ```bash
-cd /Users/alexeisele/dev/withme-starter/.claude/worktrees/derivation-skills
+cd ~/dev/withme-starter/.claude/worktrees/derivation-skills
 git fetch origin
 git switch -c claude/derivation-skills origin/main
 git log --oneline -1          # expect the merge of PR #8 (or later, if M3 already merged)
@@ -133,7 +133,7 @@ cp -n apps/api/.dev.vars.example apps/api/.dev.vars; cp -n apps/web/.env.example
 # stack window (ground rules) for the next two lines
 bun run db:reset && bun run db:seed
 bun run lint && bun run typecheck && bun run test
-mkdir -p /Users/alexeisele/dev/withme-scratch/notes && chmod 700 /Users/alexeisele/dev/withme-scratch
+mkdir -p ~/dev/withme-scratch/notes && chmod 700 ~/dev/withme-scratch
 ```
 
 Expected: the gate is green. At `4fa6c98` the db suite counts 57 and the contract suite 24. Record the actual numbers as the baseline. No commit.
@@ -150,8 +150,8 @@ Expected: the gate is green. At `4fa6c98` the db suite counts 57 and the contrac
 **Step 1: Scratch worktree.**
 
 ```bash
-git -C /Users/alexeisele/dev/withme-starter worktree add /Users/alexeisele/dev/withme-scratch/provision-tags -b scratch/provision-tags origin/main
-cd /Users/alexeisele/dev/withme-scratch/provision-tags
+git -C ~/dev/withme-starter worktree add ~/dev/withme-scratch/provision-tags -b scratch/provision-tags origin/main
+cd ~/dev/withme-scratch/provision-tags
 bun install
 cp apps/api/.dev.vars.example apps/api/.dev.vars; cp apps/web/.env.example apps/web/.env; cp apps/mobile/.env.example apps/mobile/.env
 ```
@@ -446,7 +446,7 @@ Check: `touch .supabase-demo-db-password provisioned-tags.csv provisioned-tags.h
 **Step 6: verify and commit.**
 
 ```bash
-cd /Users/alexeisele/dev/withme-starter/.claude/worktrees/derivation-skills
+cd ~/dev/withme-starter/.claude/worktrees/derivation-skills
 git add .agents/skills/provision-tags/SKILL.md .agents/skills/go-live/SKILL.md .gitignore
 git commit -m "Add provision-tags: batch tags, encode list, printable sheet
 
@@ -469,14 +469,14 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task 2: `extend-profile`, the safety core, red first (Phase A: M3-independent)
 
-**Files:** none in the M4 branch. All work is in `/Users/alexeisele/dev/withme-scratch/extend-profile-core`.
+**Files:** none in the M4 branch. All work is in `~/dev/withme-scratch/extend-profile-core`.
 
 **Step 1: Worktree.**
 
 ```bash
-git -C /Users/alexeisele/dev/withme-starter fetch origin
-git -C /Users/alexeisele/dev/withme-starter worktree add /Users/alexeisele/dev/withme-scratch/extend-profile-core -b scratch/extend-profile-core origin/main
-cd /Users/alexeisele/dev/withme-scratch/extend-profile-core && bun install
+git -C ~/dev/withme-starter fetch origin
+git -C ~/dev/withme-starter worktree add ~/dev/withme-scratch/extend-profile-core -b scratch/extend-profile-core origin/main
+cd ~/dev/withme-scratch/extend-profile-core && bun install
 cp apps/api/.dev.vars.example apps/api/.dev.vars; cp apps/web/.env.example apps/web/.env; cp apps/mobile/.env.example apps/mobile/.env
 ```
 
@@ -548,7 +548,7 @@ Optional, about 5 minutes: delete the pending-request clause from a scratch copy
 
 Then remove both scratch files and run `bun run db:reset`.
 
-**Spec deviation (Decision 3): the sibling table instead of a `profiles_select` edit.** Approved by Alex 2026-10-11 (ENG-749); no stop needed. Log the Step 3 output as the evidence for the PR body and go on.
+**Spec deviation (Decision 3): the sibling table instead of a `profiles_select` edit.** Approved by Alex 2026-10-11 (the decisions log); no stop needed. Log the Step 3 output as the evidence for the PR body and go on.
 
 **Step 4: Contract.** Apply SKILL §1 (Task 4d's text) literally. Then `cd packages/contract && bun test`; expect baseline +4, green.
 
@@ -574,7 +574,7 @@ Then remove both scratch files and run `bun run db:reset`.
 **Precondition:** Milestone 3 is merged into `origin/main`.
 
 ```bash
-cd /Users/alexeisele/dev/withme-starter/.claude/worktrees/derivation-skills
+cd ~/dev/withme-starter/.claude/worktrees/derivation-skills
 git fetch origin && git rebase origin/main
 grep -rn 'M3-CHEC[K]' .agents docs README.md
 ```
@@ -607,13 +607,13 @@ Edit the SKILL.md texts in place, both the committed provision-tags and the draf
 
 ### Task 4a: `extend-profile` on post-M3 main: the core, §3–§5 green (Phase B)
 
-**Files:** none in the M4 branch. All work is in `/Users/alexeisele/dev/withme-scratch/extend-profile`.
+**Files:** none in the M4 branch. All work is in `~/dev/withme-scratch/extend-profile`.
 
 **Step 1: Worktree on post-M3 main, carrying the core.**
 
 ```bash
-git -C /Users/alexeisele/dev/withme-starter worktree add /Users/alexeisele/dev/withme-scratch/extend-profile -b scratch/extend-profile origin/main
-cd /Users/alexeisele/dev/withme-scratch/extend-profile && bun install
+git -C ~/dev/withme-starter worktree add ~/dev/withme-scratch/extend-profile -b scratch/extend-profile origin/main
+cd ~/dev/withme-scratch/extend-profile && bun install
 cp apps/api/.dev.vars.example apps/api/.dev.vars; cp apps/web/.env.example apps/web/.env; cp apps/mobile/.env.example apps/mobile/.env
 git cherry-pick scratch/extend-profile-core
 ```
@@ -675,7 +675,7 @@ Use the established technique (agent-device + Expo Go + simctl), not the native 
 - Expo Go for the project's SDK must be installed (`xcrun simctl listapps booted | grep host.exp.Exponent`). If it is missing, stop and ask before downloading it.
 - Metro: `cd apps/mobile && bunx expo start --port 8081` (no `CI=1`: CI mode disables reloads). Open the project with `xcrun simctl openurl booted exp://127.0.0.1:8081`; deep links are `exp://127.0.0.1:8081/--/t/<uid>`, never `withme://`.
 - Drive with `bunx agent-device … --platform ios --device "iPhone 17 Pro"`. Re-snapshot before every click (refs renumber). Never `keyboard dismiss`: close the keyboard with the on-screen `return` key. Type in chunks, and no chunk may start with `-`. Tap tab-bar items by point from a fresh snapshot.
-- Screenshots: `xcrun simctl io booted screenshot /Users/alexeisele/dev/withme-scratch/notes/extend-profile-<n>.png`.
+- Screenshots: `xcrun simctl io booted screenshot ~/dev/withme-scratch/notes/extend-profile-<n>.png`.
 
 **Step 1 (stack window):** `bun run db:reset && bun run db:seed`, the API dev server up (`cd apps/api && bun run dev`), Metro up as above.
 
@@ -704,7 +704,7 @@ Use the established technique (agent-device + Expo Go + simctl), not the native 
 
 **Step 1: Write the SKILL.md.**
 1. Write it from the scratch result (Tasks 2 and 4a–4c, and the log), using the target text below.
-2. Consistency check: every path in `git -C /Users/alexeisele/dev/withme-scratch/extend-profile diff --name-only origin/main` appears in the skill's map or steps. Every file the skill tells a fork to edit appears in that diff.
+2. Consistency check: every path in `git -C ~/dev/withme-scratch/extend-profile diff --name-only origin/main` appears in the skill's map or steps. Every file the skill tells a fork to edit appears in that diff.
 3. `grep -n 'M3-CHEC[K]' .agents/skills/extend-profile/SKILL.md` prints nothing.
 
 Target text, to be corrected to the scratch build:
@@ -1874,7 +1874,7 @@ The verification gate from `docs/the-slice.md`, then
 **Step 2: Commit.**
 
 ```bash
-cd /Users/alexeisele/dev/withme-starter/.claude/worktrees/derivation-skills
+cd ~/dev/withme-starter/.claude/worktrees/derivation-skills
 grep -rn 'M3-CHEC[K]' .agents/skills/extend-profile && exit 1
 git add .agents/skills/extend-profile/SKILL.md
 git commit -m "Add extend-profile: vertical fields in two visibility tiers
@@ -1913,7 +1913,7 @@ Consistency check: every path in `git diff --name-only origin/main` of the scrat
 **Files:**
 - Modify: `.agents/skills/make-it-yours/SKILL.md`, `.agents/skills/go-live/SKILL.md` (§3's env block only)
 
-**Step 1: Scratch worktree.** Create `/Users/alexeisele/dev/withme-scratch/make-it-yours` from `origin/main` (post-M3) with `bun install` and the three `.env` copies. Run the brand sweep:
+**Step 1: Scratch worktree.** Create `~/dev/withme-scratch/make-it-yours` from `origin/main` (post-M3) with `bun install` and the three `.env` copies. Run the brand sweep:
 
 ```bash
 grep -rni --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} withme apps/ supabase/seed README.md | grep -v '@withme/'
@@ -2041,7 +2041,7 @@ the list of places the brand and voice render.
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
-**Done 2026-10-12** in `ba018ad`, against `7932548`. Log: `/Users/alexeisele/dev/withme-scratch/notes/make-it-yours.md`.
+**Done 2026-10-12** in `ba018ad`, against `7932548`. Log: `~/dev/withme-scratch/notes/make-it-yours.md`.
 - Sweep: nothing beyond the three expected surfaces; every other match is already named in steps 3, 4, or 6.
 - Edits 1–9 applied as written, with three corrections from reading and running them:
   - Step 3's "the first five" became "the first eight": the three new mark surfaces sit above the page-title bullet.
@@ -2177,7 +2177,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
      or an accepted connection with no block either way) and its own RLS
      tests, proven narrower than `profiles_select`, which stays
      byte-identical. *Amended 2026-10-11, approved by Alex 2026-10-11
-     (ENG-749): this line first said the tier "touches `profiles_select`".
+     (the decisions log): this line first said the tier "touches `profiles_select`".
      RLS decides rows, not columns, so a connections-only column on
      `profiles` would reach every viewer that policy admits (the
      pending-request recipient, the gathering co-member, the blocker).*
@@ -2190,11 +2190,11 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - `grep -n 'touches .profiles_select.' docs/superpowers/specs/2026-09-22-app-shell-and-tabs-design.md` hits only inside the dated amendment note; `grep -n 'profile_details' docs/superpowers/specs/2026-09-22-app-shell-and-tabs-design.md` hits once.
 - `bun run lint` is still green.
 
-**Commit:** `git commit -m "Docs: the derivation skills in the roadmap, the slice, the README, and the spec" …` (body: the two-tier rule now lives in the slice; README lists the skills and its tag-encoding section matches provision-tags; program status; the spec's extend-profile line amended to the sibling table Alex approved on 2026-10-11, ENG-749), ending with the Co-Authored-By line.
+**Commit:** `git commit -m "Docs: the derivation skills in the roadmap, the slice, the README, and the spec" …` (body: the two-tier rule now lives in the slice; README lists the skills and its tag-encoding section matches provision-tags; program status; the spec's extend-profile line amended to the sibling table Alex approved on 2026-10-11, the decisions log), ending with the Co-Authored-By line.
 
 
 **Done 2026-10-12.** Edits 1–6 applied, with these departures from the text above:
-- The spec amendment reads "*Amended 2026-10-12, approved by Alex 2026-10-11 (ENG-749)*": the amendment was made today; the approval date is the ENG-749 decision comment's.
+- The spec amendment reads "*Amended 2026-10-12, approved by Alex 2026-10-11 (the decisions log)*": the amendment was made today; the approval date is the decisions log decision comment's.
 - The roadmap section also records go-live (§3's `VITE_STORE_URL`, §1's password file moved to `$HOME/.config/<name>/`) and the customize-gathering / add-destination-type fix (copy `resolve_tag`'s newest definition), and names `profile_details` and `isProfileComplete`. Its "re-run against a fresh clone" becomes true in Tasks 7b–7d, before the PR merges.
 - README "Encoding NFC tags": `{UID}` is "14 uppercase hex chars", with "`04` and 12 more" only for the random default (a chip UID from §5 need not start `04`).
 - program.md status adds the merge shas (`4fa6c98`, `7932548`) and M3's merge date.
@@ -2220,7 +2220,7 @@ git diff origin/main...HEAD -- .gitignore | grep '^[+-][^+-]'   # exactly Task 1
 
    ```bash
    for s in provision-tags extend-profile make-it-yours go-live; do
-     grep -oE '`[^`]+`' .agents/skills/$s/SKILL.md | sort -u > /Users/alexeisele/dev/withme-scratch/notes/tokens-$s.txt
+     grep -oE '`[^`]+`' .agents/skills/$s/SKILL.md | sort -u > ~/dev/withme-scratch/notes/tokens-$s.txt
    done
    ```
 
@@ -2334,7 +2334,7 @@ grep -n '^## The safety discipline' docs/the-slice.md                           
 
 ```bash
 for s in customize-gathering add-destination-type; do
-  git show f22a9c4 -- .agents/skills/$s/SKILL.md | grep '^+[^+]' | grep -oE '`[^`]+`' | sort -u > /Users/alexeisele/dev/withme-scratch/notes/tokens-$s-f22a9c4.txt
+  git show f22a9c4 -- .agents/skills/$s/SKILL.md | grep '^+[^+]' | grep -oE '`[^`]+`' | sort -u > ~/dev/withme-scratch/notes/tokens-$s-f22a9c4.txt
 done
 grep -lE 'create (or replace )?function public\.resolve_tag' supabase/migrations/*.sql | sort | tail -1   # 20261011120000_avatars.sql
 grep -n 'drop column avatar_url' supabase/migrations/20261011120000_avatars.sql                       # the column the older bodies emit
@@ -2343,9 +2343,9 @@ grep -n 'v_gathering_json jsonb\|security definer\|search_path' supabase/migrati
 
 Expected: no `MISSING`, every grep hits (the two marked "nothing" print nothing), and the `docker exec` lines return the commented rows. Any miss is fixed in the skill text (or, if the app moved, in the skill's description of it) before Step 3.
 
-**Step 3: Re-run the skills from fresh clones.** Tasks 7b–7d, one clone and one stack window each, in any order. Each starts from the M4 branch's committed state, so first: `git -C /Users/alexeisele/dev/withme-starter/.claude/worktrees/derivation-skills status --porcelain` prints nothing.
+**Step 3: Re-run the skills from fresh clones.** Tasks 7b–7d, one clone and one stack window each, in any order. Each starts from the M4 branch's committed state, so first: `git -C ~/dev/withme-starter/.claude/worktrees/derivation-skills status --porcelain` prints nothing.
 
-**Done 2026-10-12** at `de386d3`, the stack reset to `origin/main` (`7932548`) + seed. Log and token lists: `/Users/alexeisele/dev/withme-scratch/notes/7a.md`, `tokens-<skill>.txt`, `tokens-<skill>.classified.txt`.
+**Done 2026-10-12** at `de386d3`, the stack reset to `origin/main` (`7932548`) + seed. Log and token lists: `~/dev/withme-scratch/notes/7a.md`, `tokens-<skill>.txt`, `tokens-<skill>.classified.txt`.
 - Step 1: clean (no marker; only the allowed paths; `.gitignore` is the comment and the two names).
 - Step 2: 590 tokens across the four skills, plus the `f22a9c4` lines of customize-gathering and add-destination-type. Every token is checked, created by the skill, or an example, placeholder, expected output, or external reference. No skill text needed a fix. Every check hit and the `docker exec` lines returned the commented rows.
 - Three check lines changed here, not in the skills: the two extend-profile finders now match the skill's `grep -lE 'create (or replace )?function public\.…' | grep -v _extend_profile` (both still print `20261011120000_avatars.sql`). The go-live count is `grep -cF`, because a `grep` backed by ugrep read the mid-pattern `$` as an anchor and printed 0 (`/usr/bin/grep` printed 2). The `f22a9c4` block is new.
@@ -2357,9 +2357,9 @@ Expected: no `MISSING`, every grep hits (the two marked "nothing" print nothing)
 **Step 1: The clone.** A re-run (after a fix) repeats this step, and the `rm -rf` removes the old clone first.
 
 ```bash
-S=/Users/alexeisele/dev/withme-scratch
+S=~/dev/withme-scratch
 rm -rf "$S/fresh-provision-tags"
-git clone --branch claude/derivation-skills /Users/alexeisele/dev/withme-starter "$S/fresh-provision-tags"
+git clone --branch claude/derivation-skills ~/dev/withme-starter "$S/fresh-provision-tags"
 git -C "$S/fresh-provision-tags" remote remove origin       # nothing in a scratch clone can be pushed
 cd "$S/fresh-provision-tags"
 # setup as the README Quickstart does it, plus the mobile copy it leaves out
@@ -2379,7 +2379,7 @@ bun install
 
 **Step 3:** Any deviation means: fix the SKILL.md in the M4 worktree, commit (`git commit -m "provision-tags: fixes from the fresh-clone run" …`), and repeat this task from Step 1. Close the window from the M4 worktree, with the hand-back to M3.
 
-**Done 2026-10-12** in two runs. Log: `/Users/alexeisele/dev/withme-scratch/notes/provision-tags-fresh.md`, screenshots in `notes/7b-shots/`. §2–§4 were skipped (production, physical tags).
+**Done 2026-10-12** in two runs. Log: `~/dev/withme-scratch/notes/provision-tags-fresh.md`, screenshots in `notes/7b-shots/`. §2–§4 were skipped (production, physical tags).
 - Run 1 (`6d05ebf`, about 6 min) found two deviations, fixed in `b02fcf3`. First, §1 began at `db:start`, but its end-to-end check signs in as a seeded demo user and runs both dev servers. It now opens with the Quickstart setup: env files, `db:start`, `db:seed`. Second, macOS prints `-rw-------@`, and the checkpoint now says so.
 - Run 2 (`b02fcf3`, about 2.5 min) had no skill deviation, and every expected result passed:
   - the §1 stdout lines;
@@ -2411,7 +2411,7 @@ bun install
 
 **Step 3:** Any deviation means: fix the SKILL.md in the M4 worktree, commit (`git commit -m "extend-profile: fixes from the fresh-clone run" …`), and repeat this task from Step 1. Close the window from the M4 worktree, with the hand-back to M3.
 
-**Done 2026-10-12** in two runs. Log: `/Users/alexeisele/dev/withme-scratch/notes/extend-profile-fresh.md`, screenshots `notes/fresh-ep-*.png`.
+**Done 2026-10-12** in two runs. Log: `~/dev/withme-scratch/notes/extend-profile-fresh.md`, screenshots `notes/fresh-ep-*.png`.
 - Run 1 (`069ec3a`, about 20 min with the simulator pass) went green everywhere, and found three places where a literal reader had to guess. All three were fixed as text in `0353083`:
   - §1 said "beside the existing schemas", but `CardLineSchema` must sit above `ProfileSchema`, which uses it;
   - §3 said `db:reset` "ends" with `Finished supabase db reset`, but outside a terminal a JSON line follows it;
@@ -2459,7 +2459,7 @@ bun install
 
 **Step 3:** Any deviation means: fix the SKILL.md in the M4 worktree, commit (`git commit -m "make-it-yours: fixes from the fresh-clone run" …`), and repeat this task from Step 1. Close the window from the M4 worktree, with the hand-back to M3.
 
-**Done 2026-10-12** in two runs. Log: `/Users/alexeisele/dev/withme-scratch/notes/make-it-yours-fresh.md`, check script `notes/7d-verify.cjs`, screenshots `notes/7d-*.png`. Steps 2 (fonts), 5 (EAS: no `eas` command was run) and step 6's `project_id` rename were skipped. Contrast, computed with the WCAG formula: light `#0f766e`/`#ffffff` 5.47:1, dark `#2dd4bf`/`#042f2e` 7.77:1.
+**Done 2026-10-12** in two runs. Log: `~/dev/withme-scratch/notes/make-it-yours-fresh.md`, check script `notes/7d-verify.cjs`, screenshots `notes/7d-*.png`. Steps 2 (fonts), 5 (EAS: no `eas` command was run) and step 6's `project_id` rename were skipped. Contrast, computed with the WCAG formula: light `#0f766e`/`#ffffff` 5.47:1, dark `#2dd4bf`/`#042f2e` 7.77:1.
 - Run 1 (`bcef319`, about 7 min) passed every expected result, and found four places where the text and the starter disagree. All four were fixed as text in `ef48bdf`:
   - the Inputs never asked for the fork's repository URL, which step 3's README badge needs;
   - step 1 put the accent on "the Connect/claim buttons", but it also sits on Accept, Join, and mobile's "Read NFC tag" (`btn--connect` / `kind="connect"`);
@@ -2491,17 +2491,17 @@ bun install
 
 ```bash
 for w in provision-tags extend-profile-core extend-profile make-it-yours; do
-  git -C /Users/alexeisele/dev/withme-starter worktree remove --force /Users/alexeisele/dev/withme-scratch/$w
-  git -C /Users/alexeisele/dev/withme-starter branch -D scratch/$w
+  git -C ~/dev/withme-starter worktree remove --force ~/dev/withme-scratch/$w
+  git -C ~/dev/withme-starter branch -D scratch/$w
 done
-rm -rf /Users/alexeisele/dev/withme-scratch/fresh-*
+rm -rf ~/dev/withme-scratch/fresh-*
 rm -rf "$HOME/withme-tags"
-git -C /Users/alexeisele/dev/withme-starter worktree list    # no withme-scratch entries
-git -C /Users/alexeisele/dev/withme-starter branch --list 'scratch/*'   # nothing
+git -C ~/dev/withme-starter worktree list    # no withme-scratch entries
+git -C ~/dev/withme-starter branch --list 'scratch/*'   # nothing
 git ls-remote --heads origin 'scratch/*'                     # nothing: never pushed
 ```
 
-Keep `/Users/alexeisele/dev/withme-scratch/notes/` until the PR body is written, then delete it. Restore the stack from the M4 worktree: `bun run db:reset && bun run db:seed`.
+Keep `~/dev/withme-scratch/notes/` until the PR body is written, then delete it. Restore the stack from the M4 worktree: `bun run db:reset && bun run db:seed`.
 
 **Step 2: Gate on the M4 branch.**
 
@@ -2513,9 +2513,9 @@ git diff --name-only origin/main...HEAD                 # .agents/skills/**, doc
 **Step 3: Push and open the PR against `main`.** Title: `Add the derivation skills: provision-tags, extend-profile, make-it-yours update`.
 
 The body includes:
-- the spec link and ENG-747;
+- the spec link and Milestone 4;
 - the three skills, the go-live fix, and the `.gitignore` backstop;
-- Decision 3, the sibling table instead of a `profiles_select` edit (approved by Alex 2026-10-11, ENG-749; the spec line amended in Task 6), with the red naive-leak output from Task 2 as evidence;
+- Decision 3, the sibling table instead of a `profiles_select` edit (approved by Alex 2026-10-11, the decisions log; the spec line amended in Task 6), with the red naive-leak output from Task 2 as evidence;
 - the red-then-green RLS counts;
 - per-skill scratch results and fresh-clone timings, including what was skipped and why (production provisioning, EAS, fonts, `project_id`);
 - the corrections the scratch runs forced into each skill;
@@ -2525,9 +2525,9 @@ The body includes:
 
 End with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 
-**Step 4:** Request review with `superpowers:requesting-code-review`. Handle findings with `superpowers:receiving-code-review`, resolving CodeRabbit comments on their merits. Merge with a merge commit once CI and CodeRabbit are clean. Report the milestone to the program manager for Alex and the Linear update.
+**Step 4:** Request review with `superpowers:requesting-code-review`. Handle findings with `superpowers:receiving-code-review`, resolving CodeRabbit comments on their merits. Merge with a merge commit once CI and CodeRabbit are clean. Report the milestone to the program manager for Alex and the tracker update.
 
-**Final review fixes 2026-10-12.** Skills and docs only, no app code. provision-tags: an explicit owner stop (project ref, count, base URL) before §2's batch and §5's production insert; `batch-<k>` for the batch, `<n>` for the count; `mkdir "$OUT"` refuses a reused directory; the `SUPABASE_SERVICE_ROLE_KEY:?` guard; §4 retires printed sheets, `provisioned-tags.html` and `provision.log`, says what to do when a list was committed (delete or disable those unclaimed rows), and that account deletion releases a tag whose UID is already known. go-live: the seed and secrets blocks source `.env.demo-seed` in a subshell, so the service role never stays exported for a later `bun test` in `packages/db` (code guard: ENG-752); `supabase link` and `supabase db push` take the password from `SUPABASE_DB_PASSWORD` (the CLI reference for `link`, Supabase's SASL-auth troubleshooting guide for `db push`), never `-p`; a committed password file means a password reset; `VITE_STORE_URL` is commented out in the example. extend-profile: the gate's cadence per platform in "What must not move" item 7, and why `updateProfile`'s two writes are not a transaction. README: owners claim, re-point, or turn off; account deletion releases tags. program.md: milestone 4 names PR #10.
+**Final review fixes 2026-10-12.** Skills and docs only, no app code. provision-tags: an explicit owner stop (project ref, count, base URL) before §2's batch and §5's production insert; `batch-<k>` for the batch, `<n>` for the count; `mkdir "$OUT"` refuses a reused directory; the `SUPABASE_SERVICE_ROLE_KEY:?` guard; §4 retires printed sheets, `provisioned-tags.html` and `provision.log`, says what to do when a list was committed (delete or disable those unclaimed rows), and that account deletion releases a tag whose UID is already known. go-live: the seed and secrets blocks source `.env.demo-seed` in a subshell, so the service role never stays exported for a later `bun test` in `packages/db` (code guard: the remote-guard gap); `supabase link` and `supabase db push` take the password from `SUPABASE_DB_PASSWORD` (the CLI reference for `link`, Supabase's SASL-auth troubleshooting guide for `db push`), never `-p`; a committed password file means a password reset; `VITE_STORE_URL` is commented out in the example. extend-profile: the gate's cadence per platform in "What must not move" item 7, and why `updateProfile`'s two writes are not a transaction. README: owners claim, re-point, or turn off; account deletion releases tags. program.md: milestone 4 names PR #10.
 
 ---
 

@@ -5,8 +5,8 @@ Decided 2026-10-07 (Alex + Claude). Status: running.
 The starter grows from the bare handshake into a fully fledged starter in
 five milestones, each one pull request. The spec that binds every milestone
 is `specs/2026-09-22-app-shell-and-tabs-design.md`. Progress is tracked in
-the Linear project "withme-starter Build-Out" (ENG-744 to ENG-748, with
-ENG-749 holding the decisions only Alex can make).
+a private project tracker (one issue per milestone, plus a decisions log
+for the calls only Alex can make).
 
 ## Milestones
 
@@ -42,7 +42,7 @@ and runs alongside 3; 5 waits for all.
 4. A pull request against `main`, CodeRabbit's comments resolved on their
    merits (pushed back where the suggestion contradicts a documented
    decision), then a merge commit once CI and CodeRabbit are clean.
-5. A milestone report to Alex and a status update on the Linear project.
+5. A milestone report to Alex and a status update on the project tracker.
 
 ## Operating rules
 
@@ -67,5 +67,4 @@ and runs alongside 3; 5 waits for all.
   fresh starter tree through the skills and a real go-live
   (vibe-with-me/golf-with-me#5, open at `c64b4db`;
   https://golfwithme-web.golfwithme.workers.dev,
-  https://golfwithme-api.golfwithme.workers.dev); tailgate deferred
-  (ENG-756). Report: `reports/2026-10-14-proof-run.md`.
+  https://golfwithme-api.golfwithme.workers.dev); tailgate deferred. Report: `reports/2026-10-14-proof-run.md`.

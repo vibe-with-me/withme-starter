@@ -195,8 +195,8 @@ In slice order:
    `grant execute on function public.create_gathering(text, timestamptz, text, text) to authenticated;`.
    Revoke from `anon` by name: Supabase's default privileges grant `anon`
    execute on every new function directly, so a revoke from `public`
-   alone leaves it callable by anon (core's own older RPCs have the same
-   gap, tracked as ENG-754; the body's `'authentication required'` still
+   alone leaves it callable by anon (core's own older RPCs had the same
+   gap until `20261014200856_revoke_anon_execute.sql`; the body's `'authentication required'` still
    refuses, but the grant should say so too).
    If the summary carries the field, also
    `create or replace function public.resolve_tag(p_uid text) returns jsonb`
