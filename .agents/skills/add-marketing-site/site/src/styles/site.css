@@ -1,0 +1,228 @@
+/*
+ * The site's layout, around the app's own card and buttons (app.css).
+ * Tokens only: every color, font, radius, and space is a var(--*) from the
+ * web app's tokens.css, so make-it-yours restyles the site with the app.
+ * The accent stays where the app keeps it: the sample card's Connect.
+ */
+
+.site-header,
+.site-main,
+.site-footer {
+  width: 100%;
+  max-width: var(--shell-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+.site-header {
+  min-height: var(--shell-nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.site-wordmark {
+  font-size: var(--text-lg);
+  text-decoration: none;
+}
+
+.site-header nav {
+  display: flex;
+}
+
+.site-header .btn--quiet {
+  padding: 0 var(--space-3);
+  white-space: nowrap;
+}
+
+.site-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-7);
+}
+
+/* --- the hero: the promise beside the card it describes ------------------- */
+
+.hero {
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (min-width: 720px) {
+  .hero {
+    grid-template-columns: 1fr minmax(0, var(--card-max-width));
+  }
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-title), 6vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.lede {
+  color: var(--color-ink-muted);
+  font-size: var(--text-lg);
+  margin: var(--space-4) 0 0;
+  max-width: 34rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.actions .btn {
+  width: auto;
+}
+
+/* the sample card is a picture of the app, not a control */
+.sample {
+  margin: 0;
+  justify-self: center;
+  width: 100%;
+  max-width: var(--card-max-width);
+}
+
+.sample .card-name {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.sample .btn {
+  pointer-events: none;
+}
+
+.sample figcaption {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+  margin-top: var(--space-3);
+}
+
+/* --- sections ------------------------------------------------------------- */
+
+.section h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-5);
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 720px) {
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.steps li {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+}
+
+.steps h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-2);
+}
+
+.steps p,
+.promises p {
+  color: var(--color-ink-muted);
+  margin: 0;
+}
+
+.promises {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 720px) {
+  .promises {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.promises h3 {
+  font-size: var(--text-md);
+  margin: 0 0 var(--space-1);
+}
+
+/* --- prose pages (privacy, support) --------------------------------------- */
+
+.prose {
+  max-width: 40rem;
+}
+
+.prose h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-5);
+}
+
+.prose h2 {
+  font-size: var(--text-lg);
+  margin: var(--space-6) 0 var(--space-2);
+}
+
+.prose p,
+.prose li {
+  color: var(--color-ink-muted);
+}
+
+.prose strong {
+  color: var(--color-ink);
+}
+
+/* --- footer --------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-4);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.site-footer nav {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+/* the site's call to action: ink on surface, never the accent */
+.btn--ink {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-surface);
+}

@@ -65,6 +65,10 @@ In the order a new fork usually runs them:
 - **go-live.** The deploy runbook: Supabase link and push, Worker secrets
   (not vars), deploy order via the service binding, hosted JWKS, tag
   encoding.
+- **add-marketing-site.** `apps/site`: a home page, the privacy and
+  support pages the app stores ask for, and a 404, as a static Astro site
+  on its own Worker. The working pages ship in the skill's `site/` folder;
+  a fork copies them and rewrites the words.
 
 ## Decisions a fork inherits
 
@@ -94,11 +98,16 @@ In the order a new fork usually runs them:
   set. No cart, no product data, no commerce API.
 - **The web app owns no data access.** Even single-row owner CRUD (My
   tags) goes through the contract (`app.tags.listMine` / `update`).
+- **The marketing site is static Astro in the app's design system.**
+  Static output with no adapter, so its Worker runs no code; no Tailwind,
+  no islands, no analytics. Its layout imports the web app's `tokens.css`
+  and `app.css`, so make-it-yours restyles it with the app. It reads no
+  data. The site and the app are two Workers, and tags encode one origin
+  forever, so the recommended layout is the site on the apex and the tags
+  on the app's subdomain ([nfc-tags.md](nfc-tags.md)).
 
 ## Candidates and known gaps
 
-- **add-marketing-site.** A one-page site for a fork (what the tag does,
-  how to get one) on the same Cloudflare account. A candidate, not built.
 - **Universal links / AASA.** A tap on a phone with the mobile app
   installed opens the web resolver, not the app. Needs an
   `apple-app-site-association` served from the web Worker, Android

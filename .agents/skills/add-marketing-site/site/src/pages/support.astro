@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import { CONTACT_EMAIL, DISPLAY_NAME } from '../brand.ts';
+---
+
+<Base title="Support" description={`Help with ${DISPLAY_NAME}: your tags, blocking, and deleting your account.`}>
+  <article class="prose">
+    <h1>Support</h1>
+    <p>Write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. A person reads every message.</p>
+
+    <h2>Lost a tag</h2>
+    <p>
+      Open <strong>Profile → My tags</strong> and choose <strong>Turn off</strong>. Anyone who taps it
+      then sees a tag with nothing connected to it. Turn it back on if it turns up.
+    </p>
+
+    <h2>Someone is bothering you</h2>
+    <p>
+      In <strong>Connections</strong>, choose <strong>Block</strong> on their row. They can no longer
+      see your card, connect, or join your gatherings, and they are not told.
+    </p>
+
+    <h2 id="delete-account">Deleting your account</h2>
+    <p>
+      In the app, open <strong>Profile → Account → Delete account</strong>, then confirm. This deletes
+      your profile, photo, links, connections, requests, blocks, the gatherings you host and the ones
+      you joined, and the record of taps on your tags, at once and for good. Your tags return to
+      unclaimed, ready for someone else.
+    </p>
+    <p>
+      Can't sign in? Email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> from the address or
+      with the phone number on your account, and we will delete it for you.
+    </p>
+  </article>
+</Base>

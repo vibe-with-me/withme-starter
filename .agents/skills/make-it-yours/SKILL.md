@@ -33,7 +33,11 @@ verified. Run it first, then fill this list from the sheet.
   used wherever the brand renders as a mark (headings, page titles,
   slugs, user-agent strings) — and the **display name** (e.g. `Acme`) —
   used in prose sentences (the app's display name, permission strings,
-  README prose).
+  README prose). Check it against `TRADEMARKS.md` first: "Vibe With Me,"
+  "VWM," and "Vibe Tags" are reserved, and a "[Something] With Me" name
+  is allowed only with the non-affiliation disclaimer that file gives.
+  If the user keeps the pattern, put that disclaimer in the README in
+  step 3, and remind them it belongs on store listings too.
 - Accent color for light and dark mode, each with an on-accent ink color.
   Required contrast (WCAG AA): accent vs. accent-ink ≥ 4.5:1 in both
   modes — verify with any WCAG contrast checker before editing. If the
@@ -213,6 +217,10 @@ names no brand, so there only the title and badge change):
   the starter app — tags resolve at `/t/<uid>`." It names no brand, so
   no sweep catches it, but your fork is no longer the starter app:
   rewrite it in your voice, or delete the `<p className="hint">`.
+- `apps/site/src/brand.ts`, only in a fork that ran `add-marketing-site`:
+  `WORDMARK`, `DISPLAY_NAME`, `PROMISE` (the landing line above). The
+  site's colors and fonts come from `tokens.css` and `app.css` on its
+  next build; nothing to edit there, but redeploy the site.
 - The demo seed identity: `supabase/seed/demo.ts` holds the demo emails
   (`*@demo.withme.local`) and `supabase/seed/index.ts` the local-only
   password (`withme-demo-1`; a hosted project needs its own
@@ -232,6 +240,10 @@ names no brand, so there only the title and badge change):
   line which must match the seed (previous bullet).
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
+- `LICENSE` — line 3 names the starter's copyright holder,
+  `Vibe With Me LLC`. MIT requires you to keep that notice for the code you
+  inherited; add your own line under it for your changes
+  (`Copyright (c) <year> <your name or org>`) rather than replacing it.
 
 **Wordmark treatment.** Set the weight and tracking from the sheet's
 Wordmark row, the same on web and mobile. Case is the wordmark string
@@ -348,6 +360,9 @@ ends with that new projectId.
   Production URLs/keys are deploy-time secrets. `VITE_DEMO_CREDENTIALS`
   (web) renders the landing-page demo hint — unset it or keep it in sync
   with your seed identity (step 3).
+
+- `apps/site/wrangler.jsonc` → `name` (e.g. `acme-site`), only in a fork
+  that ran `add-marketing-site`.
 
 **Checkpoint:** `grep -n 'withme' apps/api/wrangler.jsonc apps/web/wrangler.jsonc`
 returns nothing, and the web `services` entry matches the api `name`.

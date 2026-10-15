@@ -82,14 +82,16 @@ below does one of these end to end.
 No cloud accounts needed. Prerequisites: [Bun](https://bun.sh),
 [Docker](https://www.docker.com/products/docker-desktop/), and the
 [Supabase CLI](https://supabase.com/docs/guides/cli) version 2.118 or
-newer.
+newer. Start Docker before you begin.
 
 ```sh
+git clone https://github.com/vibe-with-me/withme-starter.git   # or your fork
+cd withme-starter
 bun install
-bun run db:start        # Supabase local on ports 553xx (Postgres, Auth, Storage)
-bun run db:seed         # demo users + tags
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 cp apps/web/.env.example apps/web/.env
+bun run db:start        # Supabase local on ports 553xx; the first run downloads images
+bun run db:seed         # demo users + tags
 bun run dev             # api on :8786, web on :3000
 ```
 
@@ -101,6 +103,11 @@ Then play the demo:
   and claim it.
 - Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
   gathering, her pending request from Lin, and her tags.
+
+If `db:start` says a port is already allocated, something else holds
+553xx, usually another project's Supabase stack: stop it first
+([Local development](docs/local-development.md#when-something-goes-wrong)
+has the commands).
 
 Mobile, tests, ports, and the fixes for the two or three things that go
 wrong on a fresh machine are in [Local development](docs/local-development.md).
@@ -154,13 +161,20 @@ start-line sign can send people to today's route map. The skill's worked
 example is exactly this type.
 
 **6. `provision-tags`: tags for the first Saturday.** Twenty-five random
-UIDs, an encode list of `https://runwithme.example/t/{UID}` URLs, and a
+UIDs, an encode list of `https://app.runwithme.example/t/{UID}` URLs, and a
 printable sheet. Encode with any NFC writer app, lock the tags, hand them
 out. First tap claims.
 
 **7. `go-live`: ship it.** Hosted Supabase, the API worker, the web
 worker, an EAS update for mobile. Every pothole in the runbook was hit on
 a real deploy.
+
+**8. `add-marketing-site`: a front door.** A static Astro site at
+`runwithme.example` (the app lives at `app.runwithme.example`, which the
+tags encode) that says what the bib tag does, plus the privacy and
+support pages the app stores ask for. It imports the app's tokens and
+card, so it wears your brand with no styles of its own, and it ships no
+JavaScript and no analytics.
 
 At the end you have Run With Me: a run club app with your brand, your
 nouns, your fields, and the same privacy promises as the starter, because
@@ -308,4 +322,6 @@ GoToTags from the starter's encode list, a Shopify store behind the tab.
 
 ## License
 
-MIT
+MIT for the code. The Vibe With Me name and marks are not covered by
+the license: [TRADEMARKS.md](TRADEMARKS.md) says what forks may call
+themselves, including the "[Something] With Me" pattern.

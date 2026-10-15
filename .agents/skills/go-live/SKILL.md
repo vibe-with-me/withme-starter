@@ -346,6 +346,10 @@ runs in `vibe-with-me/withme-starter`. A fork deletes it, or points its
 `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF`
 secrets plus a required reviewer.
 
+The marketing site, the privacy and support URLs the store listings ask
+for, and the hostname split between site and app are
+`.agents/skills/add-marketing-site/SKILL.md`, run after this one.
+
 ## Gotcha index
 
 | Symptom | Cause |

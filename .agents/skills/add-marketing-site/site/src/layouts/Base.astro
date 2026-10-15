@@ -1,0 +1,59 @@
+---
+// One layout for every page. The app's own stylesheets come first, so the
+// site wears the app's tokens, fonts, card, and buttons; site.css only lays
+// out the page around them and references var(--*) only.
+import '../../../web/src/styles/tokens.css';
+import '../../../web/src/styles/app.css';
+import '../styles/site.css';
+import { APP_URL, DESCRIPTION, DISPLAY_NAME, STORE_URL, WORDMARK } from '../brand.ts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** The 404 page: kept out of search results, no canonical URL. */
+  notFound?: boolean;
+}
+
+const { title, description = DESCRIPTION, notFound = false } = Astro.props;
+const pageTitle = title ? `${title} · ${WORDMARK}` : WORDMARK;
+// build.format 'file' names pages privacy.html; the served URL is /privacy.
+const canonical = new URL(Astro.url.pathname.replace(/(index)?\.html$/, ''), Astro.site);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    {notFound ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="wordmark site-wordmark" href="/">{WORDMARK}</a>
+      <nav aria-label="Site">
+        <a class="btn btn--quiet" href="/support">Support</a>
+        {APP_URL && <a class="btn btn--quiet" href={APP_URL}>Open the app</a>}
+      </nav>
+    </header>
+    <main id="main" class="site-main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <nav aria-label="Footer">
+        <a href="/privacy">Privacy</a>
+        <a href="/support">Support</a>
+        {STORE_URL && <a href={STORE_URL} rel="noopener noreferrer">Get tags</a>}
+      </nav>
+      <p>© {year} {DISPLAY_NAME}</p>
+    </footer>
+  </body>
+</html>
