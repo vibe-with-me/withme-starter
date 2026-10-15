@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: What could I build with this?
+    url: https://github.com/vibe-with-me/withme-starter/discussions
+    about: Ideas, verticals, and "would this fit my club?" questions go to Discussions, not issues.
+  - name: Report a vulnerability
+    url: https://github.com/vibe-with-me/withme-starter/blob/main/SECURITY.md
+    about: A break in the safety model is a vulnerability. Report it privately; never in a public issue.

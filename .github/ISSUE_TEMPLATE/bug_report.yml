@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in the starter does not work as the docs say it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If this breaks one of the promises in
+        docs/safety-model.md (an RLS bypass, a way to list people, a block
+        that leaks, a connections-tier field reaching a non-connection,
+        the service-role key reachable from a client), stop here and report
+        it privately as SECURITY.md describes. Public issues are visible to
+        everyone.
+
+        Before filing, read CONTRIBUTING.md and search the open issues.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: From a fresh clone if you can. Name the demo tag or account if one is involved.
+      placeholder: |
+        1. bun run db:start && bun run db:seed
+        2. Open http://localhost:3000/t/04BBBBBBBBBBBB
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Where it happens
+      description: The slice layers from docs/the-slice.md. Pick every one you know is involved.
+      multiple: true
+      options:
+        - Contract (packages/contract)
+        - Migration or RLS (supabase/migrations)
+        - RLS tests (packages/db/test)
+        - API (apps/api)
+        - Web (apps/web)
+        - Mobile (apps/mobile)
+        - E2E harnesses
+        - A skill (.agents/skills)
+        - Docs
+        - Not sure
+  - type: textarea
+    id: gate
+    attributes:
+      label: The gate
+      description: |
+        Output of `bun run lint && bun run typecheck && bun run test` with the
+        local stack up (`bun run db:start`, then `bun run db:reset && bun run db:seed`).
+        Paste the failing part, or say it is green.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Stack versions
+      description: Paste the output of the commands below.
+      value: |
+        bun --version:
+        supabase --version:
+        docker --version:
+        OS:
+        git rev-parse --short HEAD:
+        Node (only for mobile, node --version):
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Logs, screenshots, whether you are on a fork and what it changed.
