@@ -36,7 +36,7 @@
     "expo-web-browser": "~56.0.6",
     "react": "19.2.3",
     "react-native": "0.85.3",
-    "react-native-nfc-manager": "^3.17.2",
+    "react-native-nfc-manager": "^4.0.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2"
   },
