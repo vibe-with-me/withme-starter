@@ -57,6 +57,15 @@ console.log('Seeding demo data…');
 const ada = await createDemoUser('ada@demo.withme.local', 'Ada', 'Brings the good playlists.');
 const lin = await createDemoUser('lin@demo.withme.local', 'Lin', 'Will trade book recs.');
 
+// Ada's links: what Lin will see once Ada accepts (Profile → Links).
+const { error: linksError } = await ada.client.rpc('set_my_links', {
+  p_links: [
+    { platform: 'instagram', value: 'ada.plays' },
+    { platform: 'website', value: 'https://ada.example' },
+  ],
+});
+if (linksError) throw linksError;
+
 // Tags: recreate from scratch (cascades clear old scans).
 await admin.from('tags').delete().in('uid', Object.values(TAGS));
 const { error: tagError } = await admin
@@ -113,7 +122,7 @@ if (pointError) throw pointError;
 
 console.log(`
 Seeded.
-  Users     ada@demo.withme.local / ${DEMO_PASSWORD}   (has 1 pending request from Lin; hosts a gathering Lin joined)
+  Users     ada@demo.withme.local / ${DEMO_PASSWORD}   (has 1 pending request from Lin; hosts a gathering Lin joined; two links)
             lin@demo.withme.local / ${DEMO_PASSWORD}
   Tags      /t/${TAGS.claimed}  -> Ada's card, inviting you to her gathering
             /t/${TAGS.unclaimed}  -> claim flow

@@ -5,6 +5,7 @@ import { publicContract } from './contract/public.ts';
 export * from './schemas/connection.ts';
 export * from './schemas/destination.ts';
 export * from './schemas/gathering.ts';
+export * from './schemas/link.ts';
 export * from './schemas/phone.ts';
 export * from './schemas/profile.ts';
 export * from './schemas/tag.ts';

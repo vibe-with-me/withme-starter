@@ -1,6 +1,8 @@
+import type { ProfileLink } from '@withme/contract';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
+import { LinkList } from '../components/Links.tsx';
 import { ListLadder } from '../components/ListStates.tsx';
 import { Avatar, type CardProfile } from '../components/ProfileCard.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
@@ -163,6 +165,7 @@ function ConnectionsPage() {
                 key={connection.id}
                 profile={connection.profile}
                 sub={connection.profile.bio}
+                links={connection.links}
               >
                 <button
                   type="button"
@@ -241,10 +244,13 @@ function SegmentLink({
 function PersonRow({
   profile,
   sub,
+  links,
   children,
 }: {
   profile: CardProfile;
   sub?: string | null;
+  /** Connections only: the one list that carries them. */
+  links?: ProfileLink[];
   children: ReactNode;
 }) {
   return (
@@ -255,6 +261,8 @@ function PersonRow({
         {sub ? <span className="sub">{sub}</span> : null}
       </div>
       <div className="row-actions">{children}</div>
+      {/* On its own line under the row: the chips need the width. */}
+      {links ? <LinkList links={links} name={profile.display_name} /> : null}
     </div>
   );
 }

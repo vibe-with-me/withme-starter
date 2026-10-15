@@ -1,4 +1,5 @@
 import type { Db, Tables } from '../index.ts';
+import { LINK_EMBED, sortLinks, type ProfileLinkRow } from './links.ts';
 
 /** The card columns — everything a counterpart may see, nothing more. */
 export const CARD_COLUMNS = 'id, display_name, avatar_path, bio';
@@ -101,22 +102,26 @@ export interface ConnectionRow {
   id: string;
   created_at: string;
   profile: ProfileCard;
+  /** The other party's links: a connection is the one place they travel (RLS admits them here). */
+  links: ProfileLinkRow[];
 }
 
-/** The caller's connections, each carrying the OTHER party's card. */
+/** The caller's connections, each carrying the OTHER party's card and links. */
 export async function listConnections(db: Db, userId: string): Promise<ConnectionRow[]> {
   const { data, error } = await db
     .from('connections')
     .select(
       `id, created_at, user_a, user_b,
-       a:profiles!connections_user_a_fkey(${CARD_COLUMNS}),
-       b:profiles!connections_user_b_fkey(${CARD_COLUMNS})`,
+       a:profiles!connections_user_a_fkey(${CARD_COLUMNS}, ${LINK_EMBED}),
+       b:profiles!connections_user_b_fkey(${CARD_COLUMNS}, ${LINK_EMBED})`,
     )
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).flatMap((row) => {
-    const profile = row.user_a === userId ? row.b : row.a;
-    return profile ? [{ id: row.id, created_at: row.created_at, profile }] : [];
+    const other = row.user_a === userId ? row.b : row.a;
+    if (!other) return [];
+    const { links, ...profile } = other;
+    return [{ id: row.id, created_at: row.created_at, profile, links: sortLinks(links) }];
   });
 }
 

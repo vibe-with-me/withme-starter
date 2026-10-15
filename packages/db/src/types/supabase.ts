@@ -42,6 +42,7 @@ export type Database = {
           id: string
           tenant_id: string
         }
+        ComputedFields: never
         Insert: {
           blocked_id: string
           blocker_id: string
@@ -83,6 +84,7 @@ export type Database = {
           status: Database["public"]["Enums"]["connect_request_status"]
           tenant_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           expires_at?: string
@@ -126,6 +128,7 @@ export type Database = {
           user_a: string
           user_b: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -164,6 +167,7 @@ export type Database = {
           profile_id: string
           tenant_id: string
         }
+        ComputedFields: never
         Insert: {
           gathering_id: string
           joined_at?: string
@@ -203,6 +207,7 @@ export type Database = {
           tenant_id: string
           title: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           host_id: string
@@ -231,6 +236,45 @@ export type Database = {
           },
         ]
       }
+      profile_links: {
+        Row: {
+          created_at: string
+          platform: string
+          profile_id: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+          value: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          platform: string
+          profile_id: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          platform?: string
+          profile_id?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -241,6 +285,7 @@ export type Database = {
           tenant_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           avatar_path?: string | null
           bio?: string | null
@@ -269,6 +314,7 @@ export type Database = {
           tenant_id: string
           user_agent: string | null
         }
+        ComputedFields: never
         Insert: {
           id?: string
           scanned_at?: string
@@ -303,6 +349,7 @@ export type Database = {
           uid: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           claimed_by?: string | null
           created_at?: string
@@ -349,7 +396,10 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
-      delete_my_account: { Args: never; Returns: undefined }
+      delete_my_account: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       join_gathering: { Args: { p_gathering_id: string }; Returns: undefined }
       log_scan: {
         Args: { p_uid: string; p_user_agent?: string }
@@ -359,6 +409,24 @@ export type Database = {
       send_connect_request: {
         Args: { p_recipient: string }
         Returns: undefined
+      }
+      set_my_links: {
+        Args: { p_links: Json }
+        Returns: {
+          created_at: string
+          platform: string
+          profile_id: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+          value: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profile_links"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
     }
     Enums: {
@@ -379,12 +447,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -406,13 +474,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -431,13 +498,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -456,13 +522,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -475,11 +540,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -499,4 +564,3 @@ export const Constants = {
     },
   },
 } as const
-

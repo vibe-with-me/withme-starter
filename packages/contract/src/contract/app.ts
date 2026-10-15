@@ -7,6 +7,7 @@ import {
   GatheringSchema,
   UpdateGatheringInputSchema,
 } from '../schemas/gathering.ts';
+import { ProfileLinkSchema, ProfileLinksInputSchema } from '../schemas/link.ts';
 import {
   AvatarUploadInputSchema,
   ProfileSchema,
@@ -34,6 +35,19 @@ const uploadAvatar = oc
 const removeAvatar = oc
   .route({ method: 'DELETE', path: '/me/avatar', tags: ['Profile'] })
   .output(z.object({ profile: ProfileSchema }));
+
+// Links: Profile → Links. Connections tier: read back only by you and by
+// accepted connections (through connections.list), never on the card.
+const listMyLinks = oc
+  .route({ method: 'GET', path: '/me/links', tags: ['Profile'] })
+  .output(z.object({ links: z.array(ProfileLinkSchema) }));
+
+const replaceMyLinks = oc
+  .route({ method: 'PUT', path: '/me/links', tags: ['Profile'] })
+  .input(ProfileLinksInputSchema)
+  // The whole list, in order, one transaction: platforms left out are
+  // removed. Values must already be canonical (normalizeLinkValue).
+  .output(z.object({ links: z.array(ProfileLinkSchema) }));
 
 const deleteAccount = oc
   .route({ method: 'DELETE', path: '/me', tags: ['Profile'] })
@@ -155,6 +169,7 @@ export const appContract = {
     removeAvatar,
     deleteAccount,
   },
+  links: { listMine: listMyLinks, replace: replaceMyLinks },
   requests: {
     send: sendRequest,
     listPending: listPendingRequests,

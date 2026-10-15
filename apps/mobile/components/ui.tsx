@@ -139,15 +139,19 @@ export function Button({
 
 export function Field({
   label,
+  ref,
   ...inputProps
 }: TextInputProps & {
   label: string;
+  /** For moving focus into a field that was just added. */
+  ref?: Ref<TextInput>;
 }) {
   const t = useTokens();
   return (
     <View style={styles.field}>
       <Text style={[styles.fieldLabel, { color: t.ink }]}>{label}</Text>
       <TextInput
+        ref={ref}
         accessibilityLabel={label}
         placeholderTextColor={t.inkMuted}
         // Off by default: emails, UIDs, and URLs must not be autocorrected.
@@ -264,11 +268,14 @@ export function PersonRow({
   name,
   path,
   sub,
+  extra,
   children,
 }: {
   name: string;
   path: string | null;
   sub?: string | null;
+  /** Under the name and sub, full width: a connection's link chips. */
+  extra?: ReactNode;
   children?: ReactNode;
 }) {
   const t = useTokens();
@@ -287,6 +294,7 @@ export function PersonRow({
           ) : null}
         </View>
       </View>
+      {extra}
       {children ? <View style={styles.personActions}>{children}</View> : null}
     </View>
   );

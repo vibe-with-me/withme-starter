@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ProfileLinkSchema } from './link.ts';
 import { PublicProfileSchema } from './profile.ts';
 
 export const ConnectRequestStatusSchema = z.enum(['pending', 'accepted', 'declined', 'expired']);
@@ -12,10 +13,15 @@ export const ConnectRequestSchema = z.object({
   expires_at: z.iso.datetime({ offset: true }),
 });
 
-/** A connection as either party sees it: the other person's card. */
+/**
+ * A connection as either party sees it: the other person's card, and their
+ * links — the one place links travel. Always present; `[]` when they have
+ * none.
+ */
 export const ConnectionSchema = z.object({
   id: z.uuid(),
   profile: PublicProfileSchema,
+  links: z.array(ProfileLinkSchema),
   created_at: z.iso.datetime({ offset: true }),
 });
 
