@@ -12,20 +12,20 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@logtape/logtape": "^2.0.4",
-    "@orpc/server": "^1.13.9",
+    "@logtape/logtape": "^2.4.1",
+    "@orpc/server": "^1.15.5",
     "@withme/contract": "workspace:*",
     "@withme/db": "workspace:*",
-    "hono": "^4.12.0",
-    "jose": "^6.2.3"
+    "hono": "^4.13.13",
+    "jose": "^6.2.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260101.0",
     "@orpc/client": "^1.13.6",
-    "@orpc/contract": "^1.13.6",
-    "@types/bun": "^1.3.14",
+    "@orpc/contract": "^1.15.5",
+    "@types/bun": "^1.4.2",
     "@withme/nfc": "workspace:*",
     "typescript": "~5.9.3",
-    "wrangler": "^4.93.0"
+    "wrangler": "^4.149.0"
   }
 }

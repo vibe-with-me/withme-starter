@@ -15,24 +15,24 @@
   },
   "dependencies": {
     "@orpc/client": "^1.13.6",
-    "@supabase/supabase-js": "^2.103.0",
-    "@tanstack/react-router": "^1.170.2",
-    "@tanstack/react-start": "^1.168.25",
+    "@supabase/supabase-js": "^2.117.3",
+    "@tanstack/react-router": "^1.170.42",
+    "@tanstack/react-start": "^1.168.61",
     "@withme/contract": "workspace:*",
-    "lucide-react": "^1.47.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "lucide-react": "^1.55.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.37.0",
-    "@orpc/contract": "^1.13.6",
-    "@playwright/test": "^1.59.0",
+    "@cloudflare/vite-plugin": "^1.63.1",
+    "@orpc/contract": "^1.15.5",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "typescript": "~5.9.3",
-    "vite": "^8.0.10",
-    "wrangler": "^4.93.0"
+    "vite": "^8.3.4",
+    "wrangler": "^4.149.0"
   }
 }

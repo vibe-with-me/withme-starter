@@ -16,7 +16,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@orpc/client": "^1.13.6",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@supabase/supabase-js": "^2.103.0",
+    "@supabase/supabase-js": "^2.117.3",
     "@withme/contract": "workspace:*",
     "aes-js": "^3.1.2",
     "expo": "56.0.9",
@@ -34,17 +34,17 @@
     "expo-status-bar": "~56.0.4",
     "expo-updates": "~56.0.19",
     "expo-web-browser": "~56.0.6",
-    "react": "19.2.3",
-    "react-native": "0.85.3",
+    "react": "19.3.0",
+    "react-native": "0.87.1",
     "react-native-nfc-manager": "^3.17.2",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "4.25.2"
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "4.29.0"
   },
   "devDependencies": {
-    "@orpc/contract": "^1.13.6",
+    "@orpc/contract": "^1.15.5",
     "@types/aes-js": "^3.1.4",
-    "@types/react": "~19.2.2",
-    "agent-device": "0.17.2",
+    "@types/react": "~19.3.0",
+    "agent-device": "0.21.25",
     "typescript": "~6.0.3"
   }
 }
