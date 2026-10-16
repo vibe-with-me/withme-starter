@@ -103,6 +103,32 @@ exist, which were deliberately skipped, and the decisions behind both.
 | `skill` | Belongs in `.agents/skills/`: a new recipe, a fix to one, or a seam change that must update one. |
 | `invariant` | The proposal needs a discussion about the V1 invariant before anyone writes code. Expect it to be closed or re-scoped, not merged as written. |
 
+## Releasing `@withme/nfc` (maintainers)
+
+`.github/workflows/release.yml` publishes the SDK to npm when an `nfc-v*`
+tag is pushed. Three things gate it:
+
+- **The tag.** A ruleset on `refs/tags/nfc-v*` lets only repository admins
+  create a release tag, and nobody can move, delete, or force-push one.
+  A published version stays tied to the commit it was built from.
+- **The `npm` environment.** The release job runs in it, it accepts only
+  `nfc-v*` tags, and `NPM_TOKEN` lives there as an environment secret, so
+  no other workflow or branch can read it. Once the repo is public, a
+  maintainer must approve each deployment before the job starts.
+- **The version check.** The tag must match `packages/nfc-sdk/package.json`,
+  and lint, typecheck, build, tests, and the publish-artifact checks must
+  pass before anything is published.
+
+To cut a release:
+
+1. Merge a PR that bumps `version` in `packages/nfc-sdk/package.json`.
+2. Tag that commit on `main` and push the tag:
+   `git tag nfc-v0.2.0 && git push origin nfc-v0.2.0`.
+3. In the Actions tab, open the Release run and approve the `npm`
+   deployment ("Review deployments"). Until the repo is public the
+   environment has no reviewer, and the job starts right away.
+4. The job publishes with provenance and creates the GitHub Release.
+
 ## Where things go
 
 - **Bugs and proposals:** [Issues](https://github.com/vibe-with-me/withme-starter/issues),

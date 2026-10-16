@@ -20,6 +20,11 @@ jobs:
     # skips this job instead of trying (and failing) to publish it.
     if: github.repository == 'vibe-with-me/withme-starter'
     runs-on: ubuntu-latest
+    # The `npm` environment is the publish gate: it only deploys from
+    # nfc-v* tags, holds NPM_TOKEN as an environment secret, and (once the
+    # repo is public) waits for a maintainer to approve the run. npm's
+    # trusted-publisher config must name this same environment.
+    environment: npm
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
