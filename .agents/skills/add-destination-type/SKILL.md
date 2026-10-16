@@ -85,13 +85,19 @@ alter table public.tags add constraint tags_destination_shape check (
     jsonb_typeof(destination) = 'object'
     and destination->>'type' = 'link'
     and jsonb_typeof(destination->'url') = 'string'
-    and destination->>'url' ~ '^https://[^[:space:]]+$'
+    and destination->>'url' ~ '^https://[A-Za-z0-9.-]+(:[0-9]+)?([/?#][^[:space:]]*)?$'
     and char_length(destination->>'url') <= 2048
     and destination - 'type' - 'url' = '{}'::jsonb,
     false
   )
 );
 ```
+
+The URL pattern demands a host (letters, digits, dots and hyphens, an
+optional port) before any path, query or fragment. `https://?x` or
+`https://user@evil.example` never reaches a resolver that calls
+`new URL()` on it. An internationalized domain is stored in its punycode
+form (`xn--…`), which is also how §7 displays it.
 
 Two idioms here are load-bearing:
 
@@ -116,8 +122,21 @@ the link branch's URL test to those hosts, anchored so that
         ~ '^https://(menu\.example\.com|tickets\.example\.org)(/[^[:space:]]*)?$'
 ```
 
-Mirror it in zod with the same pattern (`.regex(...)` on the url), or the
-API accepts what the database refuses. An allowlist is a product choice,
+Mirror it in zod, or the API accepts what the database refuses. Translate
+the pattern rather than copying it: JavaScript has no POSIX classes, so
+`[^[:space:]]` becomes `\S`:
+
+```ts
+url: z
+  .url({ protocol: /^https$/ })
+  .max(2048)
+  .regex(/^https:\/\/(menu\.example\.com|tickets\.example\.org)(\/\S*)?$/),
+```
+
+Add the same accept and reject cases to the contract test and the §4 RLS
+test (an allowed host with a path, `https://menu.example.com.evil.example`,
+`https://evil.example/menu.example.com`), so the two validators are proven
+to agree. An allowlist is a product choice,
 not a requirement: the interstitial in §7 and §8 is the safety measure
 either way.
 
@@ -176,6 +195,7 @@ it('malformed link destinations are rejected at the DB boundary', async () => {
     { type: 'link', url: 'http://example.com' }, // not https
     { type: 'link', url: 'https://example.com', extra: 'x' }, // extra key
     { type: 'link', url: 'https://bad url' }, // whitespace
+    { type: 'link', url: 'https://?x' }, // no host: new URL() would throw in the resolver
   ]) {
     const { error } = await alice.client.from('tags').update({ destination }).eq('uid', uid);
     expect(error?.message).toContain('tags_destination_shape');
@@ -235,8 +255,12 @@ so the fork's name vouches for a page it has never seen. The https-only
 CHECK rules out `javascript:` and `data:`; it says nothing about where
 the link goes. So the link branch renders an interstitial card: whose tag
 it is, the destination's hostname in plain text, and a button the tapper
-presses to leave. The hostname is the part a phishing link cannot fake,
-so it is the line to show, not the full URL:
+presses to leave. Show the hostname, not the full URL: it is where the
+tap will actually land, while a path or query can be dressed up to look
+like anything. It is information, not proof: a lookalike domain
+(`paypa1.example`) or a deceptive subdomain (`paypal.example.evil.example`)
+still reads as plausible at a glance, so the card says where the link goes
+and leaves the judgement to the tapper:
 
 ```tsx
 // in ResolvePage, next to the gathering branch, before the profile-card return:
@@ -245,8 +269,8 @@ if (result.destination.type === 'link') {
   return (
     <main className="page">
       <ProfileCard profile={result.profile} settle>
-        {/* The host, as the browser will show it: the one part of the link
-            a lookalike cannot borrow. The tapper decides with it in view. */}
+        {/* The host, as the browser will show it: where the tap really lands.
+            The tapper decides with it in view. */}
         <p className="hint">This tag opens a link on</p>
         <p className="bio">
           <strong>{url.hostname}</strong>
@@ -261,10 +285,11 @@ if (result.destination.type === 'link') {
 }
 ```
 
-`new URL()` cannot throw here: the contract and the CHECK both admit only
-https URLs. `url.hostname` is already punycode for an internationalized
-domain (`xn--…`), which is what you want: a homoglyph host shows as
-punycode instead of passing for the real name. Do not add
+`new URL()` cannot throw here: the CHECK (§2) only admits an https URL
+with a host, and the contract's `z.url()` parses each one the same way.
+`url.hostname` is punycode for an internationalized domain (`xn--…`),
+which is what you want: a homoglyph host shows as punycode instead of
+passing for the real name. Do not add
 `target="_blank"`; leaving the page is the point.
 
 Scan logging already happened in the loader's `Promise.all`, so link taps
@@ -288,7 +313,7 @@ if (result.destination.type === 'link') {
       <Card settle>
         <Title>{result.profile.display_name}</Title>
         <Muted>This tag opens a link on</Muted>
-        {/* The host, not the whole URL: the part a lookalike cannot borrow. */}
+        {/* The host, not the whole URL: where the tap really lands. */}
         <Title>{url.hostname}</Title>
         <Button
           kind="connect"

@@ -70,20 +70,34 @@ shell history and transcripts):
 
 ```sh
 ( umask 077
-supabase projects api-keys --project-ref <ref> -o json | python3 -c "
+supabase projects api-keys --project-ref <ref> --reveal -o json | python3 -c "
 import json, os, secrets, sys
 keys = {k['name']: k['api_key'] for k in json.load(sys.stdin)}
 anon = next((v for v in keys.values() if str(v).startswith('sb_publishable_')), keys.get('anon', ''))
-with open(os.path.expanduser('~/.config/<name>/demo-seed.env'), 'w') as f:
+# A secret key (sb_secret_, needs --reveal) when the project has one, so the
+# command still works after section 5 retires the legacy service_role key.
+service = next((v for v in keys.values() if str(v).startswith('sb_secret_')), keys.get('service_role', ''))
+if not service:
+    sys.exit('no secret or service_role key found')
+path = os.path.expanduser('~/.config/<name>/demo-seed.env')
+tmp = path + '.tmp'
+if os.path.exists(tmp):
+    os.remove(tmp)
+# A new file, 0600 from its first byte, then swapped in: writing over an
+# existing file would keep whatever mode it had while the key lands in it.
+with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as f:
     f.write('SUPABASE_URL=https://<ref>.supabase.co\n')
-    f.write(f\"SUPABASE_SERVICE_ROLE_KEY={keys['service_role']}\n\")
+    f.write(f'SUPABASE_SERVICE_ROLE_KEY={service}\n')
     f.write(f'SUPABASE_ANON_KEY={anon}\n')
     f.write(f'SEED_DEMO_PASSWORD={secrets.token_urlsafe(18)}\n')
-" ) && chmod 600 "$HOME/.config/<name>/demo-seed.env"   # umask: never world-readable; chmod: an existing file
+os.replace(tmp, path)
+" )
 ```
 
 The file holds the service-role key until section 5 retires it. Every
-block below reads it from there; nothing copies it into the repo.
+block below reads it from there; nothing copies it into the repo. Run
+again, the command replaces the whole file, `SEED_DEMO_PASSWORD`
+included: a later seed then resets the demo logins to the new password.
 
 Older projects expose legacy keys only (`anon`, `service_role`, and one
 named `default`), no `sb_publishable_…`; the fallback to `anon` is correct
@@ -232,8 +246,12 @@ Auth URLs (the owner, in the Supabase dashboard: Authentication → URL
 Configuration): Site URL `https://<web-worker>.workers.dev`, and one
 Redirect URL, exactly `https://<web-worker>.workers.dev/auth/callback`
 (the README and `supabase/config.toml` use the same exact path). Not
-`/**`: a wildcard lets a crafted sign-in link send the session to any
-path on the origin, and the app has one callback. Without these,
+`/**`: the allowlist should name the one callback the app has. It is not
+the whole defence, though: Supabase also accepts redirects to the Site
+URL's own origin, so where the app goes after sign-in is decided by the
+callback itself. `/auth/callback` passes `returnTo` through
+`safeReturnTo` (`apps/web/src/lib/auth-guard.ts`), which only allows a
+path on the app's own origin; keep that check if you change the flow. Without these,
 confirmation and reset links point at `localhost:3000`. Do this before the
 sign-up below.
 
@@ -370,11 +388,12 @@ account:
 - [ ] **Retire the service-role key used for seeding.** Nothing deployed
   uses it: the Workers hold only the publishable key. Under Project
   Settings → API Keys, create a new secret key and delete the one in the
-  keys file. A project on legacy JWT keys instead disables the legacy
-  `service_role` key there once nothing needs it. Then delete the keys
-  file: `rm "$HOME/.config/<name>/demo-seed.env"`. A later seed or tag
-  batch fetches fresh keys with section 1's command and deletes the file
-  again afterwards.
+  keys file. A project on legacy JWT keys creates a secret key there,
+  then disables the legacy `service_role` key once nothing needs it.
+  Then delete the keys file: `rm "$HOME/.config/<name>/demo-seed.env"`.
+  A later seed or tag batch fetches fresh keys with section 1's command
+  (it picks the `sb_secret_` key, so it works after the legacy key is
+  gone) and deletes the file again afterwards.
 - [ ] **MFA on every account that can change production:** the Supabase
   org, the Cloudflare account, the Expo account, and GitHub. Each
   member, not only the owner.
