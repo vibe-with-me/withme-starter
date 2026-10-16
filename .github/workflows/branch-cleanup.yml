@@ -1,0 +1,72 @@
+name: Branch cleanup
+
+# Keeps the remote down to main plus branches with live work. GitHub's
+# "Automatically delete head branches" setting covers most merges, but it
+# skips PRs closed without merging and branches pushed again after their
+# PR closed. This catches both:
+#
+# - When a PR from this repository closes (merged or not), its head branch
+#   is deleted.
+# - Weekly, and on demand from the Actions tab, any branch whose PRs are
+#   all closed and whose tip is still the commit the PR ended on is deleted.
+#   A branch with no PR, an open PR, or commits pushed after its PR closed
+#   is left alone: that is someone's work in progress.
+#
+# Nothing is lost: GitHub keeps every PR's commits at refs/pull/<n>/head,
+# and a closed PR's branch can be restored from the PR page.
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: '17 6 * * 1' # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  closed-pr:
+    # PRs from forks have no branch here to delete (and a read-only token).
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.pull_request.head.ref }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Delete the PR's head branch
+        run: |
+          if [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then exit 0; fi
+          # 404/422: the branch is already gone (auto-delete got there first).
+          gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" \
+            && echo "Deleted $BRANCH" \
+            || echo "$BRANCH was already deleted"
+
+  sweep:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Delete branches whose PRs have all closed
+        run: |
+          owner="${REPO%%/*}"
+          gh api --paginate "repos/$REPO/branches?per_page=100" \
+            --jq '.[] | "\(.name) \(.commit.sha)"' |
+          while read -r branch tip; do
+            [ "$branch" = "$DEFAULT_BRANCH" ] && continue
+            prs=$(gh api "repos/$REPO/pulls?state=all&head=$owner:$branch&per_page=100" \
+              --jq '[.[] | {state, sha: .head.sha}]')
+            total=$(jq length <<<"$prs")
+            open=$(jq '[.[] | select(.state == "open")] | length' <<<"$prs")
+            ended=$(jq --arg tip "$tip" '[.[] | select(.sha == $tip)] | length' <<<"$prs")
+            if [ "$total" -eq 0 ] || [ "$open" -gt 0 ] || [ "$ended" -eq 0 ]; then
+              echo "Keep $branch"
+              continue
+            fi
+            gh api -X DELETE "repos/$REPO/git/refs/heads/$branch" && echo "Deleted $branch"
+          done
