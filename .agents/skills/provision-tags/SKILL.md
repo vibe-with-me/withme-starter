@@ -76,8 +76,9 @@ owner's OK).
   `--count must be an integer between 1 and 1000` and exits 1.
 - Base URL: the `https` web origin that serves `/t/<UID>`, no trailing
   path (e.g. `https://tags.acme.com`); locally `http://localhost:3000`.
-- Target: the local stack, or production (needs `.env.demo-seed` from
-  go-live §1 and the owner's OK).
+- Target: the local stack, or production (needs the keys file
+  `$HOME/.config/<name>/demo-seed.env` from go-live §1 and the owner's
+  OK).
 - An output directory outside the repo, new for every batch (the script
   overwrites `provisioned-tags.*` in place).
 
@@ -186,7 +187,7 @@ Production needs the keys file from go-live §1 and the owner's explicit OK.
 clear yes before running anything below:
 
 - the project ref, from the keys file without the key:
-  `sed -n 's|^SUPABASE_URL=https://\([^.]*\)\.supabase\.co.*|\1|p' "$(git rev-parse --show-toplevel)/.env.demo-seed"`;
+  `sed -n 's|^SUPABASE_URL=https://\([^.]*\)\.supabase\.co.*|\1|p' "$HOME/.config/<name>/demo-seed.env"`;
 - the count (`<n>` below);
 - the `--base-url`, and that its domain cannot change once the tags are
   locked (rule 6).
@@ -202,10 +203,10 @@ OUT="$HOME/<wordmark>-tags/$(date +%Y%m%d)-batch-<k>"
   mkdir -p "$(dirname "$OUT")"
   mkdir "$OUT"
   set -a
-  source "$REPO/.env.demo-seed"
+  source "$HOME/.config/<name>/demo-seed.env"
   set +a
-  : "${SUPABASE_URL:?missing from .env.demo-seed}"
-  : "${SUPABASE_SERVICE_ROLE_KEY:?missing from .env.demo-seed}"
+  : "${SUPABASE_URL:?missing from the keys file}"
+  : "${SUPABASE_SERVICE_ROLE_KEY:?missing from the keys file}"
   cd "$OUT"
   SEED_ALLOW_REMOTE=1 bun run "$REPO/supabase/seed/provision.ts" \
     --count <n> --base-url https://<your-domain> > provision.log

@@ -9,8 +9,12 @@ A tag's `destination` is the spine of this codebase: one typed union,
 enforced in four places that must move together (zod contract, DB CHECK
 constraint, SDK client types, resolver rendering). This skill walks the
 full ripple. The worked example throughout is `{ type: 'link', url }` —
-a tag that redirects to an https URL. The example was built and verified
-against the real stack, then removed: it ships here, not in the starter.
+a tag that opens an https URL, after an interstitial card that shows its
+host. The contract, CHECK, RPC, test and e2e steps were built and
+verified against the real stack, then removed: they ship here, not in the
+starter. The interstitial cards in §7 and §8 replaced an earlier silent
+redirect after a security review and have not been run end to end yet,
+so the §9 runtime check is the first proof of them in your fork.
 
 **REQUIRED BACKGROUND:** read `docs/the-slice.md` first. This skill is
 that slice applied to one concern; the safety discipline and the
@@ -100,6 +104,22 @@ Two idioms here are load-bearing:
 - **No extra keys:** `destination - '<key>' - '<key>' = '{}'::jsonb`
   subtracts the allowed keys and demands nothing is left — the jsonb
   equivalent of zod's strict object.
+
+**Optional: a host allowlist.** The CHECK above admits any https host,
+so any user who claims a tag can point it at any site. If the fork's links
+should only ever reach known sites (a venue's own menu host, say), narrow
+the link branch's URL test to those hosts, anchored so that
+`https://menu.example.com.evil.example` and userinfo tricks fail:
+
+```sql
+    and destination->>'url'
+        ~ '^https://(menu\.example\.com|tickets\.example\.org)(/[^[:space:]]*)?$'
+```
+
+Mirror it in zod with the same pattern (`.regex(...)` on the url), or the
+API accepts what the database refuses. An allowlist is a product choice,
+not a requirement: the interstitial in §7 and §8 is the safety measure
+either way.
 
 **Checkpoint:** `bun run db:reset` ends with `Finished supabase db
 reset` (some CLI versions add ` on branch …`), then `bun run db:seed`. Run `bun run db:types` and check
@@ -206,58 +226,85 @@ vitest run erases them and passes even when the types have drifted.)
 
 `apps/web/src/routes/t.$uid.tsx` renders the profile card for every
 claimed tag except a gathering tag, whose branch in the component is the
-worked example of a card-like type. Branch on your type in the loader
-(redirect-like types) or the component (card-like types). The link branch goes in the loader,
-after the unclaimed redirect:
+worked example of a card-like type. Branch on your type in the component.
 
-```ts
-if (result.status === 'claimed' && result.destination.type === 'link') {
-  // The tag IS the link. Safe to follow blind: the DB CHECK constrains
-  // destinations to https URLs, so this can never be javascript:/data:.
-  throw redirect({ href: result.destination.url });
+**A link tag is never a silent redirect.** Anyone can claim a tag and
+point it at any https URL, including a phishing page. A redirect straight
+from `/t/<uid>` would land the tapper there from the fork's own domain,
+so the fork's name vouches for a page it has never seen. The https-only
+CHECK rules out `javascript:` and `data:`; it says nothing about where
+the link goes. So the link branch renders an interstitial card: whose tag
+it is, the destination's hostname in plain text, and a button the tapper
+presses to leave. The hostname is the part a phishing link cannot fake,
+so it is the line to show, not the full URL:
+
+```tsx
+// in ResolvePage, next to the gathering branch, before the profile-card return:
+if (result.destination.type === 'link') {
+  const url = new URL(result.destination.url);
+  return (
+    <main className="page">
+      <ProfileCard profile={result.profile} settle>
+        {/* The host, as the browser will show it: the one part of the link
+            a lookalike cannot borrow. The tapper decides with it in view. */}
+        <p className="hint">This tag opens a link on</p>
+        <p className="bio">
+          <strong>{url.hostname}</strong>
+        </p>
+        <a className="btn btn--connect" href={url.href} rel="noopener noreferrer nofollow">
+          Open link
+        </a>
+      </ProfileCard>
+      <WordmarkFooter />
+    </main>
+  );
 }
 ```
 
-Scan logging already happened in the `Promise.all` above — keep the
-branch below it so link taps are logged like any tap.
+`new URL()` cannot throw here: the contract and the CHECK both admit only
+https URLs. `url.hostname` is already punycode for an internationalized
+domain (`xn--…`), which is what you want: a homoglyph host shows as
+punycode instead of passing for the real name. Do not add
+`target="_blank"`; leaving the page is the point.
+
+Scan logging already happened in the loader's `Promise.all`, so link taps
+are logged like any tap. The loader itself needs no link branch.
 
 ## 8. Mobile resolver
 
-`apps/mobile/app/t/[uid].tsx`, same branch twice: in the resolve effect
-(the physical tap is the user gesture — hand off immediately) and in the
-render (a fallback card, composed from `components/ui` primitives, for
-when the open fails or the user returns). Import `Linking` from
-react-native:
-
-```ts
-// in the .then(), after the unclaimed redirect:
-if (resolved.status === 'claimed' && resolved.destination.type === 'link') {
-  Linking.openURL(resolved.destination.url).catch(() => undefined);
-}
-setResult(resolved);
-```
+`apps/mobile/app/t/[uid].tsx` gets the same interstitial, in the render,
+next to the gathering branch. No `Linking.openURL` in the resolve effect:
+the physical tap is a gesture toward the tag, not consent to open
+whatever the tag's owner chose, and the app opening a phishing page by
+itself is the same silent redirect as on the web. Import `Linking` from
+react-native and compose the card from `components/ui` primitives:
 
 ```tsx
 // in the component, next to the gathering branch, before the profile-card return:
 if (result.destination.type === 'link') {
-  const url = result.destination.url;
+  const url = new URL(result.destination.url);
   return (
     <View style={[styles.page, { backgroundColor: t.bg }]}>
       <Card settle>
         <Title>{result.profile.display_name}</Title>
-        <Muted>{url}</Muted>
-        <Button kind="connect" label="Open link"
-          onPress={() => Linking.openURL(url).catch(() => undefined)} />
+        <Muted>This tag opens a link on</Muted>
+        {/* The host, not the whole URL: the part a lookalike cannot borrow. */}
+        <Title>{url.hostname}</Title>
+        <Button
+          kind="connect"
+          label="Open link"
+          onPress={() => Linking.openURL(url.href).catch(() => undefined)}
+        />
       </Card>
     </View>
   );
 }
 ```
 
-The fallback card is deliberately minimal (no avatar or card line, unlike
-the other branches) and only the typecheck covers it here. Check the
-hand-off (the tap opens the URL in the browser) and the fallback card
-(coming back shows "Open link") in the fork's simulator pass.
+React Native's `URL` (Hermes) parses an https URL into `hostname` like
+the browser does. Check the card in the fork's simulator pass: the tap
+shows the hostname and opens nothing until "Open link" is pressed; only
+the typecheck covers it here.
 
 ## 9. E2E + the gate
 
@@ -319,8 +366,10 @@ for u in "$LINK_UID" "$PROFILE_UID"; do
 done
 ```
 
-Expect `status=307 location=<your url>` for the link tag (the loader
-branch from §7 throws that redirect), and a normal
+Expect `status=200` with an empty `location` for both tags: the link
+tag renders the §7 interstitial, never a redirect. A 3xx for the link tag
+means a redirect crept back in. `curl -s "http://localhost:3000/t/$LINK_UID" | grep -o example.com`
+shows the hostname is on the card. A normal
 profile tag still returns 200 (if it hangs under `vite dev`, restart the
 web dev server as provision-tags §1 describes; it is a known `vite dev`
 SSR hang, not your change). Link taps are
@@ -345,3 +394,6 @@ Finish with the full verification gate from
 - The destination payload crosses the anonymous resolve boundary: never
   put private data in it. Anything in `destination` is visible to anyone
   holding the tag.
+- Any destination a tag owner controls and a stranger follows (a link, a
+  phone number, a file) gets the §7 treatment: show where it goes, and let
+  the tapper choose to go. Never hand off automatically.

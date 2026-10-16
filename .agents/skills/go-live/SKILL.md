@@ -63,22 +63,27 @@ The migrations also create the public `avatars` bucket and its policies
 (Storage is on by default in hosted projects). Confirm it under Storage →
 Buckets: public, 1 MiB, `image/jpeg, image/webp`.
 
-Fetch keys into a gitignored env file — never put the service key on a
-command line (it lands in shell history and transcripts):
+Fetch keys into a keys file next to the database password, outside the
+repo: a service-role key in the working tree is one `git add -A` away from
+a commit. Never put the service key on a command line either (it lands in
+shell history and transcripts):
 
 ```sh
 ( umask 077
 supabase projects api-keys --project-ref <ref> -o json | python3 -c "
-import json, secrets, sys
+import json, os, secrets, sys
 keys = {k['name']: k['api_key'] for k in json.load(sys.stdin)}
 anon = next((v for v in keys.values() if str(v).startswith('sb_publishable_')), keys.get('anon', ''))
-with open('.env.demo-seed', 'w') as f:
+with open(os.path.expanduser('~/.config/<name>/demo-seed.env'), 'w') as f:
     f.write('SUPABASE_URL=https://<ref>.supabase.co\n')
     f.write(f\"SUPABASE_SERVICE_ROLE_KEY={keys['service_role']}\n\")
     f.write(f'SUPABASE_ANON_KEY={anon}\n')
     f.write(f'SEED_DEMO_PASSWORD={secrets.token_urlsafe(18)}\n')
-" ) && chmod 600 .env.demo-seed   # umask: never world-readable; chmod: an existing file
+" ) && chmod 600 "$HOME/.config/<name>/demo-seed.env"   # umask: never world-readable; chmod: an existing file
 ```
+
+The file holds the service-role key until section 5 retires it. Every
+block below reads it from there; nothing copies it into the repo.
 
 Older projects expose legacy keys only (`anon`, `service_role`, and one
 named `default`), no `sb_publishable_…`; the fallback to `anon` is correct
@@ -115,10 +120,10 @@ Seed (a production write — owner's OK first):
 (
   set -e
   set -a
-  source .env.demo-seed
+  source "$HOME/.config/<name>/demo-seed.env"
   set +a
-  : "${SUPABASE_URL:?missing from .env.demo-seed}"
-  : "${SUPABASE_SERVICE_ROLE_KEY:?missing from .env.demo-seed}"
+  : "${SUPABASE_URL:?missing from the keys file}"
+  : "${SUPABASE_SERVICE_ROLE_KEY:?missing from the keys file}"
   SEED_ALLOW_REMOTE=1 bun run db:seed
 )
 ```
@@ -181,10 +186,10 @@ Then config goes in as SECRETS via stdin
 (
   set -e
   set -a
-  source ../../.env.demo-seed
+  source "$HOME/.config/<name>/demo-seed.env"
   set +a
-  : "${SUPABASE_URL:?missing from .env.demo-seed}"
-  : "${SUPABASE_ANON_KEY:?missing from .env.demo-seed}"
+  : "${SUPABASE_URL:?missing from the keys file}"
+  : "${SUPABASE_ANON_KEY:?missing from the keys file}"
   printf '%s' "$SUPABASE_URL"      | bunx wrangler secret put SUPABASE_URL
   printf '%s' "$SUPABASE_ANON_KEY" | bunx wrangler secret put SUPABASE_PUBLISHABLE_KEY
   printf '%s' 'https://<web-worker>.workers.dev' | bunx wrangler secret put CORS_ORIGIN
@@ -224,9 +229,13 @@ matches the api worker name exactly. An unknown UID (`/t/banana`) returns
 404 with the calm card, not a 500; the 404 is correct.
 
 Auth URLs (the owner, in the Supabase dashboard: Authentication → URL
-Configuration): Site URL `https://<web-worker>.workers.dev`, Redirect URLs
-`https://<web-worker>.workers.dev/**`. Without them, confirmation and
-reset links point at `localhost:3000`. Do this before the sign-up below.
+Configuration): Site URL `https://<web-worker>.workers.dev`, and one
+Redirect URL, exactly `https://<web-worker>.workers.dev/auth/callback`
+(the README and `supabase/config.toml` use the same exact path). Not
+`/**`: a wildcard lets a crafted sign-in link send the session to any
+path on the origin, and the app has one callback. Without these,
+confirmation and reset links point at `localhost:3000`. Do this before the
+sign-up below.
 
 Verify the authed path once — it exercises the JWKS leg, the classic
 silent failure. The owner runs it (production credentials); it prints
@@ -243,7 +252,7 @@ const email = 'ada@demo.withme.local';
 const password = env.SEED_DEMO_PASSWORD ?? '';
 const apiUrl = env.VITE_API_URL ?? '';
 if (!password || /localhost|127\.0\.0\.1/.test(apiUrl + env.VITE_SUPABASE_URL)) {
-  throw new Error('needs apps/web/.env.production (production URLs) and .env.demo-seed');
+  throw new Error('needs apps/web/.env.production (production URLs) and the keys file');
 }
 const supabase = createClient(env.VITE_SUPABASE_URL!, env.VITE_SUPABASE_PUBLISHABLE_KEY!, {
   auth: { persistSession: false },
@@ -259,7 +268,7 @@ console.log(`profile.get via ${new URL(apiUrl).host}: ok; fields: ${Object.keys(
 ```
 
 ```sh
-cd apps/web && ( trap 'rm -f authed-check.ts' EXIT; bun --env-file=.env.production --env-file=../../.env.demo-seed authed-check.ts )
+cd apps/web && ( trap 'rm -f authed-check.ts' EXIT; bun --env-file=.env.production --env-file="$HOME/.config/<name>/demo-seed.env" authed-check.ts )
 ```
 
 The trap deletes the file however the check ends, and the subshell exits
@@ -312,14 +321,16 @@ local `.env` sitting next to it is harmless.
 ## 5. Before real users
 
 Skip this for a public demo. For an app with real users, after every check
-above passes and before the app is announced (a production write, the
-owner's OK first):
+above passes and before the app is announced. Each step is the owner's:
+most are dashboard settings or production writes.
+
+First remove the demo logins (a production write, the owner's OK first):
 
 ```sh
 (
   set -e
   set -a
-  source .env.demo-seed
+  source "$HOME/.config/<name>/demo-seed.env"
   set +a
   SEED_ALLOW_REMOTE=1 bun run db:unseed
 )
@@ -328,8 +339,65 @@ owner's OK first):
 **Checkpoint:** it prints `Removed 2 demo user(s) and the demo tags.`;
 signing in as `ada@demo.withme.local` fails; `apps/web/.env.production`
 has no `VITE_DEMO_CREDENTIALS` and the live landing page shows no login.
-Email confirmation is on and custom SMTP delivers to an outside address
-(section 1's Auth note).
+
+Then work through the hardening checklist. Every item is a setting the
+starter cannot ship for you, because it lives in a dashboard or an
+account:
+
+- [ ] **Custom SMTP** (Authentication → Emails → SMTP Settings), with
+  email confirmation on. Checkpoint: a sign-up from an outside address
+  receives its confirmation mail (section 1's Auth note).
+- [ ] **Password rules** (Authentication → Sign In / Providers → Email):
+  minimum length 10 and letters plus digits, the values
+  `supabase/config.toml` sets locally and the sign-up forms ask for.
+  `config.toml` never reaches a hosted project by itself, and never
+  `supabase config push` it: its `site_url` and `enable_confirmations` are
+  local-only.
+- [ ] **Leaked-password protection** (the same page; it checks new
+  passwords against HaveIBeenPwned). It needs a paid plan; on a free
+  project, note it as a known gap.
+- [ ] **CAPTCHA on sign-up and sign-in** (Authentication → Attack
+  Protection; Cloudflare Turnstile). This is a code change as well as a
+  setting: once it is on, Supabase rejects any auth call without a
+  `captchaToken`, and the starter's web and mobile clients send none. Add
+  the Turnstile widget to both login screens and pass its token in
+  `options.captchaToken` first, then turn the setting on, then sign in
+  once on each client.
+- [ ] **Security Advisor** (Advisors → Security Advisor), after every
+  `db push`. Fix or knowingly accept each finding. The starter's own
+  migrations pass it; a fork's new tables and functions are what it
+  catches.
+- [ ] **Retire the service-role key used for seeding.** Nothing deployed
+  uses it: the Workers hold only the publishable key. Under Project
+  Settings → API Keys, create a new secret key and delete the one in the
+  keys file. A project on legacy JWT keys instead disables the legacy
+  `service_role` key there once nothing needs it. Then delete the keys
+  file: `rm "$HOME/.config/<name>/demo-seed.env"`. A later seed or tag
+  batch fetches fresh keys with section 1's command and deletes the file
+  again afterwards.
+- [ ] **MFA on every account that can change production:** the Supabase
+  org, the Cloudflare account, the Expo account, and GitHub. Each
+  member, not only the owner.
+- [ ] **Backups.** Paid Supabase plans take daily backups; turn on
+  point-in-time recovery (Project Settings → Add-ons) if losing a day of
+  data is not acceptable. A free-plan project has no backups you can
+  restore: do not launch real users on one (it also pauses when idle).
+- [ ] **SSL enforcement** (Project Settings → Database → SSL
+  Configuration): direct database connections must use TLS. The Workers
+  go through the HTTPS API and are unaffected.
+- [ ] **EAS environment variables.** Anything named `EXPO_PUBLIC_*` is
+  compiled into the app bundle that every user downloads, so only the
+  publishable key and public URLs belong there, never a secret. Store
+  them as EAS environment variables
+  (`bunx eas-cli env:create --environment production`) so a build does not
+  depend on one machine's `apps/mobile/.env.production`.
+- [ ] **GitHub secret scanning and push protection** (repository
+  Settings → Advanced Security). Push protection refuses a push that
+  contains a recognised key before it lands. Both are free on public
+  repositories.
+
+**Checkpoint:** every box is ticked or written down as an accepted gap,
+with the owner's name next to it.
 
 ## Redeploys
 
@@ -375,4 +443,5 @@ for, and the hostname split between site and app are
 | `eas update` fails non-interactively | Missing `--environment` |
 | Published app seems to point at localhost | You byte-grepped Hermes bytecode — use `--no-bytecode` to verify |
 | Demo DB unreachable weeks later | Free-tier project paused — wake it in the dashboard |
+| A `.env.demo-seed` file sits in the repo root | An older copy of this runbook wrote the keys file there (`.env.*` keeps it out of git): move it to `$HOME/.config/<name>/demo-seed.env`, `chmod 600` it, and retire its service-role key as section 5 says |
 | git status shows .supabase-demo-db-password, or the repo has one | an older copy of this runbook wrote it into the repo root (the starter's .gitignore now ignores the name; older forks do not): move it to `$HOME/.config/<name>/supabase-db-password` (the name the commands read), `chmod 600` it, and never commit it. If it was ever committed, moving it does not remove it from history: reset the database password (Dashboard → Project Settings → Database) and write the new one to `$HOME/.config/<name>/supabase-db-password` |
