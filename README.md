@@ -122,7 +122,9 @@ agent such as Claude Code can execute, with a checkpoint at the end of
 every step; you can also read them and do the steps yourself.
 
 The full version, with the agent prompts, every file that changes, and the
-checks at each step, is [docs/run-with-me.md](docs/run-with-me.md).
+checks at each step, is [docs/run-with-me.md](docs/run-with-me.md). To
+hand the whole run to an agent at once, start it with
+[docs/agent-prompt.md](docs/agent-prompt.md).
 
 **0. Fork and run the demo.** Everything above. You now have `withme`,
 working, on your machine. Add the starter as an `upstream` remote now;

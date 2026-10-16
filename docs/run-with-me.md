@@ -37,7 +37,10 @@ bun run lint && bun run typecheck && bun run test
 
 ## Before you start
 
-Decide the handful of things the skills will ask for. For Run With Me:
+Decide the handful of things the skills will ask for. If an agent will
+run the skills for you, [the starting prompt](agent-prompt.md) collects
+these same inputs, with the rules the agent should hold to along the way.
+For Run With Me:
 
 | Input | Value |
 | --- | --- |

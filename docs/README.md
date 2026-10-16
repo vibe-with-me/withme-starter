@@ -20,6 +20,9 @@ longer version of something it mentions.
 - [Run With Me, skill by skill](run-with-me.md): the worked derivation.
   A run club app from fork to deploy, with the prompt to give your agent
   at each step, the files that change, and the checks.
+- [The agent's starting prompt](agent-prompt.md): fill in the brackets
+  (brand, vertical, accounts, where to stop) and paste it into a fresh
+  agent session to run the whole derivation.
 - [Local development](local-development.md): the stack on your machine,
   the demo accounts, the test suites, and the fixes for what goes wrong on
   a fresh install.
