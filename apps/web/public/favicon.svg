@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="128 128 768 768">
+  <!-- The app icon from docs/brand/icon.svg, cropped for tab-size legibility.
+       Follows the browser's color scheme; colors are the tokens.css values. -->
+  <style>
+    .bg { fill: #f3efe8; } .ink { fill: #1c1916; stroke: #1c1916; } .accent { fill: #c2410c; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #141210; } .ink { fill: #f0ece5; stroke: #f0ece5; } .accent { fill: #ff6a3d; }
+    }
+  </style>
+  <rect class="bg" x="128" y="128" width="768" height="768" rx="168"/>
+  <g class="ink" style="fill: none" stroke-width="32" stroke-linecap="round">
+    <path d="M410.6 617.8A180 180 0 0 0 410.6 406.2"/>
+    <path d="M477.0 644.5A250 250 0 0 0 477.0 379.5"/>
+    <path d="M547.5 662.2A320 320 0 0 0 547.5 361.8"/>
+  </g>
+  <circle class="ink" cx="265" cy="512" r="112"/>
+  <circle class="accent" cx="759" cy="512" r="112"/>
+</svg>

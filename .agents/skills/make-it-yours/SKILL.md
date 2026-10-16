@@ -399,17 +399,40 @@ line, with the same URL. With both dev servers up, `/merch` shows the card,
 
 ## 8. Icons + final gate
 
-Replace the artwork in `apps/mobile/assets/`. `app.json` wires two
-files: `icon.png` (1024×1024, `expo.icon`) and
-`android-icon-foreground.png` (`expo.android.adaptiveIcon.foregroundImage`).
-The other four (`splash-icon.png`, `favicon.png`,
-`android-icon-background.png`, `android-icon-monochrome.png`) are
-template files nothing references: replacing them changes nothing until
-`app.json` points at them (the `expo-splash-screen` entry's `image`,
-`expo.web.favicon`, `adaptiveIcon.backgroundImage` / `monochromeImage`).
-The web app ships no favicon — and no `public/`
-directory; `mkdir -p apps/web/public` and drop a `favicon.ico` there if
-you want one.
+Every icon is rendered from two SVGs in `docs/brand/`: `icon.svg` (light)
+and `icon-dark.svg` (dark). Each is a background `<rect>` plus the mark,
+on a 1024 canvas, with colors copied from `tokens.css`. Either recolor the
+starter mark to the new tokens or draw a new one with the same structure:
+one `<rect>` for the background, the mark centered with ~150px of margin.
+The script edits the SVGs as text, so keep `viewBox="0 0 1024 1024"` and
+the background `<rect ... fill="#hex"/>` on its own line, the only `<rect>`
+in the file. It stops with an error if either is missing (its header
+lists the rest of the format).
+Then run `docs/brand/render.sh` from the repo root (it needs `rsvg-convert`
+and ImageMagick 7: `brew install librsvg imagemagick`). It writes:
+
+- `apps/mobile/assets/icon.png`: `expo.icon`, full bleed, no alpha.
+- `android-icon-foreground.png` + `android-icon-monochrome.png`:
+  `adaptiveIcon.foregroundImage` / `monochromeImage`. The mark is scaled
+  into the launcher's 66% safe zone. `android-icon-background.png` is
+  rendered too but unwired: `adaptiveIcon.backgroundColor` (step 2) is
+  what the launcher shows.
+- `splash-icon.png` + `splash-icon-dark.png`: the `expo-splash-screen`
+  entry's `image` and `dark.image`.
+- `favicon.png`: `expo.web.favicon`.
+- `apps/web/public/favicon.ico` + `apple-touch-icon.png`, linked from
+  `apps/web/src/routes/__root.tsx`.
+
+- `docs/brand/social-preview.png`: the 1280×640 card GitHub shows when the
+  repo link is shared. It is rendered from `docs/brand/social-preview.svg`:
+  set its name and tagline to the fork's (and swap in the new mark) before
+  rendering. GitHub has no API for it, and the setting only appears once the
+  repository is public: upload the PNG by hand under **Settings → General →
+  Social preview → Edit → Upload an image**.
+
+`apps/web/public/favicon.svg` is hand-written (it switches colors with the
+browser's color scheme): copy the new mark's shapes into it and set its
+light and dark colors by hand.
 
 ### Contact points
 

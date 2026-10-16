@@ -1,0 +1,16 @@
+<!-- GitHub social preview card (Settings > General > Social preview), 1280x640.
+     Change the name and tagline to your fork's, then run docs/brand/render.sh. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <rect width="1280" height="640" fill="#f3efe8"/>
+  <g transform="translate(409.6 -3.9) scale(0.45)">
+    <g fill="none" stroke="#1c1916" stroke-width="32" stroke-linecap="round">
+      <path d="M410.6 617.8A180 180 0 0 0 410.6 406.2"/>
+      <path d="M477.0 644.5A250 250 0 0 0 477.0 379.5"/>
+      <path d="M547.5 662.2A320 320 0 0 0 547.5 361.8"/>
+    </g>
+    <circle cx="265" cy="512" r="112" fill="#1c1916"/>
+    <circle cx="759" cy="512" r="112" fill="#c2410c"/>
+  </g>
+  <text x="640" y="430" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="88" fill="#1c1916" letter-spacing="-2">withme-starter</text>
+  <text x="640" y="494" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="34" fill="#6f6a62">Tap a tag. Meet a person. Stay connected.</text>
+</svg>

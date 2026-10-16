@@ -115,14 +115,16 @@ mode; the other mode keeps its value.
 
 | # | File | Old | New | Why |
 |---|---|---|---|---|
-| 64 | `apps/mobile/assets/icon.png` | Expo's blue chevron | render of `artwork/icon-on-bg.svg` at 1024, no alpha | The mark: a solid ink disc meeting an ink ring on bg. Generic enough for any community; a fork swaps the two fills and keeps the geometry. |
-| 65 | `apps/mobile/assets/android-icon-foreground.png`, `-background.png`, `-monochrome.png` | Expo's set | foreground: render of `artwork/android-foreground.svg` (mark alone inside the central 66%, alpha kept); background: a flat `#f3efe8` square; monochrome: the foreground in one color | Android adaptive icon. |
-| 66 | `apps/mobile/assets/favicon.png` and the web favicon set | Expo's set | `artwork/favicon.svg` plus 32, 180 and 512 PNG renders | The two shapes on a 32 grid with a thicker ring. |
+| 64 | `docs/brand/icon.svg` and the icons `docs/brand/render.sh` makes from it | the starter mark (a dot and three arcs reaching a second, accent dot) | `artwork/icon-on-bg.svg`: a solid ink disc meeting an ink ring on bg, no accent | An alternative mark, generic for any community and free of the accent; a fork swaps the two fills and keeps the geometry. The starter mark landed on main (PR 53) while this list was being written and already renders on the new bg; replacing it is a taste call, not a defect. |
+| 65 | `docs/brand/icon-dark.svg` | the starter mark on the dark bg | the same alternative mark in ink on the dark bg | Pairs with row 64. |
+| 66 | `apps/web/public/favicon.svg` | the starter mark, cropped, switching colors with the scheme | `artwork/favicon.svg`: the two shapes redrawn on a 32 grid with a thicker ring | Pairs with row 64. |
 | 67 | The wordmark | `.wordmark` set in the display face | unchanged as an asset: `artwork/wordmark.svg` is a reference render of the four settings (display, 700, -0.03em, lowercase) | Stays a setting a fork replaces (row 14). |
 
 The SVG sources are the canvas's files under `artwork/` (icon-on-bg,
 icon-on-accent, android-foreground, favicon, wordmark, avatar-placeholder).
-The `design-direction` skill's step 3 has the render commands.
+`docs/brand/render.sh` renders every PNG from the two icon sources. The
+value rows already moved the icon sources' background to the new bg and
+re-rendered them, so the shipped icons match the page.
 
 ## Notes for the implementation PR
 

@@ -16,8 +16,12 @@
       "package": "co.withme.starter",
       "adaptiveIcon": {
         "backgroundColor": "#f3efe8",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -26,8 +30,11 @@
       [
         "expo-splash-screen",
         {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
           "backgroundColor": "#f3efe8",
           "dark": {
+            "image": "./assets/splash-icon-dark.png",
             "backgroundColor": "#141210"
           }
         }
