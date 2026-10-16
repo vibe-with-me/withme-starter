@@ -124,7 +124,7 @@ tag is pushed. Three things gate it:
 To cut a release:
 
 1. Before the first release only: create an npm granular access token with
-   publish rights on `@withme`, then store it on the environment with
+   publish rights on `@vibewithme`, then store it on the environment with
    `gh secret set NPM_TOKEN --env npm`. Without it the publish step fails.
 2. Merge a PR that bumps `version` in `packages/nfc-sdk/package.json`.
 3. Tag that commit on `main` and push the tag:
