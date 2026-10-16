@@ -76,8 +76,10 @@ tags encode and keep forever; site domain `[example.co]`; contact email
 cloud resource, or writes to production, and before the production tag
 batch. Provision against production only after `go-live` has created the
 database and its keys file, whatever order the walkthrough lists them in.
-Never read credentials from an old checkout; ask for them when a skill
-needs them.
+Never read credentials from an old checkout, and never ask for or print
+a secret value in chat. When a skill needs one, the owner puts it where
+that skill says (an env file, a CLI login, a provider dashboard) and
+tells you it is there.
 
 **Done for this pass:** `[local stack green and both apps running on the
 new brand / deployed to the accounts above / tags provisioned and the
