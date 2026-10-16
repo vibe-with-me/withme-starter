@@ -16,12 +16,14 @@ interface NavItem {
  * Adding a top-level section = adding one entry here (see docs/the-slice.md
  * step 5). Events leads: the one universal feature is the first thing a
  * signed-in user sees. Merch exists only when a store is configured: the
- * fulfillment pointer is dormant by default.
+ * fulfillment pointer is dormant by default. In development it shows
+ * anyway, as a setup card, so a forker meets it while running the demo
+ * instead of at launch; a production build never has it without a store.
  */
 export const navItems: readonly [NavItem, ...NavItem[]] = [
   { to: '/gatherings', label: 'Events', icon: Calendar },
   { to: '/connections', label: 'Connections', icon: Users },
-  ...(import.meta.env.VITE_STORE_URL
+  ...(import.meta.env.VITE_STORE_URL || import.meta.env.DEV
     ? ([{ to: '/merch', label: 'Merch', icon: ShoppingBag }] as const)
     : []),
   { to: '/profile', label: 'Profile', icon: User },

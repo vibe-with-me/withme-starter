@@ -61,8 +61,9 @@ so the owner can keep what people already recognise.
     gathering") and no secondary action, the wordmark footer;
   - the signed-in shell, `apps/web/src/components/AppShell.tsx` — the
     header wordmark, a list of gathering cards, the bottom tab bar
-    (Events, Connections, Merch when a store is set, Profile; active tab
-    in ink, never accent);
+    (Events, Connections, Merch, Profile; active tab in ink, never
+    accent). Merch renders only when a store URL is set, but the boards
+    always draw it;
   - the landing page, `apps/web/src/routes/index.tsx` — the wordmark,
     the one-line promise under it ("Tap a tag. Meet a person. Stay
     connected."), a neutral "Sign in" button (ink on surface, no
@@ -95,8 +96,9 @@ so the owner can keep what people already recognise.
 - Optional references: photos of the place, an existing logo or store
   page, a competitor to steer away from. A logo is copied, never
   redrawn by an artboard.
-- Whether a store exists (the Merch tab and the landing page's "Get
-  tags" button render only with a store URL; the sheet carries their
+- Whether a store exists, or is planned (the Merch tab and the landing
+  page's "Get tags" button render only with a store URL; the sheet
+  carries their
   copy either way).
 - The vertical's nouns, if already known ("round", not "gathering";
   "Rounds", not "Events"). Draw the boards with them. The skills run
@@ -136,8 +138,10 @@ Draw three artboards at 390×844, in light AND dark mode (six boards):
    the wordmark as a footer below the card.
 2. The signed-in shell (apps/web/src/components/AppShell.tsx): a 56px
    header with the wordmark, a page title, two gathering cards, and a
-   60px bottom tab bar (Events, Connections, Profile). The active tab is
-   drawn in ink, not in the accent.
+   60px bottom tab bar (Events, Connections, Merch, Profile). The active
+   tab is drawn in ink, not in the accent. Draw Merch even when there is
+   no store yet, labelled "appears once a store URL is set", so the owner
+   decides about it now instead of discovering it at launch.
 3. The landing page (apps/web/src/routes/index.tsx): the wordmark, the
    one-line promise under it, a neutral "Sign in" button (ink on
    surface, not the accent), and a quiet "Get tags" button only if
