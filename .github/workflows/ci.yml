@@ -37,9 +37,7 @@ jobs:
         run: bun run build
 
       - name: Check publish artifacts (@vibewithme/nfc)
-        run: |
-          bunx publint packages/nfc-sdk
-          bunx @arethetypeswrong/cli --pack packages/nfc-sdk --profile node16
+        run: bun run --cwd packages/nfc-sdk check:publish
 
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:

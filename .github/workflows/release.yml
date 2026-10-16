@@ -63,9 +63,9 @@ jobs:
         run: bunx turbo run test --filter=@vibewithme/nfc
 
       - name: Check publish artifacts
-        run: |
-          bunx publint packages/nfc-sdk
-          bunx @arethetypeswrong/cli --pack packages/nfc-sdk --profile node16
+        # publint and attw are pinned devDependencies of the SDK (bun.lock),
+        # never fetched at run time: this job can hold an npm OIDC token.
+        run: bun run --cwd packages/nfc-sdk check:publish
 
       # npm (not bun) for publishing. No token: npm trusted publishing
       # exchanges this job's OIDC token, which needs npm >= 11.5.1.
