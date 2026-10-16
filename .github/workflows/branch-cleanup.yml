@@ -10,7 +10,8 @@ name: Branch cleanup
 # - Weekly, and on demand from the Actions tab, any branch whose PRs are
 #   all closed and whose tip is still the commit the PR ended on is deleted.
 #   A branch with no PR, an open PR, or commits pushed after its PR closed
-#   is left alone: that is someone's work in progress.
+#   is left alone: that is someone's work in progress. So is any branch an
+#   open PR is based on.
 #
 # Nothing is lost: GitHub keeps every PR's commits at refs/pull/<n>/head,
 # and a closed PR's branch can be restored from the PR page.
@@ -39,6 +40,14 @@ jobs:
       - name: Delete the PR's head branch
         run: |
           if [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then exit 0; fi
+          # Deleting a branch through the API closes every open PR based on
+          # it (GitHub's own auto-delete retargets them instead), so a
+          # branch that a stacked PR still targets stays.
+          stacked=$(gh api "repos/$REPO/pulls?state=open&base=$BRANCH&per_page=1" --jq length)
+          if [ "$stacked" -gt 0 ]; then
+            echo "Keep $BRANCH: an open PR is based on it"
+            exit 0
+          fi
           # 404/422: the branch is already gone (auto-delete got there first).
           gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" \
             && echo "Deleted $BRANCH" \
@@ -64,7 +73,9 @@ jobs:
             total=$(jq length <<<"$prs")
             open=$(jq '[.[] | select(.state == "open")] | length' <<<"$prs")
             ended=$(jq --arg tip "$tip" '[.[] | select(.sha == $tip)] | length' <<<"$prs")
-            if [ "$total" -eq 0 ] || [ "$open" -gt 0 ] || [ "$ended" -eq 0 ]; then
+            # Same stacked-PR guard as closed-pr above.
+            stacked=$(gh api "repos/$REPO/pulls?state=open&base=$branch&per_page=1" --jq length)
+            if [ "$total" -eq 0 ] || [ "$open" -gt 0 ] || [ "$ended" -eq 0 ] || [ "$stacked" -gt 0 ]; then
               echo "Keep $branch"
               continue
             fi
