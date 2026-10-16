@@ -109,25 +109,30 @@ exist, which were deliberately skipped, and the decisions behind both.
 tag is pushed. Three things gate it:
 
 - **The tag.** A ruleset on `refs/tags/nfc-v*` lets only repository admins
-  create a release tag, and nobody can move, delete, or force-push one.
-  A published version stays tied to the commit it was built from.
+  create a release tag and blocks moving, deleting, or force-pushing one.
+  Admins can bypass the ruleset, so don't move or delete a published tag:
+  a published version stays tied to the commit it was built from.
 - **The `npm` environment.** The release job runs in it, it accepts only
   `nfc-v*` tags, and `NPM_TOKEN` lives there as an environment secret, so
-  no other workflow or branch can read it. Once the repo is public, a
-  maintainer must approve each deployment before the job starts.
+  only a job that runs in `npm` on an `nfc-v*` tag can read it. Once the
+  repo is public, a maintainer must approve each deployment before the job
+  starts.
 - **The version check.** The tag must match `packages/nfc-sdk/package.json`,
   and lint, typecheck, build, tests, and the publish-artifact checks must
   pass before anything is published.
 
 To cut a release:
 
-1. Merge a PR that bumps `version` in `packages/nfc-sdk/package.json`.
-2. Tag that commit on `main` and push the tag:
+1. Before the first release only: create an npm granular access token with
+   publish rights on `@withme`, then store it on the environment with
+   `gh secret set NPM_TOKEN --env npm`. Without it the publish step fails.
+2. Merge a PR that bumps `version` in `packages/nfc-sdk/package.json`.
+3. Tag that commit on `main` and push the tag:
    `git tag nfc-v0.2.0 && git push origin nfc-v0.2.0`.
-3. In the Actions tab, open the Release run and approve the `npm`
+4. In the Actions tab, open the Release run and approve the `npm`
    deployment ("Review deployments"). Until the repo is public the
    environment has no reviewer, and the job starts right away.
-4. The job publishes with provenance and creates the GitHub Release.
+5. The job publishes with provenance and creates the GitHub Release.
 
 ## Where things go
 
