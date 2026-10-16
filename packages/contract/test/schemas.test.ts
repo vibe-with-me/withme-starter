@@ -297,10 +297,12 @@ describe('gathering schemas', () => {
   it('a start more than a year ahead is refused, on create and on edit', () => {
     const far = new Date(Date.now() + 400 * 86_400_000).toISOString();
     const near = new Date(Date.now() + 300 * 86_400_000).toISOString();
-    const create = (starts_at: string) =>
-      CreateGatheringInputSchema.safeParse({ title: 'Tee', starts_at }).success;
-    expect(create(far)).toBe(false);
-    expect(create(near)).toBe(true);
+    for (const [starts_at, ok] of [
+      [far, false],
+      [near, true],
+    ] as const) {
+      expect(CreateGatheringInputSchema.safeParse({ title: 'Tee', starts_at }).success).toBe(ok);
+    }
     expect(UpdateGatheringInputSchema.safeParse({ id: gathering.id, starts_at: far }).success).toBe(
       false,
     );
