@@ -203,6 +203,12 @@ img.avatar {
   opacity: 0.45;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}
+
 /* the accent's only home */
 .btn--connect {
   background: var(--color-accent);
