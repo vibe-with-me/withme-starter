@@ -35,7 +35,12 @@ union member:
 /** Tag -> URL redirect. https only; the DB CHECK constraint mirrors this. */
 export const LinkDestinationSchema = z.object({
   type: z.literal('link'),
-  url: z.url({ protocol: /^https$/ }).max(2048),
+  url: z
+    .url({ protocol: /^https$/ })
+    .max(2048)
+    // The CHECK refuses ports too; refusing here keeps the API's answer a clean 400.
+    // canParse first: an unparseable url is z.url()'s refusal, not a throw here.
+    .refine((url) => !URL.canParse(url) || new URL(url).port === '', 'No port'),
 });
 
 export const DestinationSchema = z.discriminatedUnion('type', [
@@ -55,7 +60,7 @@ as its unknown-type specimen — once you add your type, make sure that
 test's specimen is still an unknown type (swap in an invented one like
 `{ type: 'teleport' }`). Add: an accept case for your type, a reject
 case per validation rule (for link: non-https url, `javascript:` url,
-missing url).
+missing url, a url with a port).
 
 **Checkpoint:** `cd packages/contract && bun test` — all pass.
 
@@ -85,7 +90,7 @@ alter table public.tags add constraint tags_destination_shape check (
     jsonb_typeof(destination) = 'object'
     and destination->>'type' = 'link'
     and jsonb_typeof(destination->'url') = 'string'
-    and destination->>'url' ~ '^https://[A-Za-z0-9.-]+(:[0-9]+)?([/?#][^[:space:]]*)?$'
+    and destination->>'url' ~ '^https://[A-Za-z0-9.-]+([/?#][^[:space:]]*)?$'
     and char_length(destination->>'url') <= 2048
     and destination - 'type' - 'url' = '{}'::jsonb,
     false
@@ -93,10 +98,11 @@ alter table public.tags add constraint tags_destination_shape check (
 );
 ```
 
-The URL pattern demands a host (letters, digits, dots and hyphens, an
-optional port) before any path, query or fragment. `https://?x` or
-`https://user@evil.example` never reaches a resolver that calls
-`new URL()` on it. An internationalized domain is stored in its punycode
+The URL pattern demands a host (letters, digits, dots and hyphens) before
+any path, query or fragment, and no port: a public link has no need for
+one, and a port can be out of range (`:70000`). `https://?x`,
+`https://user@evil.example` and `https://example.com:70000` never reach a
+resolver that calls `new URL()` on them. An internationalized domain is stored in its punycode
 form (`xn--…`), which is also how §7 displays it.
 
 Two idioms here are load-bearing:
@@ -131,6 +137,7 @@ url: z
   .url({ protocol: /^https$/ })
   .max(2048)
   .regex(/^https:\/\/(menu\.example\.com|tickets\.example\.org)(\/\S*)?$/),
+  // (the §1 port refine stays on the url as well)
 ```
 
 Add the same accept and reject cases to the contract test and the §4 RLS
@@ -196,6 +203,7 @@ it('malformed link destinations are rejected at the DB boundary', async () => {
     { type: 'link', url: 'https://example.com', extra: 'x' }, // extra key
     { type: 'link', url: 'https://bad url' }, // whitespace
     { type: 'link', url: 'https://?x' }, // no host: new URL() would throw in the resolver
+    { type: 'link', url: 'https://example.com:70000' }, // a port, here out of range: same
   ]) {
     const { error } = await alice.client.from('tags').update({ destination }).eq('uid', uid);
     expect(error?.message).toContain('tags_destination_shape');
@@ -286,7 +294,7 @@ if (result.destination.type === 'link') {
 ```
 
 `new URL()` cannot throw here: the CHECK (§2) only admits an https URL
-with a host, and the contract's `z.url()` parses each one the same way.
+with a host and no port, and the contract's `z.url()` parses each one the same way.
 `url.hostname` is punycode for an internationalized domain (`xn--…`),
 which is what you want: a homoglyph host shows as punycode instead of
 passing for the real name. Do not add
