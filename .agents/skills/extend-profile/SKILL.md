@@ -710,7 +710,7 @@ A failure on a data assertion instead (`Received: undefined`, say) means a
 write upstream went unchecked: check its `error`. A new test that passes
 now asserts nothing: fix it before going on. `bunx turbo run typecheck
 --continue` is red for `@withme/db` until §3 regenerates the types, and
-may already be red for `@withme/api` and `@withme/nfc` from §1's contract
+may already be red for `@withme/api` and `@vibewithme/nfc` from §1's contract
 change (§4 and §5 close those).
 
 A format-checked card field: the card-tier "is length-checked" test
@@ -881,7 +881,7 @@ bun run db:reset && bun run db:seed && bun run db:types
 `git diff packages/db/src/types/supabase.ts` shows `affiliation` and a
 `profile_details` table with a one-to-one `profile_details_profile_id_fkey`
 relationship — commit it. `bunx turbo run typecheck --continue` is now red
-only in `@withme/api` (`src/routers/app.ts`) and `@withme/nfc` (the
+only in `@withme/api` (`src/routers/app.ts`) and `@vibewithme/nfc` (the
 `PublicProfileCard` parity test); §4 and §5 close those. (Plain `bun run
 typecheck` stops at the first failing package, so it cannot show which
 others are red.)
@@ -1031,7 +1031,7 @@ them. `uploadAvatar`, `removeAvatar`, and `deleteAccount` need none either:
 the photo endpoints keep returning `{ profile }` alone.
 
 **Checkpoint:** `bunx turbo run typecheck --continue` — `@withme/api` and
-`@withme/db` green; `@withme/nfc` red until §5.
+`@withme/db` green; `@vibewithme/nfc` red until §5.
 
 ## 5. SDK mirror (card tier only)
 

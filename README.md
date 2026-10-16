@@ -50,7 +50,7 @@ minutes ([Try it](#try-it-locally)).
 | **Mobile app** | The same tabs and the same resolver over the same contract, in Expo. Reads NFC in a development build. |
 | **One API** | Every client talks to one Hono + oRPC API on Cloudflare Workers. It runs every query as the signed-in user, never as an admin. |
 | **The database** | Supabase (Postgres + Auth + Storage). Row-level security and a small set of security-definer functions enforce every rule above, with 70+ policy tests that *are* the spec. |
-| **A redirect SDK** | `@withme/nfc`: if all you want is "tag → URL" with scan logging, the SDK does that on its own. |
+| **A redirect SDK** | `@vibewithme/nfc`: if all you want is "tag → URL" with scan logging, the SDK does that on its own. |
 
 Each block is a real file you can open. [Building blocks](docs/building-blocks.md)
 is the tour; [the glossary](docs/glossary.md) defines the words.
@@ -205,7 +205,7 @@ re-point it from the app for as long as the domain exists.
 | [`apps/web`](apps/web) | TanStack Start on Workers. Loaders call the API through the typed client; the web app owns no data access. `/t/$uid` is the product. |
 | [`apps/mobile`](apps/mobile) | Expo + Expo Router. Same tabs, same resolver, same contract. |
 | [`packages/db`](packages/db) | Supabase client, generated types, query helpers, and the RLS test suite. |
-| [`packages/nfc-sdk`](packages/nfc-sdk) | `@withme/nfc`, the standalone redirect SDK; its `client` entry wraps this API's public contract. |
+| [`packages/nfc-sdk`](packages/nfc-sdk) | `@vibewithme/nfc`, the standalone redirect SDK; its `client` entry wraps this API's public contract. |
 | [`supabase/`](supabase) | Migrations, policies, the seed, and the tag-provisioning script. |
 
 Every change enters the codebase as one vertical slice in a fixed order:

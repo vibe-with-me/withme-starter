@@ -24,7 +24,7 @@
     "@orpc/client": "^1.15.5",
     "@orpc/contract": "^1.15.5",
     "@types/bun": "^1.4.2",
-    "@withme/nfc": "workspace:*",
+    "@vibewithme/nfc": "workspace:*",
     "typescript": "~5.9.3",
     "wrangler": "^4.149.0"
   }

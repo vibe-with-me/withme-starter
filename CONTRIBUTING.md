@@ -103,7 +103,7 @@ exist, which were deliberately skipped, and the decisions behind both.
 | `skill` | Belongs in `.agents/skills/`: a new recipe, a fix to one, or a seam change that must update one. |
 | `invariant` | The proposal needs a discussion about the V1 invariant before anyone writes code. Expect it to be closed or re-scoped, not merged as written. |
 
-## Releasing `@withme/nfc` (maintainers)
+## Releasing `@vibewithme/nfc` (maintainers)
 
 `.github/workflows/release.yml` publishes the SDK to npm when an `nfc-v*`
 tag is pushed. Three things gate it:

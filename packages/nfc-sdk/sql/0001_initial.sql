@@ -1,4 +1,4 @@
--- @withme/nfc initial schema.
+-- @vibewithme/nfc initial schema.
 -- Single-tenant by design: no tenant_id. 0002_lock_down.sql turns on
 -- row-level security with no policies, so only a server-side client can
 -- read or write; apply both files.

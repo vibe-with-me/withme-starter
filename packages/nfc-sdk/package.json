@@ -1,5 +1,5 @@
 {
-  "name": "@withme/nfc",
+  "name": "@vibewithme/nfc",
   "version": "0.1.0",
   "description": "NFC-to-destination redirect SDK: resolve tag UIDs to destinations, log scans, bring your own storage.",
   "license": "MIT",

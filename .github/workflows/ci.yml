@@ -36,7 +36,7 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Check publish artifacts (@withme/nfc)
+      - name: Check publish artifacts (@vibewithme/nfc)
         run: |
           bunx publint packages/nfc-sdk
           bunx @arethetypeswrong/cli --pack packages/nfc-sdk --profile node16

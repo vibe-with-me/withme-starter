@@ -1,11 +1,11 @@
-# @withme/nfc
+# @vibewithme/nfc
 
 NFC-to-destination redirect infrastructure as a reusable TypeScript library: register tag UIDs, resolve them to destination URLs, and log scans with privacy-preserving IP hashing. Storage is bring-your-own via a small `StorageAdapter` interface (a Supabase adapter and an in-memory adapter ship in the box), the core is framework-agnostic, and a Hono router adapter is included for the common `GET /t/:uid` redirect endpoint. This SDK is **single-tenant by design**: one instance serves one logical owner, and multi-tenancy is intentionally out of scope.
 
 ## Install
 
 ```sh
-bun add @withme/nfc
+bun add @vibewithme/nfc
 ```
 
 The two storage/framework integrations rely on optional peer dependencies — install only what you use:
@@ -20,9 +20,9 @@ bun add hono                    # for the Hono router adapter
 ```ts
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
-import { NfcSdk } from '@withme/nfc';
-import { SupabaseStorageAdapter } from '@withme/nfc/storage/supabase';
-import { nfcRouter } from '@withme/nfc/adapters/hono';
+import { NfcSdk } from '@vibewithme/nfc';
+import { SupabaseStorageAdapter } from '@vibewithme/nfc/storage/supabase';
+import { nfcRouter } from '@vibewithme/nfc/adapters/hono';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
@@ -55,7 +55,7 @@ interface StorageAdapter {
 }
 ```
 
-UIDs are normalized to uppercase by the SDK before they reach the adapter, so adapters can assume uppercase. An `InMemoryStorageAdapter` ships at `@withme/nfc/storage/memory` for tests and examples.
+UIDs are normalized to uppercase by the SDK before they reach the adapter, so adapters can assume uppercase. An `InMemoryStorageAdapter` ships at `@vibewithme/nfc/storage/memory` for tests and examples.
 
 ## Schema
 

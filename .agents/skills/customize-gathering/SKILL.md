@@ -288,7 +288,7 @@ In slice order:
    done in step 2, and that edit can carry §1's new seed title too.
 
 Now run the root `bun run typecheck`, not only the packages': the API e2e
-imports the built `@withme/nfc/client`, and the root task's `^build`
+imports the built `@vibewithme/nfc/client`, and the root task's `^build`
 rebuilds it (until then the e2e sees the old `GatheringSummary`). Run
 earlier, it is red in the expected places: the mobile create screen until
 step 6, and `handshake.e2e.ts` until step 7.

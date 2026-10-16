@@ -1,7 +1,7 @@
 // End-to-end exercise of the public surface through the real stack:
 // built SDK client -> API Worker (wrangler dev) -> Supabase local (RLS).
 // Run: bun run db:start, then `bun run dev` here, then `bun run e2e`.
-import { NfcClient } from '@withme/nfc/client';
+import { NfcClient } from '@vibewithme/nfc/client';
 import { admin, createTestUser, provisionTag } from '@withme/db/test-utils';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:8786';

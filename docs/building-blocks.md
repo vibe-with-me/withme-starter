@@ -147,7 +147,7 @@ NFC in development builds, and publishing with EAS Update.
 The tests are the spec. When behavior is ambiguous, read them before the
 implementation.
 
-### `packages/nfc-sdk`: `@withme/nfc`
+### `packages/nfc-sdk`: `@vibewithme/nfc`
 
 Two things in one package:
 

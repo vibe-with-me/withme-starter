@@ -127,13 +127,13 @@ and fonts, with your app identity.
 | 8. Icons + gate | `apps/mobile/assets/`, then the gate and the brand sweep |
 
 This is configuration only. No feature code moves, no policy moves, and
-the `@withme/*` package names stay (they are internal; renaming them
+the `@withme/*` and `@vibewithme/nfc` package names stay (they are internal; renaming them
 breaks every import for zero brand value).
 
 **Done when.** The final sweep returns nothing:
 
 ```sh
-grep -rni --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} withme apps/ supabase/seed README.md | grep -v '@withme/'
+grep -rni --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} withme apps/ supabase/seed README.md | grep -vE '@(vibe)?withme/'
 ```
 
 (your own `runwithme` strings need an extra `| grep -vi runwithme`

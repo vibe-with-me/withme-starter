@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   release:
-    # Only upstream publishes @withme/nfc: a fork that pushes an nfc-v* tag
+    # Only upstream publishes @vibewithme/nfc: a fork that pushes an nfc-v* tag
     # skips this job instead of trying (and failing) to publish it.
     if: github.repository == 'vibe-with-me/withme-starter'
     runs-on: ubuntu-latest
@@ -55,11 +55,11 @@ jobs:
 
       # Gate on the package being shipped; the full suite (incl. RLS tests
       # against Supabase local) runs in ci.yml on every push.
-      - name: Build @withme/nfc
-        run: bunx turbo run build --filter=@withme/nfc
+      - name: Build @vibewithme/nfc
+        run: bunx turbo run build --filter=@vibewithme/nfc
 
-      - name: Test @withme/nfc
-        run: bunx turbo run test --filter=@withme/nfc
+      - name: Test @vibewithme/nfc
+        run: bunx turbo run test --filter=@vibewithme/nfc
 
       - name: Check publish artifacts
         run: |
@@ -72,13 +72,13 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @withme/nfc to npm
+      - name: Publish @vibewithme/nfc to npm
         working-directory: packages/nfc-sdk
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
-        run: gh release create "$GITHUB_REF_NAME" --title "@withme/nfc ${GITHUB_REF_NAME#nfc-v}" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" --title "@vibewithme/nfc ${GITHUB_REF_NAME#nfc-v}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}

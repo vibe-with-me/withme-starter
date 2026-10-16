@@ -16,9 +16,9 @@ to add functionality, see `docs/the-slice.md` and the other skills.
 Execution rules for the whole skill:
 
 - **Never rename the `@withme/*` workspace packages** or their imports
-  (`@withme/contract`, `@withme/db`, `@withme/nfc`, …). They are internal
-  infrastructure, invisible to users; renaming them breaks every import
-  for zero brand value.
+  (`@withme/contract`, `@withme/db`, …), or the published SDK
+  `@vibewithme/nfc`. They are infrastructure, invisible to users;
+  renaming them breaks every import for zero brand value.
 - Steps 1–7 are independent of each other. Skip any seam you're keeping.
 - Run the final checkpoint (step 8) once at the end regardless.
 
@@ -236,7 +236,7 @@ names no brand, so there only the title and badge change):
   blind substitution: the root README's `withme` occurrences include the
   title (`# withme-starter` becomes the wordmark, `# acme`), the
   upstream repo URL in the CI badge (needs your **fork's
-  URL**), `@withme/*` package names which stay, and the demo-credentials
+  URL**), `@withme/*` and `@vibewithme/nfc` package names which stay, and the demo-credentials
   line which must match the seed (previous bullet).
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
@@ -277,7 +277,7 @@ steps in `apps/web/e2e/helpers.ts` included, or e2e will fail.
 ```sh
 grep -rni withme apps/web/src apps/mobile/app apps/mobile/components \
   supabase/seed apps/web/.env.example apps/web/.env \
-  README.md apps/mobile/README.md | grep -v '@withme/' \
+  README.md apps/mobile/README.md | grep -vE '@(vibe)?withme/' \
   | sed -E 's/^([^:]*\.env[^:]*:[0-9]+):.*/\1/'
 ```
 
@@ -459,7 +459,7 @@ delete it:
   requests, and fails to request your own reviewers.
 - `CONTRIBUTING.md`: your issues link, or delete the file if the fork does
   not take outside contributions.
-- `.github/workflows/release.yml` publishes `@withme/nfc` and runs only in
+- `.github/workflows/release.yml` publishes `@vibewithme/nfc` and runs only in
   `vibe-with-me/withme-starter` (its `if:`), so a fork never publishes it
   by accident. Leave it, or delete the file; a fork that publishes the SDK
   under its own name changes the `if:` to its own repository.
@@ -489,7 +489,7 @@ points above as well as the app, and reads your `.env` files under `apps/`
 grep -rniE --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
   'withme|vibe-with-me|alex-eisele' apps/ packages/ supabase/ .github/ \
   README.md SECURITY.md CONTRIBUTING.md \
-  | grep -v '@withme/' \
+  | grep -vE '@(vibe)?withme/' \
   | grep -v "^\.github/workflows/release\.yml:[0-9]*:.*github\.repository == 'vibe-with-me/withme-starter'" \
   | grep -v "^\.github/workflows/demo-migrate\.yml:[0-9]*:.*github\.repository == 'vibe-with-me/withme-starter'" \
   | grep -v '^supabase/migrations/' \
@@ -507,11 +507,11 @@ drop, and why a fork leaves it:
 - `supabase/migrations/` — the first migration's header comment names
   `withme-starter`. Migrations are history: never edit an applied one.
 - `release.yml`'s `if:` line — the guard that keeps a fork from
-  publishing `@withme/nfc` (Contact points, above). It names the
+  publishing `@vibewithme/nfc` (Contact points, above). It names the
   upstream on purpose.
 - `demo-migrate.yml`'s `if:` line — the same guard, keeping a fork from
   trying to migrate the starter's demo (Contact points, above).
-- `packages/nfc-sdk/` — the SDK (`@withme/nfc`) names the upstream in
+- `packages/nfc-sdk/` — the SDK (`@vibewithme/nfc`) names the upstream in
   its `package.json` `repository.url` and in doc comments. A fork that
   does not publish the SDK leaves them. If you publish it under your
   own name, drop that filter and fix what it then prints.

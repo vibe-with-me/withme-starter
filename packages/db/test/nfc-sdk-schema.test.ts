@@ -1,4 +1,4 @@
-// @withme/nfc ships SQL that forks apply to their own Supabase project. Applied
+// @vibewithme/nfc ships SQL that forks apply to their own Supabase project. Applied
 // in order, its tables must be unreachable through the Data API: RLS on, and
 // no privileges for the client roles. Applied here in a scratch schema inside
 // a rolled-back transaction, so the starter's own `tags` is untouched.
@@ -45,7 +45,7 @@ async function applyAndInspect(files: string[]): Promise<TableState[]> {
   return state;
 }
 
-describe('@withme/nfc schema', () => {
+describe('@vibewithme/nfc schema', () => {
   it('leaves tags and scans server-only once both files are applied', async () => {
     expect(await applyAndInspect(['0001_initial.sql', '0002_lock_down.sql'])).toEqual([
       { table: 'scans', rls: true, anon: false, authenticated: false },

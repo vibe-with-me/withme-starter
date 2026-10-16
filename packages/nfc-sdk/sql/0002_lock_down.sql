@@ -1,4 +1,4 @@
--- @withme/nfc: keep the tables server-only.
+-- @vibewithme/nfc: keep the tables server-only.
 --
 -- 0001 left row-level security off. On Supabase, tables in an exposed schema
 -- are reachable through the Data API with the publishable key that every
