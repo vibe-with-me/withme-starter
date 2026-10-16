@@ -103,19 +103,76 @@ async function withWhoIsGoing(
   });
 }
 
-/** What is happening in the domain: every upcoming gathering the viewer may
- * see, in start-time order. A bare RLS-scoped select — nothing ranks,
- * recommends, or filters beyond "has not started yet". No pagination yet:
- * the page is every upcoming gathering, and the enrichment runs one
- * members select and one counts RPC over all of them. */
-export async function listUpcomingGatherings(db: Db, userId: string): Promise<GatheringListRow[]> {
-  const { data, error } = await db
+/** Where a feed page ends: the last row's start and id (ties on start are broken by id). */
+export interface FeedCursor {
+  startsAt: string;
+  id: string;
+}
+
+const CURSOR_STARTS_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
+const CURSOR_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** Opaque to clients: base64url of `<starts_at>|<id>`, the row's own values. */
+export function encodeFeedCursor(cursor: FeedCursor): string {
+  return btoa(`${cursor.startsAt}|${cursor.id}`)
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/, '');
+}
+
+/** The cursor, or null when it is not one this module wrote. Both parts are
+ * checked against strict patterns, so they are safe inside a PostgREST filter. */
+export function decodeFeedCursor(raw: string): FeedCursor | null {
+  let text: string;
+  try {
+    text = atob(raw.replaceAll('-', '+').replaceAll('_', '/'));
+  } catch {
+    return null;
+  }
+  const [startsAt, id, ...rest] = text.split('|');
+  if (rest.length > 0 || !startsAt || !id) return null;
+  if (!CURSOR_STARTS_AT.test(startsAt) || !CURSOR_ID.test(id)) return null;
+  return { startsAt, id };
+}
+
+export interface GatheringsPage {
+  gatherings: GatheringListRow[];
+  nextCursor: FeedCursor | null;
+}
+
+/** What is happening in the domain: the upcoming gatherings the viewer may
+ * see, in start-time order, one page at a time. A bare RLS-scoped select —
+ * nothing ranks, recommends, or filters beyond "has not started yet". Keyset
+ * paging on (starts_at, id), so a gathering created between two pages never
+ * shifts or repeats a row, and the enrichment (one members select, one counts
+ * RPC) only ever covers one page's ids. */
+export async function listUpcomingGatherings(
+  db: Db,
+  userId: string,
+  { cursor = null, limit }: { cursor?: FeedCursor | null; limit: number },
+): Promise<GatheringsPage> {
+  let query = db
     .from('gatherings')
     .select('*')
-    .gte('starts_at', new Date().toISOString())
-    .order('starts_at', { ascending: true });
+    .gte('starts_at', new Date().toISOString());
+  if (cursor) {
+    // Quoted: a timestamp holds PostgREST's reserved ':' and '.'.
+    query = query.or(
+      `starts_at.gt."${cursor.startsAt}",and(starts_at.eq."${cursor.startsAt}",id.gt.${cursor.id})`,
+    );
+  }
+  const { data, error } = await query
+    .order('starts_at', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(limit + 1);
   if (error) throw error;
-  return withWhoIsGoing(db, userId, data ?? []);
+  const rows = data ?? [];
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+  return {
+    gatherings: await withWhoIsGoing(db, userId, page),
+    nextCursor: rows.length > limit && last ? { startsAt: last.starts_at, id: last.id } : null,
+  };
 }
 
 /** The viewer's own calendar: every gathering they host or have joined,

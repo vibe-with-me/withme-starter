@@ -11,6 +11,8 @@ export interface ApiEnv {
   CORS_ORIGIN: string;
   /** Per-UID scan/resolve limiter: a single tag cannot generate unbounded writes. */
   SCAN_RATE_LIMITER: RateLimit;
+  /** Per-IP resolve limiter across all tags: one client cannot walk the UID space. */
+  RESOLVE_IP_RATE_LIMITER: RateLimit;
 }
 
 export interface HonoEnv {

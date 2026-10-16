@@ -73,7 +73,11 @@ Handlers are thin: a typed query from
 mapping PG error codes to oRPC codes. Every handler runs on `context.db`,
 a per-request client carrying the caller's JWT — the API never bypasses
 RLS. Anonymous endpoints take an edge rate limit keyed on UID + caller IP
-(`public.ts`); the IP is a rate-limit key only, never stored.
+(and resolve one on caller IP alone; `public.ts`); the IP is a rate-limit
+key only, never stored. Edge limits are advisory: a direct
+`/rest/v1/rpc/...` call with the publishable key skips the Worker, so a
+limit that must hold for everyone is a ledger inside the RPC
+(`claim_tag`, `create_gathering`, `send_connect_request`).
 A handler that writes to Storage does it through `context.db` too (the
 caller's JWT; the Storage helpers are in
 `packages/db/src/queries/avatars.ts`) and checks uploaded bytes itself

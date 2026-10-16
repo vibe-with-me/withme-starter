@@ -1,8 +1,11 @@
 import { ORPCError } from '@orpc/server';
+import { GATHERINGS_PAGE_SIZE } from '@withme/contract';
 import type { Connection, Gathering, Profile, ProfileLink, Tag } from '@withme/contract';
 import {
   blockUser,
+  decodeFeedCursor,
   deleteGathering,
+  encodeFeedCursor,
   getGathering,
   getGatheringMemberCount,
   getOwnProfile,
@@ -282,10 +285,20 @@ const gatheringsLeave = appProcedure.gatherings.leave.handler(async ({ input, co
   return { ok: true as const };
 });
 
-const gatheringsList = appProcedure.gatherings.list.handler(async ({ context }) => {
+const gatheringsList = appProcedure.gatherings.list.handler(async ({ input, context }) => {
   const { userId } = context;
-  const gatherings = await run(context, () => listUpcomingGatherings(context.db, userId));
-  return { gatherings };
+  const cursor = input?.cursor === undefined ? null : decodeFeedCursor(input.cursor);
+  if (input?.cursor !== undefined && cursor === null) {
+    throw new ORPCError('BAD_REQUEST', { message: 'Invalid cursor' });
+  }
+  const limit = input?.limit ?? GATHERINGS_PAGE_SIZE;
+  const page = await run(context, () =>
+    listUpcomingGatherings(context.db, userId, { cursor, limit }),
+  );
+  return {
+    gatherings: page.gatherings,
+    next_cursor: page.nextCursor ? encodeFeedCursor(page.nextCursor) : null,
+  };
 });
 
 const gatheringsListMine = appProcedure.gatherings.listMine.handler(async ({ context }) => {

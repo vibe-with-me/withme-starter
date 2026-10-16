@@ -53,6 +53,13 @@ const doubleClaim = await authed.claim(uid).then(
 );
 assert(doubleClaim === 'CONFLICT', `double claim is CONFLICT (got ${doubleClaim})`);
 
+// 5a. an unknown UID gets the same answer as a claimed one: no existence oracle
+const unknownClaim = await authed.claim('04FFFFFFFFFF97').then(
+  () => 'succeeded',
+  (e: { code?: string }) => e.code ?? 'error',
+);
+assert(unknownClaim === 'CONFLICT', `an unknown uid is CONFLICT too (got ${unknownClaim})`);
+
 // 6. scan logging works and stores exactly the privacy-safe columns
 await anon.logScan(uid, 'e2e-agent');
 const { data: scans } = await admin.from('tag_scans').select('*').eq('tag_uid', uid);
@@ -150,6 +157,19 @@ assert(true, 'blocking an unknown id acks silently');
 
 // === gatherings: tap-to-join through the API ===
 
+/** The whole feed, page by page: other runs may have filled the first page. */
+async function wholeFeed(client: AppClient) {
+  const rows = [];
+  let cursor: string | undefined;
+  for (let pages = 0; pages < 200; pages++) {
+    const page = await client.gatherings.list({ cursor, limit: 50 });
+    rows.push(...page.gatherings);
+    if (page.next_cursor === null) return rows;
+    cursor = page.next_cursor;
+  }
+  throw new Error('FAIL: the feed did not end');
+}
+
 // 12. create a gathering, point a tag at it, resolve anonymously
 const created = await aliceApp.gatherings.create({
   title: 'E2E Rooftop',
@@ -178,11 +198,28 @@ assert(
 // 13. the gathering is listed to the domain before bob joins; after joining,
 // who's going is connections-only, so each sees their own row until the
 // pair connects
-const feed = await bobApp.gatherings.list();
-const listed = feed.gatherings.find((g) => g.id === created.gathering.id);
+const listed = (await wholeFeed(bobApp)).find((g) => g.id === created.gathering.id);
 assert(listed !== undefined, 'a stranger sees the gathering in the feed');
 assert(listed.member_count === 1 && !listed.is_member, 'the feed carries the headcount');
 assert(listed.members.length === 0, 'the feed reveals no stranger (not even the host)');
+
+// 13a. the feed pages: a one-row page hands back a cursor, the next page moves on,
+// and a cursor the API did not write is refused
+const firstRow = await bobApp.gatherings.list({ limit: 1 });
+assert(
+  firstRow.gatherings.length === 1 && firstRow.next_cursor !== null,
+  'a page hands back a cursor',
+);
+const secondRow = await bobApp.gatherings.list({ cursor: firstRow.next_cursor, limit: 1 });
+assert(
+  secondRow.gatherings[0]?.id !== firstRow.gatherings[0]?.id,
+  'the next page starts after the last row',
+);
+const badCursor = await bobApp.gatherings.list({ cursor: 'not-a-cursor' }).then(
+  () => 'accepted',
+  (e: { code?: string }) => e.code ?? 'error',
+);
+assert(badCursor === 'BAD_REQUEST', `a forged cursor is refused (got ${badCursor})`);
 const strangerDetail = await bobApp.gatherings.get({ id: created.gathering.id });
 assert(strangerDetail.members.length === 0, 'a stranger reads the detail with no member rows');
 
@@ -256,7 +293,7 @@ assert(
   'a left gathering drops out of listMine',
 );
 assert(
-  (await bobApp.gatherings.list()).gatherings.some((g) => g.id === created.gathering.id),
+  (await wholeFeed(bobApp)).some((g) => g.id === created.gathering.id),
   'a left gathering stays in the feed',
 );
 await aliceApp.blocks.block({ user_id: bob.id });
@@ -266,7 +303,7 @@ const gone = await bobApp.gatherings.get({ id: created.gathering.id }).then(
 );
 assert(gone === 'NOT_FOUND', `a blocked viewer reads the gathering as not found (got ${gone})`);
 assert(
-  !(await bobApp.gatherings.list()).gatherings.some((g) => g.id === created.gathering.id),
+  !(await wholeFeed(bobApp)).some((g) => g.id === created.gathering.id),
   'a blocked viewer does not see it in the feed',
 );
 await aliceApp.blocks.unblock({ user_id: bob.id });

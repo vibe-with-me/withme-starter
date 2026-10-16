@@ -21,9 +21,14 @@ gathering reveals nothing.
 is the only anonymous read, and it answers for one UID at a time. There
 is no search endpoint, no directory, no sequential id anywhere; UIDs are
 48 random bits. Error responses are shaped so they cannot be used as an
-oracle: an unknown UID and an unclaimed UID both resolve as `unclaimed`,
-and the rate limiter accounts attempts in a private ledger so its
-responses do not reveal whether a row exists.
+oracle: an unknown UID and an unclaimed UID both resolve as `unclaimed`;
+`claim_tag` answers an unknown, a claimed and a disabled UID alike; and
+the rate limiters account attempts in private ledgers so their responses
+do not reveal whether a row exists. Those ledgers live inside the RPCs
+(`send_connect_request`, `claim_tag`, `create_gathering`), because the
+publishable key reaches PostgREST directly: the API Worker's per-IP and
+per-tag limits only see calls that go through it, so they are advisory,
+never the boundary.
 
 **The test.** `packages/db/test/enumeration.test.ts`.
 

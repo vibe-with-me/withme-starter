@@ -11,6 +11,12 @@ import {
   createTestUser,
   provisionTag,
 } from '../src/test-utils/index.ts';
+import {
+  decodeFeedCursor,
+  encodeFeedCursor,
+  listUpcomingGatherings,
+  type FeedCursor,
+} from '../src/queries/index.ts';
 
 beforeAll(assertStackRunning);
 
@@ -519,5 +525,124 @@ describe('gathering destinations', () => {
       const { error } = await alice.client.from('tags').update({ destination }).eq('uid', uid);
       expect(error?.message).toContain('tags_destination_shape');
     }
+  });
+});
+
+const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString();
+
+describe('gathering limits', () => {
+  it('a host creates at most 5 gatherings an hour, even straight through PostgREST', async () => {
+    const alice = await createTestUser('Alice');
+    for (let i = 0; i < 5; i++) await createGathering(alice.client, `Night ${i}`);
+    const { error } = await alice.client.rpc('create_gathering', {
+      p_title: 'One too many',
+      p_starts_at: inDays(1),
+    });
+    expect(error?.code).toBe('P0004');
+    const { count } = await admin
+      .from('gatherings')
+      .select('id', { count: 'exact', head: true })
+      .eq('host_id', alice.id);
+    expect(count).toBe(5);
+  });
+
+  it('a host holds at most 20 upcoming gatherings; past ones do not count', async () => {
+    const alice = await createTestUser('Alice');
+    const rows = (startsAt: (i: number) => string, n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        host_id: alice.id,
+        title: `Seeded ${i}`,
+        starts_at: startsAt(i),
+      }));
+    // Seeded with the service role, around the hourly limit. 19 upcoming, 5 past.
+    const seeded = await admin
+      .from('gatherings')
+      .insert([...rows((i) => inDays(i + 1), 19), ...rows((i) => inDays(-(i + 1)), 5)]);
+    expect(seeded.error).toBeNull();
+
+    await createGathering(alice.client, 'The 20th');
+    const { error } = await alice.client.rpc('create_gathering', {
+      p_title: 'The 21st',
+      p_starts_at: inDays(2),
+    });
+    expect(error?.code).toBe('P0004');
+  });
+
+  it('a start more than a year ahead is refused, on create and on edit', async () => {
+    const alice = await createTestUser('Alice');
+    const far = await alice.client.rpc('create_gathering', {
+      p_title: 'Next decade',
+      p_starts_at: inDays(400),
+    });
+    expect(far.error?.code).toBe('22023');
+
+    const id = await createGathering(alice.client);
+    const moved = await alice.client
+      .from('gatherings')
+      .update({ starts_at: inDays(400) })
+      .eq('id', id);
+    expect(moved.error?.code).toBe('22023');
+    const ok = await alice.client
+      .from('gatherings')
+      .update({ starts_at: inDays(300) })
+      .eq('id', id);
+    expect(ok.error).toBeNull();
+  });
+});
+
+describe('the feed, a page at a time', () => {
+  it('pages through every upcoming gathering once, in order, ties on start broken by id', async () => {
+    const alice = await createTestUser('Alice');
+    // Five gatherings at one shared instant (ties) and two just after it.
+    const tie = new Date(
+      Date.now() + 200 * 86_400_000 + Math.floor(Math.random() * 1e9),
+    ).toISOString();
+    const after = new Date(Date.parse(tie) + 1000).toISOString();
+    const { data: seeded, error } = await admin
+      .from('gatherings')
+      .insert(
+        [tie, tie, tie, tie, tie, after, after].map((starts_at, i) => ({
+          host_id: alice.id,
+          title: `Paged ${i}`,
+          starts_at,
+        })),
+      )
+      .select('id, starts_at');
+    expect(error).toBeNull();
+    const mine = new Set((seeded ?? []).map((g) => g.id));
+
+    const seen: { id: string; starts_at: string }[] = [];
+    let cursor: FeedCursor | null = null;
+    let pages = 0;
+    do {
+      // Through the opaque form, as the API hands it out and takes it back.
+      const page = await listUpcomingGatherings(alice.client, alice.id, {
+        cursor,
+        limit: 2 + (pages % 3),
+      });
+      expect(page.gatherings.length).toBeLessThanOrEqual(4);
+      seen.push(...page.gatherings.map(({ id, starts_at }) => ({ id, starts_at })));
+      cursor = page.nextCursor ? decodeFeedCursor(encodeFeedCursor(page.nextCursor)) : null;
+      pages++;
+    } while (cursor !== null && pages < 500);
+
+    const ids = seen.map((g) => g.id);
+    expect(new Set(ids).size).toBe(ids.length); // nothing twice
+    expect(ids.filter((id) => mine.has(id))).toHaveLength(7); // nothing missed
+    const order = seen.map(
+      (g) => `${Date.parse(g.starts_at).toString().padStart(15, '0')}|${g.id}`,
+    );
+    expect(order).toEqual(order.toSorted());
+  });
+
+  it('a cursor it did not write decodes to null', () => {
+    expect(decodeFeedCursor('not-a-cursor')).toBeNull();
+    expect(decodeFeedCursor(btoa('2026-10-16T18:00:00Z|x),or(id.gt.0'))).toBeNull();
+    expect(decodeFeedCursor(btoa('tomorrow|7c9e6679-7425-40de-944b-e07fc1f90ae7'))).toBeNull();
+    const cursor = {
+      startsAt: '2026-10-16T18:00:00.123456+00:00',
+      id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+    };
+    expect(decodeFeedCursor(encodeFeedCursor(cursor))).toEqual(cursor);
   });
 });

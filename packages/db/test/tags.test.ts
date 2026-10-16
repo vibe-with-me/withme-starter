@@ -17,16 +17,54 @@ describe('claiming', () => {
     const bob = await createTestUser('Bob');
     const uid = await provisionTag();
 
-    const { error: first } = await alice.client.rpc('claim_tag', { p_uid: uid });
-    expect(first).toBeNull();
-    const { error: second } = await bob.client.rpc('claim_tag', { p_uid: uid });
-    expect(second?.message).toContain('not claimable');
+    const first = await alice.client.rpc('claim_tag', { p_uid: uid });
+    expect(first.error).toBeNull();
+    expect(first.data).not.toBeNull();
+    // Not an exception: an exception would roll back the attempt it records.
+    const second = await bob.client.rpc('claim_tag', { p_uid: uid });
+    expect(second.error).toBeNull();
+    expect(second.data).toBeNull();
+    const { data } = await admin.from('tags').select('claimed_by').eq('uid', uid).single();
+    expect(data?.claimed_by).toBe(alice.id);
   });
 
-  it('claiming an unknown uid fails gracefully with a distinct error', async () => {
+  it('unknown, claimed and disabled uids get the same answer: no existence oracle', async () => {
     const alice = await createTestUser('Alice');
-    const { error } = await alice.client.rpc('claim_tag', { p_uid: '04FFFFFFFFFF98' });
-    expect(error?.message).toContain('tag not found');
+    const bob = await createTestUser('Bob');
+    const claimed = await provisionTag();
+    await bob.client.rpc('claim_tag', { p_uid: claimed });
+    const disabled = await provisionTag();
+    await admin.from('tags').update({ status: 'disabled' }).eq('uid', disabled);
+
+    const answers = [];
+    for (const uid of ['04FFFFFFFFFF98', claimed, disabled]) {
+      const { data, error } = await alice.client.rpc('claim_tag', { p_uid: uid });
+      answers.push({ data, error });
+    }
+    expect(answers).toEqual([
+      { data: null, error: null },
+      { data: null, error: null },
+      { data: null, error: null },
+    ]);
+  });
+
+  it('every attempt counts against 30 an hour, failed guesses included, via PostgREST', async () => {
+    const alice = await createTestUser('Alice');
+    for (let i = 0; i < 30; i++) {
+      const { error } = await alice.client.rpc('claim_tag', {
+        p_uid: `04${i.toString(16).toUpperCase().padStart(12, '0')}`,
+      });
+      expect(error).toBeNull();
+    }
+    // The 31st is refused, even for a real, unclaimed tag.
+    const uid = await provisionTag();
+    const { error } = await alice.client.rpc('claim_tag', { p_uid: uid });
+    expect(error?.code).toBe('P0004');
+    const { data } = await admin.from('tags').select('status').eq('uid', uid).single();
+    expect(data?.status).toBe('unclaimed');
+    // Per user: someone else still claims it.
+    const bob = await createTestUser('Bob');
+    expect((await bob.client.rpc('claim_tag', { p_uid: uid })).data).not.toBeNull();
   });
 
   it('anon cannot claim', async () => {

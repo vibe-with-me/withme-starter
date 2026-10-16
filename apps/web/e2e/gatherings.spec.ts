@@ -1,8 +1,22 @@
 // The gathering: tap the host's tag, join, see the headcount but not the
 // host; connect, and the host appears in who's going. The feed lists it to
 // the whole domain.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { admin, freshUid, signUp } from './helpers.ts';
+
+/** The feed comes a page at a time, and other runs fill the first page:
+ * press Load more until the row shows, as a person would. */
+async function revealInFeed(feed: Locator, title: string): Promise<void> {
+  const row = feed.getByText(title);
+  const more = feed.getByRole('button', { name: 'Load more' });
+  for (let page = 0; page < 50; page++) {
+    await expect(row.or(more).first()).toBeVisible();
+    if (await row.isVisible()) return;
+    await more.click();
+    await expect(feed.getByRole('button', { name: 'Loading…' })).toHaveCount(0);
+  }
+  await expect(row).toBeVisible();
+}
 
 test("tap a host's tag, join from the feed, and who's going shows only connections", async ({
   browser,
@@ -38,7 +52,7 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await ada.getByRole('button', { name: 'Create gathering' }).click();
   const adaHappening = ada.getByRole('region', { name: 'Happening' });
   const adaYours = ada.getByRole('region', { name: 'Yours' });
-  await expect(adaHappening.getByText(title)).toBeVisible();
+  await revealInFeed(adaHappening, title);
   await expect(adaHappening.getByText(/Hosting · .* · 1 going/)).toBeVisible();
   await expect(adaYours.getByText(title)).toBeVisible();
 
@@ -83,7 +97,7 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   // The feed lists it to Bob as Going; Ada's side counts him without naming him.
   await bob.goto('/gatherings');
   const bobHappening = bob.getByRole('region', { name: 'Happening' });
-  await expect(bobHappening.getByText(title)).toBeVisible();
+  await revealInFeed(bobHappening, title);
   await expect(bobHappening.getByText(/Going · .* · 2 going/)).toBeVisible();
   await ada.reload();
   await expect(ada.getByText('2 going')).toBeVisible();
@@ -106,6 +120,7 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await bob.goto(detailPath);
   await expect(bob.getByText('Smoke Ada')).toBeVisible();
   await bob.goto('/gatherings');
+  await revealInFeed(bobHappening, title);
   await expect(bobHappening.getByText('With Smoke Ada')).toBeVisible();
   await ada.goto(detailPath);
   await expect(ada.getByText('Smoke Bob')).toBeVisible();

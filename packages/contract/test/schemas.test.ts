@@ -11,6 +11,8 @@ import {
   GatheringListItemSchema,
   GatheringSchema,
   GatheringSummarySchema,
+  GatheringsPageSchema,
+  ListGatheringsInputSchema,
   isPlainText,
   LINK_PLATFORM_IDS,
   LINK_PLATFORMS,
@@ -290,6 +292,29 @@ describe('gathering schemas', () => {
       const update = { id: gathering.id, title: bad };
       expect(UpdateGatheringInputSchema.safeParse(update).success).toBe(false);
     }
+  });
+
+  it('a start more than a year ahead is refused, on create and on edit', () => {
+    const far = new Date(Date.now() + 400 * 86_400_000).toISOString();
+    const near = new Date(Date.now() + 300 * 86_400_000).toISOString();
+    const create = (starts_at: string) =>
+      CreateGatheringInputSchema.safeParse({ title: 'Tee', starts_at }).success;
+    expect(create(far)).toBe(false);
+    expect(create(near)).toBe(true);
+    expect(UpdateGatheringInputSchema.safeParse({ id: gathering.id, starts_at: far }).success).toBe(
+      false,
+    );
+  });
+
+  it('the feed takes an optional cursor and a page size of 1 to 50', () => {
+    expect(ListGatheringsInputSchema.safeParse(undefined).success).toBe(true);
+    expect(ListGatheringsInputSchema.safeParse({ cursor: 'abc', limit: 50 }).success).toBe(true);
+    expect(ListGatheringsInputSchema.safeParse({ limit: 51 }).success).toBe(false);
+    expect(ListGatheringsInputSchema.safeParse({ limit: 0 }).success).toBe(false);
+    expect(ListGatheringsInputSchema.safeParse({ cursor: 'x'.repeat(201) }).success).toBe(false);
+    const lastPage = { gatherings: [], next_cursor: null };
+    expect(GatheringsPageSchema.safeParse(lastPage).success).toBe(true);
+    expect(GatheringsPageSchema.safeParse({ gatherings: [] }).success).toBe(false);
   });
 
   it('rejects an update with nothing to update', () => {

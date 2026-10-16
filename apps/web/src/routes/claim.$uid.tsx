@@ -47,10 +47,12 @@ function ClaimPage() {
     } catch (claimError) {
       const code = (claimError as { code?: string }).code;
       setError(
+        // One answer for unknown, taken and disabled tags: the API does not
+        // say which, so nobody can probe which tags exist.
         code === 'CONFLICT'
-          ? 'This tag has already been claimed.'
-          : code === 'NOT_FOUND'
-            ? 'This tag is not registered.'
+          ? "This tag can't be claimed. It may already belong to someone."
+          : code === 'TOO_MANY_REQUESTS'
+            ? 'Too many tries. Wait a while, then try again.'
             : 'Something went wrong. Try again.',
       );
     } finally {

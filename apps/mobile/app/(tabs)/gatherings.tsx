@@ -28,6 +28,10 @@ import { fonts, space, useTokens } from '../../lib/tokens';
 export default function GatheringsScreen() {
   const t = useTokens();
   const [happening, setHappening] = useState<GatheringListItem[]>([]);
+  // The feed comes a page at a time; null once the last page is in.
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState(false);
   const [gatherings, setGatherings] = useState<GatheringListItem[]>([]);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -43,12 +47,15 @@ export default function GatheringsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [{ gatherings: feed }, { gatherings: mine }, { data }] = await Promise.all([
+      const [feed, { gatherings: mine }, { data }] = await Promise.all([
         api.app.gatherings.list(),
         api.app.gatherings.listMine(),
         supabase.auth.getSession(),
       ]);
-      setHappening(feed);
+      // A re-load starts the feed over from its first page.
+      setHappening(feed.gatherings);
+      setCursor(feed.next_cursor);
+      setMoreError(false);
       setGatherings(mine);
       setViewerId(data.session?.user.id ?? null);
       setLoadError(false);
@@ -66,6 +73,21 @@ export default function GatheringsScreen() {
       load();
     }, [load]),
   );
+
+  async function loadMore() {
+    if (cursor === null || loadingMore) return;
+    setLoadingMore(true);
+    setMoreError(false);
+    try {
+      const page = await api.app.gatherings.list({ cursor });
+      setHappening((rows) => [...rows, ...page.gatherings]);
+      setCursor(page.next_cursor);
+    } catch {
+      setMoreError(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function create() {
     if (busy) return;
@@ -202,6 +224,17 @@ export default function GatheringsScreen() {
         ) : (
           happening.map(row)
         )}
+        {loaded && !loadError && moreError ? (
+          <ErrorText>Could not load more. Try again.</ErrorText>
+        ) : null}
+        {loaded && !loadError && cursor !== null ? (
+          <Button
+            kind="quiet"
+            label={loadingMore ? 'Loading…' : 'Load more'}
+            onPress={loadMore}
+            disabled={loadingMore}
+          />
+        ) : null}
 
         <Text style={[styles.sectionTitle, { color: t.ink }]}>Yours</Text>
         {!loaded || loadError ? null : gatherings.length === 0 ? (

@@ -377,14 +377,14 @@ shipment. Both kinds of UID live in the same table.
   (`update … where status = 'unclaimed'`). A fork that wants pre-assigned
   tags (claim codes, binding to an order) builds that as its own slice with
   RLS tests, not by loosening this.
-- `claim_tag` is the one place existence leaks, knowingly: it answers
-  `tag not found` (`P0003`) for an unknown UID and `tag is not claimable`
-  (`P0002`) for a claimed or disabled one. The risk is low: `resolve_tag`
-  already tells anyone that a UID is claimed or disabled, and a guess that
-  hits an unclaimed UID is a claim, not an oracle answer, so rule 1's
-  entropy is what protects it. That holds only while nothing lists
-  unclaimed UIDs, and this runbook never exposes such a list: it lives in
-  `$OUT`, on the operator's machine.
+- `claim_tag` gives one answer, `null`, for an unknown UID and for a
+  claimed or disabled one, so it reveals nothing about which UIDs exist,
+  and it counts every attempt (30 per user per hour) inside the database,
+  where a direct PostgREST call cannot skip it. A guess that hits an
+  unclaimed UID is still a claim, so rule 1's entropy is what protects a
+  batch. That holds only while nothing lists unclaimed UIDs, and this
+  runbook never exposes such a list: it lives in `$OUT`, on the operator's
+  machine.
 - `tags.uid` stays immutable: the column grant
   (`grant update (destination, status)`) is what stops an owner from
   re-keying a row onto a future batch.

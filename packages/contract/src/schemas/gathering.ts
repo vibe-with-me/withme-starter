@@ -14,6 +14,17 @@ const LocationInputSchema = z
   .nullable()
   .optional();
 
+/** How far ahead a gathering may start. The database enforces a year too. */
+export const GATHERING_MAX_LEAD_DAYS = 365;
+
+/** A start on the way in: ISO with an offset, and at most a year out. */
+const StartsAtInputSchema = z.iso
+  .datetime({ offset: true })
+  .refine(
+    (value) => Date.parse(value) <= Date.now() + GATHERING_MAX_LEAD_DAYS * 86_400_000,
+    'At most a year ahead',
+  );
+
 /** A gathering as its members see it. host_id tells the UI who runs it. */
 export const GatheringSchema = z.object({
   id: z.uuid(),
@@ -59,7 +70,7 @@ export const GatheringListItemSchema = GatheringSchema.extend({
 
 export const CreateGatheringInputSchema = z.object({
   title: z.string().trim().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE),
-  starts_at: z.iso.datetime({ offset: true }),
+  starts_at: StartsAtInputSchema,
   location: LocationInputSchema,
 });
 
@@ -68,7 +79,7 @@ export const UpdateGatheringInputSchema = z
   .object({
     id: z.uuid(),
     title: z.string().trim().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE).optional(),
-    starts_at: z.iso.datetime({ offset: true }).optional(),
+    starts_at: StartsAtInputSchema.optional(),
     location: LocationInputSchema,
   })
   .refine(
@@ -77,9 +88,31 @@ export const UpdateGatheringInputSchema = z
     { message: 'Nothing to update' },
   );
 
+/** A page of the feed: 20 by default, 50 at most. */
+export const GATHERINGS_PAGE_SIZE = 20;
+
+/**
+ * The feed's page request. `cursor` is the previous page's `next_cursor`,
+ * opaque to clients; omit it for the first page.
+ */
+export const ListGatheringsInputSchema = z
+  .object({
+    cursor: z.string().max(200).optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+  })
+  .optional();
+
+export const GatheringsPageSchema = z.object({
+  gatherings: z.array(GatheringListItemSchema),
+  /** Pass it back for the next page; null on the last one. */
+  next_cursor: z.string().nullable(),
+});
+
 export type Gathering = z.infer<typeof GatheringSchema>;
 export type GatheringSummary = z.infer<typeof GatheringSummarySchema>;
 export type GatheringMember = z.infer<typeof GatheringMemberSchema>;
 export type GatheringListItem = z.infer<typeof GatheringListItemSchema>;
 export type CreateGatheringInput = z.infer<typeof CreateGatheringInputSchema>;
 export type UpdateGatheringInput = z.infer<typeof UpdateGatheringInputSchema>;
+export type ListGatheringsInput = z.infer<typeof ListGatheringsInputSchema>;
+export type GatheringsPage = z.infer<typeof GatheringsPageSchema>;

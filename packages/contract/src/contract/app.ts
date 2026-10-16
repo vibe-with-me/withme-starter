@@ -6,6 +6,8 @@ import {
   GatheringListItemSchema,
   GatheringMemberSchema,
   GatheringSchema,
+  GatheringsPageSchema,
+  ListGatheringsInputSchema,
   UpdateGatheringInputSchema,
 } from '../schemas/gathering.ts';
 import { ProfileLinkSchema, ProfileLinksInputSchema } from '../schemas/link.ts';
@@ -146,8 +148,11 @@ const listGatherings = oc
   // What is happening in the domain: every upcoming gathering the caller may
   // see (RLS: the tenant, minus a block either way with the host), in
   // start-time order. A bulletin board, not a directory: nothing ranks or
-  // filters, and no row reveals a stranger's card.
-  .output(z.object({ gatherings: z.array(GatheringListItemSchema) }));
+  // filters, and no row reveals a stranger's card. Paged: one page holds at
+  // most 50, so its who-is-going lookup stays one bounded request however
+  // many gatherings the domain has.
+  .input(ListGatheringsInputSchema)
+  .output(GatheringsPageSchema);
 
 const listMyGatherings = oc
   .route({ method: 'GET', path: '/me/gatherings', tags: ['Gatherings'] })

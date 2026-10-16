@@ -158,6 +158,26 @@ describe('delete_my_account', () => {
     expect(remaining).toHaveLength(1); // bob and carol, untouched
   });
 
+  it('a direct call refuses while the caller has photos, so none outlive the account', async () => {
+    const alice = await createTestUser('Alice');
+    const path = `${alice.id}/${crypto.randomUUID()}.jpg`;
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]);
+    const upload = await alice.client.storage
+      .from('avatars')
+      .upload(path, jpeg, { contentType: 'image/jpeg' });
+    expect(upload.error).toBeNull();
+
+    // /rest/v1/rpc/delete_my_account straight from the client, skipping the API's sweep.
+    const refused = await alice.client.rpc('delete_my_account');
+    expect(refused.error?.code).toBe('P0006');
+    expect((await admin.auth.admin.getUserById(alice.id)).data.user?.id).toBe(alice.id);
+
+    // The API's order: empty the folder through Storage, then delete.
+    expect((await alice.client.storage.from('avatars').remove([path])).error).toBeNull();
+    expect((await alice.client.rpc('delete_my_account')).error).toBeNull();
+    expect((await admin.auth.admin.getUserById(alice.id)).data.user).toBeNull();
+  });
+
   it('anon cannot call it', async () => {
     const alice = await createTestUser('Alice');
     const { error } = await anonClient().rpc('delete_my_account');
