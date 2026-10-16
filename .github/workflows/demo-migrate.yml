@@ -1,0 +1,72 @@
+name: Demo migrate
+
+# Applies new migrations to the hosted starter demo after they merge to
+# main, so the demo never drifts behind the schema. The demo holds only
+# seed data, and every migration was reviewed in its PR and applied to a
+# fresh local stack by ci.yml before it merged, so no one approves the run.
+# Dispatch it by hand from the Actions tab (branch: main) to retry or
+# catch up. It never seeds, never runs `supabase config push`
+# (supabase/config.toml holds local-only auth values), and never deploys
+# Workers.
+#
+# A project with real users needs a person in the loop: migrations can
+# delete data. Give its environment a required reviewer, or drop the push
+# trigger and start runs by hand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+
+# Two runs must never push at once; a newer run waits for the older one.
+concurrency:
+  group: demo-migrate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    # Only upstream migrates the starter demo: a fork skips this job. A fork
+    # with its own hosted project points this at its own repository and
+    # environment, or deletes the file. Only main: a manual run from another
+    # branch would push migrations no one has merged.
+    if: github.repository == 'vibe-with-me/withme-starter' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The three secrets below live on this environment.
+    environment: demo
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      # Reads SUPABASE_DB_PASSWORD from the environment, keeping it off the
+      # command line.
+      - name: Link the demo project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Dry run (what will apply)
+        run: |
+          set -o pipefail
+          supabase db push --dry-run 2>&1 | tee dry-run.txt
+          {
+            echo '### Migrations to apply'
+            echo '```'
+            cat dry-run.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # --yes answers the CLI's own prompt, which has no one to read it.
+      # No --include-seed: the demo is never reseeded here.
+      - name: Push migrations
+        run: supabase db push --yes

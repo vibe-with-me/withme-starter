@@ -29,6 +29,7 @@ updates:
       - dependency-name: "react-native"
       - dependency-name: "react-native-safe-area-context"
       - dependency-name: "react-native-screens"
+      - dependency-name: "@react-native-async-storage/async-storage"
       - dependency-name: "@types/react"
       - dependency-name: "@types/react-dom"
       # Tracks the Node 22 runtime used in CI and release.

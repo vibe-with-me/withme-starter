@@ -337,6 +337,19 @@ DB: new migrations via `supabase db push`; reseed only with the owner's
 OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
 
+The starter's own demo DB is migrated by
+`.github/workflows/demo-migrate.yml`: after migrations merge to `main`,
+it runs `supabase db push` against the `demo` GitHub Environment with no
+approval step (the demo holds only seed data, and CI already applied each
+migration to a fresh local stack). Re-run it from the Actions tab, on
+`main`, to retry; it skips any other branch. It only runs in
+`vibe-with-me/withme-starter`. A fork deletes it, or points its `if:` at
+its own repository and gives its own `demo` environment the `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and
+`SUPABASE_PROJECT_REF` secrets. Against a database with real users,
+never let it push unreviewed: add a required reviewer to the environment
+(public repositories; a private one needs GitHub Enterprise), or remove
+the `push` trigger and start each run by hand.
+
 The marketing site, the privacy and support URLs the store listings ask
 for, and the hostname split between site and app are
 `.agents/skills/add-marketing-site/SKILL.md`, run after this one.
