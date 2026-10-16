@@ -53,16 +53,19 @@ colors and fonts below are blank):
 
 **Vertical:**
 - The gathering becomes `[round / rounds]`, tab label `[Rounds]`, URL
-  `/[rounds]`, with fields `[course_name: required text up to 80
+  `/[rounds]`, with fields `[course_name: required text up to 120
   characters, shown to a tapper before joining]` (`customize-gathering`)
 - Profile fields on the card: `[handicap, home_course]`; visible only to
-  connections: `[phone]`; required before the app opens: `[handicap]`
-  (`extend-profile`; a handle or a way to reach someone goes in Links
-  instead, as the skill says)
+  connections: `[shirt_size, or "none"]`; required before the app opens:
+  `[handicap]` (`extend-profile`; a phone number, an email, or a handle
+  goes in Links instead, as the skill says)
 - A tag that sends people somewhere other than a person: `[a link to the
   tee sheet, or "none"]` (`add-destination-type`)
 - Tags live on `[bag tag, ball marker]`; merch to list: `[items, or
   "none yet"]`
+- Site (`add-marketing-site`): landing promise `[one line]` and one plain
+  sentence of what the app does; sample card `[an invented name and bio,
+  or "invent one"]`; sign-in methods `[email / phone through Twilio]`
 
 **Accounts and money.** Supabase `[new org "Name" on the free plan /
 existing project ref]`, region `[us-east-1]`. Cloudflare account `[name]`
@@ -71,8 +74,10 @@ existing id]`. App domain `[https://app.example.co]`, the base URL the
 tags encode and keep forever; site domain `[example.co]`; contact email
 `[hello@example.co]`. Stop and ask before anything that bills, creates a
 cloud resource, or writes to production, and before the production tag
-batch. Never read credentials from an old checkout; ask for them when a
-skill needs them.
+batch. Provision against production only after `go-live` has created the
+database and its keys file, whatever order the walkthrough lists them in.
+Never read credentials from an old checkout; ask for them when a skill
+needs them.
 
 **Done for this pass:** `[local stack green and both apps running on the
 new brand / deployed to the accounts above / tags provisioned and the
