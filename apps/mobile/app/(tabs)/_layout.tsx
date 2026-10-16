@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
 import { Text } from 'react-native';
 import { Header } from '../../components/Header';
-import { fonts, useTokens } from '../../lib/tokens';
+import { fonts, useShadow, useTokens } from '../../lib/tokens';
 
 type FeatherName = ComponentProps<typeof Feather>['name'];
 
@@ -28,7 +28,7 @@ function label({
   children: string;
 }) {
   return (
-    <Text style={{ color, fontSize: 12, fontFamily: focused ? fonts.bodySemiBold : fonts.body }}>
+    <Text style={{ color, fontSize: 12, fontFamily: focused ? fonts.bodySemiBold : fonts.bodyMedium }}>
       {children}
     </Text>
   );
@@ -46,12 +46,19 @@ function header() {
  */
 export default function TabsLayout() {
   const t = useTokens();
+  const shadow = useShadow();
   return (
     <Tabs
       screenOptions={{
         header,
         sceneStyle: { backgroundColor: t.bg },
-        tabBarStyle: { backgroundColor: t.surface, borderTopColor: t.border },
+        // The bar floats on a shadow in light; in dark (no bar shadow) it keeps the hairline.
+        tabBarStyle: {
+          backgroundColor: t.surface,
+          borderTopColor: t.border,
+          borderTopWidth: shadow.bar ? 0 : 1,
+          ...shadow.bar,
+        },
         tabBarActiveTintColor: t.ink,
         tabBarInactiveTintColor: t.inkMuted,
         tabBarLabel: label,

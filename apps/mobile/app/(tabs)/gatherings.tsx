@@ -16,7 +16,7 @@ import { api } from '../../lib/api';
 import { parseLocalDateTime, tomorrowEvening, whenAndWhere } from '../../lib/format-time';
 import { goingLine, withLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
-import { fonts, radius, space, useTokens } from '../../lib/tokens';
+import { fonts, space, useTokens } from '../../lib/tokens';
 
 /**
  * The Events tab: what is happening in the domain, and your own calendar.
@@ -116,7 +116,7 @@ export default function GatheringsScreen() {
         onPress={() => router.push({ pathname: '/gathering/[id]', params: { id: gathering.id } })}
         style={({ pressed }) => [
           styles.row,
-          { backgroundColor: t.surface, borderColor: t.border },
+          { borderTopColor: t.border },
           pressed && { opacity: 0.6 },
         ]}
       >
@@ -234,14 +234,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     marginTop: space.s4,
   },
+  // Rows are flat and ruled, not boxed (mirrors PersonRow and web's .row).
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.s3,
-    borderWidth: 1,
-    borderRadius: radius.control,
+    borderTopWidth: 1,
     paddingVertical: space.s3,
-    paddingHorizontal: space.s4,
   },
   rowBody: {
     flex: 1,
@@ -250,9 +249,11 @@ const styles = StyleSheet.create({
   rowName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: 16,
+    lineHeight: 22,
   },
   rowSub: {
     fontFamily: fonts.body,
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 21,
   },
 });

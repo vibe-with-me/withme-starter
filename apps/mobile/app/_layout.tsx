@@ -1,11 +1,13 @@
 import {
   Inter_400Regular,
+  Inter_500Medium,
   Inter_600SemiBold,
   useFonts,
 } from '@expo-google-fonts/inter';
 import {
   SpaceGrotesk_500Medium,
   SpaceGrotesk_600SemiBold,
+  SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 import { Feather } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
@@ -23,9 +25,11 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     ...Feather.font,
     Inter_400Regular,
+    Inter_500Medium,
     Inter_600SemiBold,
     SpaceGrotesk_500Medium,
     SpaceGrotesk_600SemiBold,
+    SpaceGrotesk_700Bold,
   });
 
   const ready = fontsLoaded && !loading;

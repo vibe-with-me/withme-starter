@@ -10,17 +10,19 @@
 :root {
   color-scheme: light dark;
 
-  /* surfaces & ink */
-  --color-bg: #f6f3ee;
-  --color-surface: #fffdf9;
+  /* surfaces & ink. The page sits a visible step below the surface so a
+     card needs no border to read as an object. */
+  --color-bg: #f3efe8;
+  --color-surface: #fffefb;
   --color-border: rgba(28, 25, 22, 0.09);
-  /* input boundaries need >=3:1 against the surface (WCAG 1.4.11) */
-  --color-border-input: rgba(28, 25, 22, 0.46);
+  /* input boundaries need >=3:1 against the surface (WCAG 1.4.11):
+     3.32:1 light, 4.43:1 dark */
+  --color-border-input: rgba(28, 25, 22, 0.5);
   --color-ink: #1c1916;
   --color-ink-muted: #6f6a62;
 
   /* the accent. The handshake pair — Connect and Accept — and nothing else.
-     (4.8:1 with --color-accent-ink) */
+     (5.18:1 with --color-accent-ink in light; 6.46:1 in dark) */
   --color-accent: #c2410c;
   --color-accent-ink: #ffffff;
 
@@ -55,20 +57,26 @@
   --shell-tab-height: 60px;
   --shell-max-width: 60rem;
 
-  /* elevation */
+  /* elevation: one shadow for every card, one for the bottom bar. Cards
+     have no border; the shadow and the bg/surface step do the work.
+     Mobile mirrors these as `shadow` in tokens.ts. */
   --shadow-card:
-    0 1px 2px rgba(28, 25, 22, 0.04),
-    0 16px 40px -16px rgba(28, 25, 22, 0.16);
+    0 1px 2px rgba(28, 25, 22, 0.05),
+    0 8px 24px -12px rgba(28, 25, 22, 0.18),
+    0 28px 56px -32px rgba(28, 25, 22, 0.22);
+  --shadow-bar: 0 -8px 24px -12px rgba(28, 25, 22, 0.18);
 
-  /* the motion budget: one. The card's settle on resolve. */
+  /* the motion budget: the card's settle on resolve, and a button's
+     opacity on hover and press. Nothing else moves. */
   --motion-settle-duration: 360ms;
   --motion-settle-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-press-duration: 120ms;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #161412;
-    --color-surface: #211e1b;
+    --color-bg: #141210;
+    --color-surface: #26221e;
     --color-border: rgba(240, 236, 229, 0.1);
     --color-border-input: rgba(240, 236, 229, 0.5);
     --color-ink: #f0ece5;
@@ -76,7 +84,10 @@
     --color-accent: #ff6a3d;
     --color-accent-ink: #211008;
     --shadow-card:
-      0 1px 2px rgba(0, 0, 0, 0.4),
-      0 16px 40px -16px rgba(0, 0, 0, 0.6);
+      0 1px 2px rgba(0, 0, 0, 0.5),
+      0 8px 24px -12px rgba(0, 0, 0, 0.55),
+      0 28px 56px -32px rgba(0, 0, 0, 0.7);
+    /* shadows vanish on a dark ground: the bar keeps a hairline instead (app.css) */
+    --shadow-bar: none;
   }
 }

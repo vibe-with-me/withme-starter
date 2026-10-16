@@ -18,7 +18,7 @@ const SIZE = 512;
  * not depend on the uploader's theme: every viewer sees the same file. It
  * mirrors the light --color-surface token in styles/tokens.css.
  */
-const PHOTO_FILL = '#fffdf9';
+const PHOTO_FILL = '#fffefb';
 
 function encode(canvas: HTMLCanvasElement, type: 'image/webp' | 'image/jpeg'): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob(resolve, type, 0.85));

@@ -15,7 +15,7 @@
     "android": {
       "package": "co.withme.starter",
       "adaptiveIcon": {
-        "backgroundColor": "#f6f3ee",
+        "backgroundColor": "#f3efe8",
         "foregroundImage": "./assets/android-icon-foreground.png"
       }
     },
@@ -26,9 +26,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#f6f3ee",
+          "backgroundColor": "#f3efe8",
           "dark": {
-            "backgroundColor": "#161412"
+            "backgroundColor": "#141210"
           }
         }
       ],

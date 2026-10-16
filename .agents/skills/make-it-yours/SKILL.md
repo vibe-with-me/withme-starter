@@ -113,9 +113,8 @@ design system. Keep the WCAG notes in `tokens.css` honest: accent/accent-ink
 cite four ratios in the comments: the accent pair (accent vs. accent-ink)
 in each theme, and the input border against the surface in each theme.
 Don't leave stale numbers. The
-starter's shipped light `--color-border-input` measures 2.97:1, just
-under the 3:1 minimum: until that is fixed upstream, raise it in both
-files, e.g. opacity 0.46 → 0.47 (3.06:1).
+starter ships its input border at 3.32:1 light and 4.43:1 dark; a new
+neutral set must keep both at or above 3:1.
 
 **Checkpoint:**
 
@@ -128,7 +127,7 @@ returns nothing (old accent fully evicted from both files; the
 exclusions matter — stale build output under `dist/` still contains the
 old values and would false-fail this). Repeat for each old neutral you
 replaced, over the same `apps/` tree so it reaches `app.json` and
-`avatar.ts` too (the starter's light surface `#fffdf9` is also
+`avatar.ts` too (the starter's light surface `#fffefb` is also
 `PHOTO_FILL`). Then `bun run lint && bun run typecheck` — both green.
 If you changed the header height,
 `grep -n 'shell-nav-height:' apps/web/src/styles/tokens.css` and

@@ -12,11 +12,12 @@ import {
   type TextProps,
 } from 'react-native';
 import { avatarSrc } from '../lib/avatar';
-import { fonts, radius, space, TAP_TARGET, useTokens } from '../lib/tokens';
+import { fonts, radius, space, TAP_TARGET, useShadow, useTokens } from '../lib/tokens';
 
 /** The card surface. `settle` plays the one animation in the motion budget. */
 export function Card({ children, settle = false }: { children: ReactNode; settle?: boolean }) {
   const t = useTokens();
+  const shadow = useShadow();
   const progress = useRef(new Animated.Value(settle ? 0 : 1)).current;
 
   useEffect(() => {
@@ -40,7 +41,8 @@ export function Card({ children, settle = false }: { children: ReactNode; settle
     <Animated.View
       style={[
         styles.card,
-        { backgroundColor: t.surface, borderColor: t.border },
+        { backgroundColor: t.surface },
+        shadow.card,
         settle && {
           opacity: progress,
           transform: [
@@ -75,7 +77,7 @@ export function ErrorText({ children }: { children: ReactNode }) {
   return (
     <Text
       accessibilityRole="alert"
-      style={[styles.errorText, { color: t.ink, backgroundColor: t.bg, borderColor: t.border }]}
+      style={[styles.errorText, { color: t.ink, backgroundColor: t.bg }]}
     >
       {children}
     </Text>
@@ -118,17 +120,21 @@ export function Button({
       style={({ pressed }) => [
         styles.button,
         inline && styles.buttonInline,
-        kind === 'connect' && { backgroundColor: t.accent, borderColor: t.accent },
-        kind === 'default' && { backgroundColor: t.surface, borderColor: t.borderInput },
+        // Rank by solidity: default is solid ink, connect is the accent, quiet is text.
+        kind === 'connect' && { backgroundColor: t.accent },
+        kind === 'default' && { backgroundColor: t.ink },
         kind === 'quiet' && styles.buttonQuiet,
-        (pressed || disabled) && { opacity: 0.6 },
+        kind === 'quiet' && pressed && { backgroundColor: t.bg },
+        pressed && { opacity: 0.85 },
+        disabled && { opacity: 0.45 },
       ]}
     >
       <Text
         style={[
           styles.buttonLabel,
-          { color: kind === 'connect' ? t.accentInk : kind === 'quiet' ? t.inkMuted : t.ink },
+          { color: kind === 'connect' ? t.accentInk : kind === 'quiet' ? t.inkMuted : t.surface },
           kind === 'connect' && styles.buttonLabelConnect,
+          kind === 'quiet' && styles.buttonLabelQuiet,
         ]}
       >
         {label}
@@ -191,15 +197,17 @@ export function Avatar({
       />
     );
   }
+  // The placeholder is a solid object (ink disc, surface initial): the first
+  // thing a stranger sees. A photo keeps a hairline so a light photo has an edge.
   return (
     <View
       style={[
         styles.avatar,
         styles.avatarFallback,
-        { width: size, height: size, backgroundColor: t.bg, borderColor: t.border },
+        { width: size, height: size, backgroundColor: t.ink },
       ]}
     >
-      <Text style={[styles.avatarInitial, { color: t.inkMuted, fontSize: size * 0.42 }]}>
+      <Text style={[styles.avatarInitial, { color: t.surface, fontSize: size * 0.42 }]}>
         {(name.trim().charAt(0) || '?').toUpperCase()}
       </Text>
     </View>
@@ -220,7 +228,11 @@ export function SectionHeader({ children }: { children: ReactNode }) {
 
 /** The typed empty state at the bottom of the ladder. */
 export function EmptyState({ children }: { children: ReactNode }) {
-  return <Muted>{children}</Muted>;
+  return (
+    <View style={styles.empty}>
+      <Muted>{children}</Muted>
+    </View>
+  );
 }
 
 /**
@@ -248,15 +260,25 @@ export function ListLadder<T>({
     );
   }
   if (state.status === 'error') {
+    // A row of the list it failed to load, not a box (mirrors web's .list-error).
     return (
       <View style={styles.ladderError}>
-        <ErrorText>{`Couldn't load ${what}.`}</ErrorText>
-        <Button label="Try again" kind="quiet" onPress={onRetry} />
+        <LadderErrorText>{`Couldn't load ${what}.`}</LadderErrorText>
+        <Button label="Try again" kind="quiet" inline onPress={onRetry} />
       </View>
     );
   }
   if (state.items.length === 0) return <EmptyState>{empty}</EmptyState>;
   return <>{children(state.items)}</>;
+}
+
+function LadderErrorText({ children }: { children: ReactNode }) {
+  const t = useTokens();
+  return (
+    <Text accessibilityRole="alert" style={[styles.ladderErrorText, { color: t.ink }]}>
+      {children}
+    </Text>
+  );
 }
 
 /**
@@ -280,7 +302,7 @@ export function PersonRow({
 }) {
   const t = useTokens();
   return (
-    <View style={[styles.personRow, { backgroundColor: t.surface, borderColor: t.border }]}>
+    <View style={[styles.personRow, { borderTopColor: t.border }]}>
       <View style={styles.personMain}>
         <Avatar name={name} path={path} size={44} />
         <View style={styles.personBody}>
@@ -358,10 +380,11 @@ export function SegmentedTabs<K extends string>({
 }
 
 const styles = StyleSheet.create({
+  // No border: the shadow (tokens.shadow.card) and the bg/surface step do the work.
   card: {
     borderRadius: radius.card,
-    borderWidth: 1,
-    padding: space.s6,
+    paddingVertical: space.s6,
+    paddingHorizontal: space.s5,
     alignItems: 'center',
     gap: space.s4,
     width: '100%',
@@ -374,17 +397,19 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     textAlign: 'center',
   },
+  // The meta role: 15 on 21, muted.
   muted: {
     fontFamily: fonts.body,
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 23,
-  },
-  errorText: {
-    fontFamily: fonts.body,
     fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 21,
+  },
+  // A bg well inside the card, no outline.
+  errorText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 15,
+    lineHeight: 21,
     borderRadius: radius.control,
-    borderWidth: 1,
     paddingVertical: space.s3,
     paddingHorizontal: space.s4,
     width: '100%',
@@ -393,16 +418,15 @@ const styles = StyleSheet.create({
   button: {
     minHeight: 52,
     borderRadius: radius.control,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: space.s5,
     width: '100%',
   },
   buttonQuiet: {
-    borderWidth: 0,
     backgroundColor: 'transparent',
     minHeight: TAP_TARGET,
+    paddingHorizontal: space.s3,
   },
   buttonLabel: {
     fontFamily: fonts.bodySemiBold,
@@ -413,9 +437,13 @@ const styles = StyleSheet.create({
   buttonLabelConnect: {
     fontSize: 18,
   },
+  buttonLabelQuiet: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 15,
+  },
   field: {
     width: '100%',
-    gap: space.s2,
+    gap: 6,
   },
   fieldLabel: {
     fontFamily: fonts.bodySemiBold,
@@ -425,8 +453,8 @@ const styles = StyleSheet.create({
     minHeight: TAP_TARGET,
     borderWidth: 1,
     borderRadius: radius.control,
-    paddingHorizontal: space.s4,
-    paddingVertical: space.s3,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontFamily: fonts.body,
     fontSize: 17,
     width: '100%',
@@ -436,11 +464,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   avatarFallback: {
+    borderWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
-    fontFamily: fonts.displayMedium,
+    fontFamily: fonts.display,
   },
   buttonInline: {
     width: 'auto',
@@ -457,14 +486,25 @@ const styles = StyleSheet.create({
   },
   ladderError: {
     width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: space.s2,
-  },
-  personRow: {
-    borderWidth: 1,
-    borderRadius: radius.control,
+    justifyContent: 'space-between',
+    gap: space.s3,
     paddingVertical: space.s3,
-    paddingHorizontal: space.s4,
+  },
+  ladderErrorText: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+    flexShrink: 1,
+  },
+  empty: {
+    paddingVertical: space.s5,
+  },
+  // Rows are flat and ruled, not boxed: a hairline above each, no fill.
+  personRow: {
+    borderTopWidth: 1,
+    paddingVertical: space.s3,
     gap: space.s2,
   },
   personMain: {
@@ -473,8 +513,8 @@ const styles = StyleSheet.create({
     gap: space.s3,
   },
   personBody: { flex: 1, minWidth: 0 },
-  personName: { fontFamily: fonts.bodySemiBold, fontSize: 16 },
-  personSub: { fontFamily: fonts.body, fontSize: 14 },
+  personName: { fontFamily: fonts.bodySemiBold, fontSize: 16, lineHeight: 22 },
+  personSub: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21 },
   personActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',

@@ -45,10 +45,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.s5,
     borderBottomWidth: 1,
   },
+  // A setting, not a drawing: display face, 700, -0.03em, lowercase (mirrors .wordmark).
   wordmark: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.displayBold,
     fontSize: 20,
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
   },
   action: {
     minWidth: TAP_TARGET,

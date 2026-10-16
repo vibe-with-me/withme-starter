@@ -18,10 +18,10 @@ export interface Tokens {
 }
 
 const light: Tokens = {
-  bg: '#f6f3ee',
-  surface: '#fffdf9',
+  bg: '#f3efe8',
+  surface: '#fffefb',
   border: 'rgba(28, 25, 22, 0.09)',
-  borderInput: 'rgba(28, 25, 22, 0.46)',
+  borderInput: 'rgba(28, 25, 22, 0.5)',
   ink: '#1c1916',
   inkMuted: '#6f6a62',
   accent: '#c2410c',
@@ -29,8 +29,8 @@ const light: Tokens = {
 };
 
 const dark: Tokens = {
-  bg: '#161412',
-  surface: '#211e1b',
+  bg: '#141210',
+  surface: '#26221e',
   border: 'rgba(240, 236, 229, 0.1)',
   borderInput: 'rgba(240, 236, 229, 0.5)',
   ink: '#f0ece5',
@@ -43,10 +43,62 @@ export function useTokens(): Tokens {
   return useColorScheme() === 'dark' ? dark : light;
 }
 
+/**
+ * Elevation — the mirror of --shadow-card and --shadow-bar in tokens.css,
+ * as React Native shadow props. Cards have no border; the shadow and the
+ * bg/surface step do the work. The bar has no shadow in dark (it vanishes
+ * on a dark ground) and keeps a hairline instead.
+ */
+export interface Shadow {
+  shadowColor: string;
+  shadowOpacity: number;
+  shadowRadius: number;
+  shadowOffset: { width: number; height: number };
+  elevation: number;
+}
+
+export const shadow = {
+  card: {
+    light: {
+      shadowColor: '#1c1916',
+      shadowOpacity: 0.16,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 6,
+    },
+    dark: {
+      shadowColor: '#000000',
+      shadowOpacity: 0.55,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 6,
+    },
+  },
+  bar: {
+    light: {
+      shadowColor: '#1c1916',
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: -6 },
+      elevation: 8,
+    },
+    dark: null,
+  },
+} as const satisfies { card: Record<'light' | 'dark', Shadow>; bar: Record<'light' | 'dark', Shadow | null> };
+
+export function useShadow(): { card: Shadow; bar: Shadow | null } {
+  const isDark = useColorScheme() === 'dark';
+  return isDark
+    ? { card: shadow.card.dark, bar: shadow.bar.dark }
+    : { card: shadow.card.light, bar: shadow.bar.light };
+}
+
 export const fonts = {
   display: 'SpaceGrotesk_600SemiBold',
   displayMedium: 'SpaceGrotesk_500Medium',
+  displayBold: 'SpaceGrotesk_700Bold',
   body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
   bodySemiBold: 'Inter_600SemiBold',
 } as const;
 
