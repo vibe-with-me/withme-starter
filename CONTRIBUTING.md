@@ -106,15 +106,24 @@ exist, which were deliberately skipped, and the decisions behind both.
 ## Releasing `@vibewithme/nfc` (maintainers)
 
 `.github/workflows/release.yml` publishes the SDK to npm when an `nfc-v*`
-tag is pushed. Four things gate it:
+tag is pushed. It runs three jobs, each with only the permissions it needs:
+
+- **`build`** (read-only) installs, lints, typechecks, builds, tests, and
+  checks the package, then packs the tarball and records its SHA-256.
+- **`publish`** is the only job that can get an npm OIDC token. It runs
+  no project code: it downloads that tarball, refuses it if the hash
+  changed, and publishes it.
+- **`github-release`** creates the GitHub Release once the publish lands.
+
+Four things gate the publish:
 
 - **The tag.** A ruleset on `refs/tags/nfc-v*` lets only repository admins
   create a release tag and blocks moving, deleting, or force-pushing one.
   Admins can bypass the ruleset, so don't move or delete a published tag:
   a published version stays tied to the commit it was built from.
-- **The `npm` environment.** The release job runs in it, and it accepts
+- **The `npm` environment.** The `publish` job runs in it, and it accepts
   only `nfc-v*` tags. Once the repo is public, a maintainer must approve
-  each deployment before the job starts.
+  each deployment before that job starts.
 - **npm trusted publishing.** There is no npm token. npm accepts a publish
   of `@vibewithme/nfc` only from this repository's `release.yml` running
   in the `npm` environment, and the package refuses tokens that bypass
@@ -129,10 +138,11 @@ To cut a release:
 1. Merge a PR that bumps `version` in `packages/nfc-sdk/package.json`.
 2. Tag that commit on `main` and push the tag:
    `git tag nfc-v0.2.0 && git push origin nfc-v0.2.0`.
-3. In the Actions tab, open the Release run and approve the `npm`
-   deployment ("Review deployments"). Until the repo is public the
-   environment has no reviewer, and the job starts right away.
-4. The job publishes with provenance and creates the GitHub Release.
+3. In the Actions tab, open the Release run. Once `build` is green,
+   approve the `npm` deployment ("Review deployments"). Until the repo is
+   public the environment has no reviewer, and `publish` starts right away.
+4. `publish` publishes with provenance, then `github-release` creates the
+   GitHub Release.
 
 ## Where things go
 
