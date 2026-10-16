@@ -1,6 +1,6 @@
 import type { GatheringListItem } from '@withme/contract';
 import { createFileRoute, Link, useLoaderData, useRouter } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
@@ -35,6 +35,11 @@ function GatheringsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreError, setMoreError] = useState(false);
   const [pagedFrom, setPagedFrom] = useState(firstPage);
+  // The first page a Load more was asked for: an answer that arrives after
+  // the loader replaced it is dropped, or it would append an old page (and an
+  // old cursor) to the new feed.
+  const firstPageRef = useRef(firstPage);
+  firstPageRef.current = firstPage;
   if (pagedFrom !== firstPage) {
     // A new first page: drop what was appended to the old one (during render,
     // so the stale pages never paint under the new first page).
@@ -61,14 +66,16 @@ function GatheringsPage() {
 
   async function loadMore() {
     if (cursor === null) return;
+    const askedFor = firstPage;
     setLoadingMore(true);
     setMoreError(false);
     try {
       const page = await api.app.gatherings.list({ cursor });
+      if (firstPageRef.current !== askedFor) return;
       setLaterPages((pages) => [...pages, ...page.gatherings]);
       setCursor(page.next_cursor);
     } catch {
-      setMoreError(true);
+      if (firstPageRef.current === askedFor) setMoreError(true);
     } finally {
       setLoadingMore(false);
     }

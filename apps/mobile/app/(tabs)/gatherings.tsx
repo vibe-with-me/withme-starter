@@ -1,6 +1,6 @@
 import type { GatheringListItem } from '@withme/contract';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -32,6 +32,9 @@ export default function GatheringsScreen() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreError, setMoreError] = useState(false);
+  // Bumped by every full load: a Load more answer from before it is dropped,
+  // or it would append an old page (and an old cursor) to the new feed.
+  const feedGeneration = useRef(0);
   const [gatherings, setGatherings] = useState<GatheringListItem[]>([]);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -46,6 +49,7 @@ export default function GatheringsScreen() {
   const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
+    feedGeneration.current += 1;
     try {
       const [feed, { gatherings: mine }, { data }] = await Promise.all([
         api.app.gatherings.list(),
@@ -76,14 +80,16 @@ export default function GatheringsScreen() {
 
   async function loadMore() {
     if (cursor === null || loadingMore) return;
+    const generation = feedGeneration.current;
     setLoadingMore(true);
     setMoreError(false);
     try {
       const page = await api.app.gatherings.list({ cursor });
+      if (generation !== feedGeneration.current) return;
       setHappening((rows) => [...rows, ...page.gatherings]);
       setCursor(page.next_cursor);
     } catch {
-      setMoreError(true);
+      if (generation === feedGeneration.current) setMoreError(true);
     } finally {
       setLoadingMore(false);
     }

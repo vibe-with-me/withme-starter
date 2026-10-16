@@ -18,7 +18,8 @@
 --     domain-wide feed for everyone.
 --   * gatherings.starts_at: at most a year ahead, on insert and on any
 --     update of starts_at (the host edits through PostgREST, not an RPC), by
---     trigger: now() cannot sit in a CHECK.
+--     trigger: now() cannot sit in a CHECK. The same trigger holds the
+--     20-upcoming cap when an edit moves a past gathering into the future.
 --   * delete_my_account: refuses while the caller's avatar folder still
 --     holds files. The API empties it through the Storage API first; a
 --     direct RPC call, or an API run that failed partway, used to delete
@@ -170,6 +171,15 @@ as $$
 begin
   if new.starts_at > now() + interval '1 year' then
     raise exception 'starts_at is more than a year ahead' using errcode = '22023';
+  end if;
+  -- Moving a past gathering back into the future makes it upcoming again,
+  -- so the 20-upcoming cap create_gathering checks applies here too.
+  -- (Inserts only come through create_gathering: there is no insert policy.)
+  if tg_op = 'UPDATE' and old.starts_at <= now() and new.starts_at > now() and (
+    select count(*) from public.gatherings
+     where host_id = new.host_id and starts_at > now() and id <> new.id
+  ) >= 20 then
+    raise exception 'too many upcoming gatherings' using errcode = 'P0004';
   end if;
   return new;
 end

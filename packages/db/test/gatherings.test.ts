@@ -566,6 +566,33 @@ describe('gathering limits', () => {
       p_starts_at: inDays(2),
     });
     expect(error?.code).toBe('P0004');
+
+    // Nor can an edit move a past one back into the future to get around it.
+    const { data: past } = await admin
+      .from('gatherings')
+      .select('id')
+      .eq('host_id', alice.id)
+      .lt('starts_at', new Date().toISOString())
+      .limit(1)
+      .single();
+    const revived = await alice.client
+      .from('gatherings')
+      .update({ starts_at: inDays(3) })
+      .eq('id', past!.id);
+    expect(revived.error?.code).toBe('P0004');
+    // An upcoming one still moves freely within the future.
+    const { data: upcoming } = await admin
+      .from('gatherings')
+      .select('id')
+      .eq('host_id', alice.id)
+      .gt('starts_at', new Date().toISOString())
+      .limit(1)
+      .single();
+    const moved = await alice.client
+      .from('gatherings')
+      .update({ starts_at: inDays(4) })
+      .eq('id', upcoming!.id);
+    expect(moved.error).toBeNull();
   });
 
   it('a start more than a year ahead is refused, on create and on edit', async () => {
