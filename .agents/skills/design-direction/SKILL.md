@@ -55,7 +55,8 @@ so the owner can keep what people already recognise.
 
 - The design system, in two files kept value-identical:
   `apps/web/src/styles/tokens.css` (eight color tokens in `:root` and a
-  `prefers-color-scheme: dark` block, type scale, radii 24/14/pill,
+  `prefers-color-scheme: dark` block, plus `--color-scrim`, derived from
+  the ink and never on the sheet, type scale, radii 24/14/pill,
   spacing, the 44px tap target, one motion token) and
   `apps/mobile/lib/tokens.ts` (the same eight colors as `light` and
   `dark`, plus `fonts`, `radius`, `space`, and `displaySize`, the mirror
@@ -272,8 +273,10 @@ skill:
 - One accent, on primary actions only; never on navigation, links,
   chrome, borders, or headings. A direction that needs two is a
   different product.
-- Eight color tokens, no more. A new token key is a design-system
-  change, not a rebrand, and it is out of this skill's scope.
+- Eight color tokens, no more. Derived values (`--color-scrim`, the ink
+  at 40%) are not brand tokens and follow the eight on their own. A new
+  token key is a design-system change, not a rebrand, and it is out of
+  this skill's scope.
 - Neutrals near-monochrome; no gradients, no tinted surfaces.
 - Layout, radii, spacing, tap targets, the card idiom, the motion
   budget: untouched. Artboards vary the look, not the structure.

@@ -144,6 +144,12 @@ And one place copies the light `--color-surface`:
   transparent photo when an avatar is cropped. Set it to the new light
   surface value (light only: every viewer sees the same file).
 
+`--color-scrim` (behind the web report dialog) needs nothing: it is
+derived, not a ninth brand token. Light is the ink at 40%
+(`color-mix(… var(--color-ink) 40%, transparent)`), so the new ink
+recolors it; dark is plain black. Change the dark value only if black
+fights the new dark bg.
+
 **The one-accent rule.** The palette is near-monochrome with exactly one
 vivid accent, and the accent appears only on the primary action of a
 screen: Connect, Accept, Claim tag, and Join (the resolver's "Join this

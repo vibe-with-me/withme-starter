@@ -111,7 +111,12 @@ use of the tab label.
   line, and the `/gathering/` prefix that `gatheringHref` in
   `lib/gathering-link.ts` builds for redirects, and the same prefix in its
   test, `lib/gathering-link.test.ts`, which asserts `/gathering/…` hrefs
-  (`bun run test` fails on it until it says `/round/…`).
+  (`bun run test` fails on it until it says `/round/…`). Push
+  notifications follow that one prefix: the database writes
+  `/gathering/<id>` into a push as an internal path (leave it, like the
+  API's routes), and `pushScreen` in `lib/push-state.ts`, which
+  `lib/push.ts` calls on a tap, opens it through `gatheringHref`. Its test
+  compares with `gatheringHref` too, so nothing else changes.
 - Docs: `docs/the-slice.md` cites the detail files as the idioms to copy
   (web `_app.gatherings_.$id.tsx`, "the real one"; mobile
   `gathering/[id].tsx`, among the stack screens). Point both at the
