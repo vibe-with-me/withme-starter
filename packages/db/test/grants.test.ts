@@ -78,6 +78,18 @@ describe('function grants', () => {
     }
   });
 
+  // Exactly, not "at least": a private definer (push_send, mint_share_code,
+  // notify_report...) reachable by a signed-in session would be a hole even
+  // though PostgREST does not expose `private`, because a fork's policy or
+  // view could call it. lock_pair is the one non-definer helper granted
+  // since the first migration; it only takes an advisory lock.
+  it('authenticated can execute nothing beyond the RPCs and helpers listed here', async () => {
+    const expected = [
+      ...new Set([...ANON_EXECUTABLE, ...SIGNED_IN_RPCS, ...POLICY_HELPERS, 'private.lock_pair']),
+    ].toSorted();
+    expect(await executableBy('authenticated')).toEqual(expected);
+  });
+
   it('service_role keeps every RPC', async () => {
     const granted = await executableBy('service_role');
     for (const fn of [...ANON_EXECUTABLE, ...SIGNED_IN_RPCS]) expect(granted).toContain(fn);
@@ -107,5 +119,41 @@ describe('function grants', () => {
       throw rollback;
     });
     await expect(probe).rejects.toBe(rollback);
+  });
+});
+
+describe('table privileges', () => {
+  // Every table a client role could ever reach has RLS on, including the
+  // private ledgers (settings, push batches, throttle, report and share-code
+  // attempts): defense in depth if `private` were ever exposed.
+  it('every table in public and private has row level security on', async () => {
+    const rows: { name: string }[] = await sql`
+      select schemaname || '.' || tablename as name
+      from pg_tables
+      where schemaname in ('public', 'private') and not rowsecurity
+      order by 1`;
+    expect(rows.map((r) => r.name)).toEqual([]);
+  });
+
+  // private.settings holds the push access token and the outbound URLs:
+  // no client role holds any privilege on any private table.
+  it('anon and authenticated hold no privilege on any private table', async () => {
+    const rows: { name: string }[] = await sql`
+      select distinct table_schema || '.' || table_name || ':' || grantee as name
+      from information_schema.role_table_grants
+      where table_schema = 'private' and grantee in ('anon', 'authenticated', 'public')
+      order by 1`;
+    expect(rows.map((r) => r.name)).toEqual([]);
+  });
+
+  // Account deletion is one door, delete_my_account: it clears the ledgers,
+  // refuses while photos remain, and keeps reports about the person tied to
+  // the deletion clock. A bare DELETE on profiles skipped all of that.
+  it('no client role may delete a profile row directly', async () => {
+    const [row] = await sql`
+      select
+        has_table_privilege('anon', 'public.profiles', 'DELETE') anon,
+        has_table_privilege('authenticated', 'public.profiles', 'DELETE') authed`;
+    expect(row).toEqual({ anon: false, authed: false });
   });
 });
