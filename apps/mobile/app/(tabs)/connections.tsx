@@ -1,7 +1,8 @@
 import type { ConnectRequest, Connection } from '@withme/contract';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LinkChips } from '../../components/Links';
+import { PushOffer } from '../../components/Push';
 import { AccessibilityInfo, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import {
   Button,
@@ -44,6 +45,7 @@ async function settleInto<T>(
  */
 export default function ConnectionsScreen() {
   const t = useTokens();
+  const params = useLocalSearchParams<{ segment?: string }>();
   const [segment, setSegment] = useState<Segment>('connections');
   const [pending, setPending] = useState<ListState<ConnectRequest>>({ status: 'loading' });
   const [connections, setConnections] = useState<ListState<Connection>>({ status: 'loading' });
@@ -86,6 +88,17 @@ export default function ConnectionsScreen() {
     () => Promise.all([loadPending(), loadConnections(), loadBlocks()]),
     [loadPending, loadConnections, loadBlocks],
   );
+
+  // A tapped request notification opens /connections?segment=requests; the
+  // tab stays mounted, so follow the param whenever it arrives.
+  useEffect(() => {
+    if (params.segment !== 'requests') return;
+    setSegment('requests');
+    // The tab may have been mounted, and loaded, before the request arrived.
+    loadAll();
+    // Cleared, so the next tapped notification changes it again.
+    router.setParams({ segment: undefined });
+  }, [params.segment, loadAll]);
 
   useFocusEffect(
     useCallback(() => {
@@ -138,6 +151,7 @@ export default function ConnectionsScreen() {
         />
       }
     >
+      <PushOffer />
       <SegmentedTabs
         items={[
           { key: 'connections', label: 'Connections' },

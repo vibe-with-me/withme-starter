@@ -164,11 +164,55 @@ and caches may serve the old file for up to an hour after that.
 **The test.** `packages/db/test/avatars.test.ts`, with a positive control
 for every negative case so none can pass vacuously.
 
+## Notifications say only what you could already see
+
+**The promise.** A phone gets three pushes, ever: someone sent you a
+connect request, someone accepted yours, people joined your gathering.
+No reminders, no digests, nothing to bring you back. A push names only
+what you could already see in the app, never tells anyone a block
+exists, and never reaches someone who blocked the sender. Pushes are
+off until you turn them on, and one switch in Profile turns them off.
+
+**How.** The database sends them, from triggers on the rows that
+already carry consent (`connect_requests`, `gathering_members`), through
+`pg_net` to Expo's push service. A send that a block silently drops
+writes no row, so it cannot push; the triggers check the block again
+anyway. Because the send is in the database, a call straight to
+PostgREST pushes exactly as a call through the API does, and the API
+never needs the service-role key to read someone else's tokens. `pg_net`
+is asynchronous, so the sender's response time does not depend on
+whether a push went out. A request names the sender (their card is on
+the request); an acceptance names the person who accepted (you are
+connected now); a gathering push gives a count and never a name, because
+a host sees only their connections among the members. Bursts collapse:
+one request push per sender per day, one gathering push per fifteen
+minutes with the joins in between counted into the next one.
+
+`push_tokens` is owner-only: you read and delete your own devices'
+tokens, and nobody reads anyone else's. A token Expo reports as
+`DeviceNotRegistered` is deleted, and so is one the app has not
+refreshed in thirty days. Signing out deletes that device's token;
+deleting your account deletes all of them. The notification text passes
+through Expo and Apple or Google on its way to your phone, so it holds
+a display name, a gathering's title, or a count, and nothing else.
+
+**The test.** `packages/db/test/push.test.ts`, against a stand-in for
+Expo's push endpoint, with a positive control for every "no push" case.
+
+**What this means for a fork.** A new push kind is a trigger on a row
+that already encodes consent, and its text names only what the
+recipient can already read. Never add a push that exists to bring
+someone back. Never add `net` to the API's exposed schemas: Supabase
+grants pg_net's functions to every role, and the schema being
+unexposed is what keeps an outbound HTTP call out of a client's reach.
+Web push and email are a fork's choice; the starter ships neither, and
+the web app shows the pending count instead.
+
 ## Deleting an account deletes everything
 
 **The promise.** Delete your account and your profile, connections,
-requests, blocks, hosted gatherings and memberships, photos, and scan
-history are gone. Your claimed tags return to unclaimed.
+requests, blocks, hosted gatherings and memberships, photos, push
+tokens, and scan history are gone. Your claimed tags return to unclaimed.
 
 **How.** Profile → Account clears the photo pointer, sweeps the avatar
 files through the Storage API, then calls `delete_my_account()`, a

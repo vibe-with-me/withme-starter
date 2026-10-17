@@ -23,6 +23,8 @@ import {
   ProfileLinksInputSchema,
   ProfileSchema,
   PublicProfileSchema,
+  pushPath,
+  RegisterPushTokenInputSchema,
   ResolveOutputSchema,
   TagUidSchema,
   UpdateGatheringInputSchema,
@@ -578,5 +580,45 @@ describe('plain text', () => {
     };
     expect(ProfileSchema.safeParse(card).success).toBe(true);
     expect(ProfileSchema.safeParse({ ...card, display_name: 'Ad\u202Ea' }).success).toBe(false);
+  });
+});
+
+describe('push', () => {
+  const token = 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]';
+
+  it('registers an Expo token for ios or android only', () => {
+    expect(RegisterPushTokenInputSchema.safeParse({ token, platform: 'ios' }).success).toBe(true);
+    expect(
+      RegisterPushTokenInputSchema.safeParse({ token: 'ExpoPushToken[abc_-1]', platform: 'android' })
+        .success,
+    ).toBe(true);
+    for (const bad of [
+      { token, platform: 'web' },
+      { token: 'https://example.com/hook', platform: 'ios' },
+      { token: 'ExponentPushToken[]', platform: 'ios' },
+      { token: 'ExponentPushToken[a b]', platform: 'ios' },
+    ]) {
+      expect(RegisterPushTokenInputSchema.safeParse(bad).success).toBe(false);
+    }
+  });
+
+  it('a notification opens Requests, Connections, or one gathering, and nothing else', () => {
+    const id = '9b2c8f43-1b1a-4f7e-9d3c-2a6c1e5b8d90';
+    expect(pushPath({ path: '/connections?segment=requests' })).toBe('/connections?segment=requests');
+    expect(pushPath({ path: '/connections' })).toBe('/connections');
+    expect(pushPath({ path: `/gathering/${id}` })).toBe(`/gathering/${id}`);
+    for (const bad of [
+      null,
+      'path',
+      {},
+      { path: 'https://evil.example' },
+      { path: '//evil.example' },
+      { path: '/profile' },
+      { path: '/gathering/not-a-uuid' },
+      { path: `/gathering/${id}/edit` },
+      { path: '/connections?segment=blocked' },
+    ]) {
+      expect(pushPath(bad)).toBeUndefined();
+    }
   });
 });

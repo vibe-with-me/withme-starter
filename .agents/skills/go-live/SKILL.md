@@ -336,6 +336,41 @@ NODE_ENV=production bunx expo export --platform ios --no-bytecode \
 `.env.production` beats `.env` in production exports (verified), so a
 local `.env` sitting next to it is harmless.
 
+### Push credentials
+
+The database sends pushes through Expo's push service (the
+`push_notifications` migration); it needs no key of yours. The phone
+needs credentials to receive them, and both kinds are tied to the
+owner's accounts, so **every step here is the owner's, or done with
+their explicit OK**. They are free.
+
+1. **iOS (APNs key).** `bunx eas-cli credentials --platform ios`, pick
+   the production profile, then Push Notifications: Manage your Apple
+   Push Notifications Key → set up a new key. EAS signs in to the
+   owner's Apple Developer account to create it (one key serves every
+   app on the team; reuse an existing one if EAS lists it).
+2. **Android (FCM V1).** Create a Firebase project for the app, add an
+   Android app with the package from `app.json`, download its
+   `google-services.json` to `apps/mobile/` and set
+   `expo.android.googleServicesFile` to `./google-services.json` (it
+   holds no secret, but it is per-fork: commit it in the fork, not
+   upstream). Then make a service-account key (Project settings →
+   Service accounts → Generate new private key) and upload it with
+   `bunx eas-cli credentials --platform android` → Google Service
+   Account → Push Notifications (FCM V1). Delete the downloaded key file
+   afterwards; EAS holds it.
+3. **A build.** Pushes reach a store or development build, not an EAS
+   Update alone, and never Expo Go on Android. `bunx eas-cli build
+   --profile production` (or `development` for a device build) after the
+   credentials exist. Builds beyond the free allotment bill, so ask.
+
+**Checkpoint:** on a real phone running the build, Connections offers
+"Turn on notifications"; after Allow, `select platform, last_seen_at
+from public.push_tokens` (SQL editor) shows the device. Send yourself a
+request from a second account: the push arrives and tapping it opens
+Requests. `select endpoint from private.push_config` reads Expo's URL;
+setting it to `null` is the kill switch for every push.
+
 ## 5. Before real users
 
 Skip this for a public demo. For an app with real users, after every check

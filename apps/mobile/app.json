@@ -46,6 +46,7 @@
           "includeNdefEntitlement": false
         }
       ],
+      "expo-notifications",
       "expo-web-browser",
       [
         "expo-image-picker",

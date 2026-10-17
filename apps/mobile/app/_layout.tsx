@@ -14,6 +14,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { usePushRouting } from '../lib/push';
 import { useSession } from '../lib/use-session';
 import { useTokens } from '../lib/tokens';
 
@@ -33,6 +34,8 @@ export default function RootLayout() {
   });
 
   const ready = fontsLoaded && !loading;
+  // Signed in and mounted: refresh this device's token, open tapped pushes.
+  usePushRouting(ready && !!session);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();

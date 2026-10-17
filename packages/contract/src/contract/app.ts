@@ -17,6 +17,7 @@ import {
   PublicProfileSchema,
   UpdateProfileInputSchema,
 } from '../schemas/profile.ts';
+import { RegisterPushTokenInputSchema, UnregisterPushTokenInputSchema } from '../schemas/push.ts';
 import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
 
 const getProfile = oc
@@ -181,6 +182,20 @@ const updateMyTag = oc
   // Not yours and nonexistent are the same NOT_FOUND.
   .output(z.object({ tag: TagSchema }));
 
+// Push: this device's token, for the three transactional pushes (a request
+// to you, yours accepted, people joined your gathering). Owner-only.
+const registerPushToken = oc
+  .route({ method: 'PUT', path: '/me/push-tokens', tags: ['Push'] })
+  .input(RegisterPushTokenInputSchema)
+  // Registers or refreshes; a token another account held moves to you.
+  .output(z.object({ ok: z.literal(true) }));
+
+const unregisterPushToken = oc
+  .route({ method: 'DELETE', path: '/me/push-tokens', tags: ['Push'] })
+  .input(UnregisterPushTokenInputSchema)
+  // Turning pushes off, and signing out. Not yours is the same ok.
+  .output(z.object({ ok: z.literal(true) }));
+
 /** Session-scoped surface — every procedure requires a verified Supabase JWT. */
 export const appContract = {
   profile: {
@@ -210,4 +225,5 @@ export const appContract = {
     remove: removeGathering,
   },
   tags: { listMine: listMyTags, update: updateMyTag },
+  push: { register: registerPushToken, unregister: unregisterPushToken },
 };

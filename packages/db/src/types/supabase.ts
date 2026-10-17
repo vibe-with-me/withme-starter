@@ -309,6 +309,42 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          last_seen_at: string
+          platform: string
+          tenant_id: string
+          token: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          last_seen_at?: string
+          platform: string
+          tenant_id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_seen_at?: string
+          platform?: string
+          tenant_id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tag_scans: {
         Row: {
           id: string
@@ -413,6 +449,10 @@ export type Database = {
       join_gathering: { Args: { p_gathering_id: string }; Returns: undefined }
       log_scan: {
         Args: { p_uid: string; p_user_agent?: string }
+        Returns: undefined
+      }
+      register_push_token: {
+        Args: { p_platform: string; p_token: string }
         Returns: undefined
       }
       resolve_tag: { Args: { p_uid: string }; Returns: Json }

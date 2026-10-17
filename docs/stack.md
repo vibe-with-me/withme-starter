@@ -156,6 +156,7 @@ For a club-sized fork:
 | Supabase | Two projects per free org, paused after ~1 week idle | ~$10/month for an always-on project. |
 | Twilio Verify | Trial credit, verified numbers only | About $0.05 per successful sign-in, plus the SMS fee. Only if you turn phone sign-in on. |
 | Expo EAS | Updates and a limited number of builds | Builds beyond the free allotment. |
+| Expo push service | Free | Not billed. iOS pushes need the Apple Developer membership a store app needs anyway. |
 | A domain | — | Required. The domain you encode on tags is forever. |
 
 `go-live` has the exact commands and the potholes for each.
@@ -165,9 +166,11 @@ For a club-sized fork:
 - **No analytics or telemetry.** The no-telemetry stance is part of the
   starter's identity. PostHog and friends ship their own instrumentation
   skills if a fork wants them.
-- **No push notifications.** A real handshake need, but infra-heavy. If
-  added, transactional only (request received, request accepted), never
-  engagement.
+- **No engagement pushes.** The mobile app gets three transactional
+  pushes (request received, request accepted, people joined your
+  gathering), sent by the database through Expo's free push service.
+  Nothing else, ever: no reminders, digests, or "you haven't opened the
+  app". No web push or email either; a fork adds those if it wants them.
 - **No commerce.** The Merch tab is a pointer to a store URL. No cart,
   no products, no Shopify API.
 - **No background jobs.** Request expiry is a timestamp comparison, not a
