@@ -25,12 +25,28 @@ const StartsAtInputSchema = z.iso
     'At most a year ahead',
   );
 
+/**
+ * Who can see a gathering. `everyone`: every signed-in person in the app.
+ * `connections`: the host's accepted connections, plus whoever is already
+ * going. The database enforces it on every read and join.
+ */
+export const GATHERING_VISIBILITIES = ['everyone', 'connections'] as const;
+export const GatheringVisibilitySchema = z.enum(GATHERING_VISIBILITIES);
+
+/** Spots, counting the host: at least 2, at most 500. The database enforces both. */
+export const GATHERING_CAPACITY_MIN = 2;
+export const GATHERING_CAPACITY_MAX = 500;
+const CapacitySchema = z.number().int().min(GATHERING_CAPACITY_MIN).max(GATHERING_CAPACITY_MAX);
+
 /** A gathering as its members see it. host_id tells the UI who runs it. */
 export const GatheringSchema = z.object({
   id: z.uuid(),
   title: z.string().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE),
   starts_at: z.iso.datetime({ offset: true }),
   location: z.string().min(1).max(160).refine(plain, PLAIN_TEXT_MESSAGE).nullable(),
+  visibility: GatheringVisibilitySchema,
+  /** Null: no limit. */
+  capacity: CapacitySchema.nullable(),
   host_id: z.uuid(),
   created_at: z.iso.datetime({ offset: true }),
 });
@@ -72,6 +88,8 @@ export const CreateGatheringInputSchema = z.object({
   title: z.string().trim().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE),
   starts_at: StartsAtInputSchema,
   location: LocationInputSchema,
+  visibility: GatheringVisibilitySchema.optional(),
+  capacity: CapacitySchema.nullable().optional(),
 });
 
 /** Host-only patch; the id travels in the path. At least one field. */
@@ -81,12 +99,24 @@ export const UpdateGatheringInputSchema = z
     title: z.string().trim().min(1).max(120).refine(plain, PLAIN_TEXT_MESSAGE).optional(),
     starts_at: StartsAtInputSchema.optional(),
     location: LocationInputSchema,
+    visibility: GatheringVisibilitySchema.optional(),
+    /** Null clears the limit. Lowering it below the headcount keeps everyone. */
+    capacity: CapacitySchema.nullable().optional(),
   })
   .refine(
     (patch) =>
-      patch.title !== undefined || patch.starts_at !== undefined || patch.location !== undefined,
+      patch.title !== undefined ||
+      patch.starts_at !== undefined ||
+      patch.location !== undefined ||
+      patch.visibility !== undefined ||
+      patch.capacity !== undefined,
     { message: 'Nothing to update' },
   );
+
+/** Full: a capacity, and that many going. Leaving frees a spot. */
+export function isGatheringFull(gathering: { capacity: number | null }, memberCount: number): boolean {
+  return gathering.capacity !== null && memberCount >= gathering.capacity;
+}
 
 /** A page of the feed: 20 by default, 50 at most. */
 export const GATHERINGS_PAGE_SIZE = 20;
@@ -109,6 +139,7 @@ export const GatheringsPageSchema = z.object({
 });
 
 export type Gathering = z.infer<typeof GatheringSchema>;
+export type GatheringVisibility = z.infer<typeof GatheringVisibilitySchema>;
 export type GatheringSummary = z.infer<typeof GatheringSummarySchema>;
 export type GatheringMember = z.infer<typeof GatheringMemberSchema>;
 export type GatheringListItem = z.infer<typeof GatheringListItemSchema>;

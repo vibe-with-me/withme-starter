@@ -64,6 +64,7 @@ const POLICY_HELPERS = [
   'private.is_link_value',
   'private.is_plain_text',
   'private.sees_card',
+  'private.sees_gathering',
 ];
 
 describe('function grants', () => {

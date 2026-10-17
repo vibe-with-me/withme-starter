@@ -13,6 +13,7 @@ import {
   GatheringSummarySchema,
   GatheringsPageSchema,
   ListGatheringsInputSchema,
+  isGatheringFull,
   isPlainText,
   LINK_PLATFORM_IDS,
   LINK_PLATFORMS,
@@ -214,6 +215,8 @@ describe('gathering schemas', () => {
     title: 'Rooftop listening session',
     starts_at: '2026-10-09T18:00:00+00:00',
     location: 'The roof',
+    visibility: 'everyone' as const,
+    capacity: null,
     host_id: '9b2c8f43-1b1a-4f7e-9d3c-2a6c1e5b8d90',
     created_at: '2026-10-01T00:00:00Z',
   };
@@ -275,6 +278,54 @@ describe('gathering schemas', () => {
     });
     expect(parsed).toEqual({ title: 'Tee time', starts_at: gathering.starts_at, location: null });
     expect(CreateGatheringInputSchema.parse({ ...parsed, location: '   ' }).location).toBeNull();
+  });
+
+  it('visibility is everyone or connections, and nothing else', () => {
+    expect(GatheringSchema.parse({ ...gathering, visibility: 'connections' }).visibility).toBe(
+      'connections',
+    );
+    for (const bad of ['invite_only', 'private', '', null, undefined]) {
+      expect(GatheringSchema.safeParse({ ...gathering, visibility: bad }).success).toBe(false);
+    }
+    const { starts_at } = gathering;
+    expect(CreateGatheringInputSchema.parse({ title: 'Tee', starts_at }).visibility).toBeUndefined();
+    expect(
+      CreateGatheringInputSchema.safeParse({ title: 'Tee', starts_at, visibility: 'friends' })
+        .success,
+    ).toBe(false);
+    expect(
+      UpdateGatheringInputSchema.safeParse({ id: gathering.id, visibility: 'connections' }).success,
+    ).toBe(true);
+  });
+
+  it('capacity is null or a whole number from 2 to 500; null on edit clears it', () => {
+    const { starts_at } = gathering;
+    for (const [capacity, ok] of [
+      [2, true],
+      [4, true],
+      [500, true],
+      [1, false],
+      [0, false],
+      [501, false],
+      [3.5, false],
+      ['4', false],
+    ] as const) {
+      expect(GatheringSchema.safeParse({ ...gathering, capacity }).success).toBe(ok);
+      expect(CreateGatheringInputSchema.safeParse({ title: 'Tee', starts_at, capacity }).success).toBe(
+        ok,
+      );
+      expect(UpdateGatheringInputSchema.safeParse({ id: gathering.id, capacity }).success).toBe(ok);
+    }
+    expect(GatheringSchema.safeParse({ ...gathering, capacity: undefined }).success).toBe(false);
+    expect(UpdateGatheringInputSchema.parse({ id: gathering.id, capacity: null }).capacity).toBeNull();
+  });
+
+  it('full means a capacity and that many going', () => {
+    expect(isGatheringFull({ capacity: null }, 400)).toBe(false);
+    expect(isGatheringFull({ capacity: 4 }, 3)).toBe(false);
+    expect(isGatheringFull({ capacity: 4 }, 4)).toBe(true);
+    // lowered below the headcount: still full, nobody removed
+    expect(isGatheringFull({ capacity: 2 }, 5)).toBe(true);
   });
 
   it('an emptied location clears it', () => {

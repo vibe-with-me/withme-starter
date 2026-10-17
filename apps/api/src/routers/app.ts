@@ -274,6 +274,8 @@ const gatheringsCreate = appProcedure.gatherings.create.handler(async ({ input, 
     p_title: input.title,
     p_starts_at: input.starts_at,
     p_location: input.location ?? undefined,
+    p_visibility: input.visibility,
+    p_capacity: input.capacity ?? undefined,
   });
   if (error) throwFromDbError(error, context.logger);
   context.logger.info('gathering created');

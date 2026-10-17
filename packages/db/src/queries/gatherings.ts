@@ -5,21 +5,33 @@ import { CARD_COLUMNS, type ProfileCard } from './handshake.ts';
  * RLS does the scoping in every query here. A gathering is visible to every
  * signed-in user of the tenant except across a block with its host either
  * way, so a hidden one (blocked, or nonexistent) reads as nonexistent.
+ * A `connections` gathering reads as nonexistent too, except to its host,
+ * the host's accepted connections and its members (private.sees_gathering).
  * Member rows are the viewer's own and their accepted connections' only;
  * the headcount comes from a definer RPC that re-states the gathering's
  * visibility.
  */
+/** The row with `visibility` narrowed from the generated `string`: the
+ * gatherings_visibility_known CHECK admits exactly these two values. */
+export type GatheringRow = Omit<Tables<'gatherings'>, 'visibility'> & {
+  visibility: 'everyone' | 'connections';
+};
+
+function narrow(row: Tables<'gatherings'>): GatheringRow {
+  return row as GatheringRow;
+}
+
 export async function getGathering(
   db: Db,
   gatheringId: string,
-): Promise<Tables<'gatherings'> | null> {
+): Promise<GatheringRow | null> {
   const { data, error } = await db
     .from('gatherings')
     .select('*')
     .eq('id', gatheringId)
     .maybeSingle();
   if (error) throw error;
-  return data;
+  return data && narrow(data);
 }
 
 export interface GatheringMemberRow {
@@ -60,7 +72,7 @@ async function memberCounts(db: Db, ids: string[]): Promise<Map<string, number>>
   return new Map((data ?? []).map((row) => [row.gathering_id, Number(row.member_count)]));
 }
 
-export interface GatheringListRow extends Tables<'gatherings'> {
+export interface GatheringListRow extends GatheringRow {
   member_count: number;
   is_member: boolean;
   members: GatheringMemberRow[];
@@ -70,8 +82,9 @@ export interface GatheringListRow extends Tables<'gatherings'> {
 async function withWhoIsGoing(
   db: Db,
   userId: string,
-  gatherings: Tables<'gatherings'>[],
+  rows: Tables<'gatherings'>[],
 ): Promise<GatheringListRow[]> {
+  const gatherings = rows.map(narrow);
   if (gatherings.length === 0) return [];
   const ids = gatherings.map((g) => g.id);
   const [membersResult, counts] = await Promise.all([
@@ -198,6 +211,8 @@ export interface GatheringPatch {
   title?: string;
   starts_at?: string;
   location?: string | null;
+  visibility?: 'everyone' | 'connections';
+  capacity?: number | null;
 }
 
 /** Host-only by RLS and the column grant: a non-host's patch matches zero
@@ -206,7 +221,7 @@ export async function updateGathering(
   db: Db,
   gatheringId: string,
   patch: GatheringPatch,
-): Promise<Tables<'gatherings'> | null> {
+): Promise<GatheringRow | null> {
   const { data, error } = await db
     .from('gatherings')
     .update(patch)
@@ -214,7 +229,7 @@ export async function updateGathering(
     .select()
     .maybeSingle();
   if (error) throw error;
-  return data;
+  return data && narrow(data);
 }
 
 /** Host-only by RLS; idempotent — a non-host's delete is a no-op.

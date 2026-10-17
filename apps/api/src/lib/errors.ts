@@ -26,6 +26,10 @@ export function throwFromDbError(error: DbError, logger: Logger): never {
     case 'P0006':
       // delete_my_account found photos the sweep missed (an upload raced it).
       throw new ORPCError('CONFLICT', { message: 'Try again' });
+    case 'P0007':
+      // join_gathering: capacity reached. Only reachable for a viewer who
+      // already sees the gathering and its headcount.
+      throw new ORPCError('CONFLICT', { message: 'Gathering is full' });
     case '42501':
       throw new ORPCError('UNAUTHORIZED', { message: 'Authentication required' });
     case '23503':

@@ -202,6 +202,7 @@ export type Database = {
       }
       gatherings: {
         Row: {
+          capacity: number | null
           created_at: string
           host_id: string
           id: string
@@ -209,9 +210,11 @@ export type Database = {
           starts_at: string
           tenant_id: string
           title: string
+          visibility: string
         }
         ComputedFields: never
         Insert: {
+          capacity?: number | null
           created_at?: string
           host_id: string
           id?: string
@@ -219,8 +222,10 @@ export type Database = {
           starts_at: string
           tenant_id?: string
           title: string
+          visibility?: string
         }
         Update: {
+          capacity?: number | null
           created_at?: string
           host_id?: string
           id?: string
@@ -228,6 +233,7 @@ export type Database = {
           starts_at?: string
           tenant_id?: string
           title?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -501,7 +507,13 @@ export type Database = {
         Returns: Json
       }
       create_gathering: {
-        Args: { p_location?: string; p_starts_at: string; p_title: string }
+        Args: {
+          p_capacity?: number
+          p_location?: string
+          p_starts_at: string
+          p_title: string
+          p_visibility?: string
+        }
         Returns: Json
       }
       decline_connect_request: {
