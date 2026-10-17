@@ -47,8 +47,14 @@ so the owner can keep what people already recognise.
   `prefers-color-scheme: dark` block, type scale, radii 24/14/pill,
   spacing, the 44px tap target, one motion token) and
   `apps/mobile/lib/tokens.ts` (the same eight colors as `light` and
-  `dark`, plus `fonts`, `radius`, `space`). `/design` reads the first
-  one when it runs from the fork root.
+  `dark`, plus `fonts`, `radius`, `space`, and `displaySize`, the mirror
+  of the two display sizes). `/design` reads the first one when it runs
+  from the fork root.
+- The icon sources, `docs/brand/icon.svg` and `icon-dark.svg`, and
+  `docs/brand/render.sh`, which makes every app icon, splash and favicon
+  PNG from those two. They are the starter's own artwork until
+  make-it-yours step 8 replaces them; this skill draws the replacements
+  but does not write them there.
 - The palette rule, in both files' header comments: near-monochrome
   neutrals with **exactly one vivid accent**, on the primary action of a
   screen only (Connect, Accept, Claim tag, Join, "Read NFC tag"). Links,
@@ -252,6 +258,8 @@ Contrast, as `contrast.ts` reported it on <date>: <paste its output>.
 
 A fresh starter ships Space Grotesk for display and Inter for body. Each row names the family make-it-yours step 2 will end with; "(starter)" means that step is skipped for the row. The comparison is always to the starter, never to a brand the fork had before.
 
+Display sizes (make-it-yours step 1): <"starter's" (web `--text-title` 2rem, `--text-lg` 1.25rem; mobile `displaySize` title 30, section 20, wordmark 20), or the raised values for a face that sets small>.
+
 ## Copy (make-it-yours step 3 and 7)
 
 | screen | file | line |
@@ -263,10 +271,8 @@ A fresh starter ships Space Grotesk for display and Inter for body. Each row nam
 
 ## Artwork (make-it-yours step 8)
 
-- `apps/mobile/assets/icon.png` 1024×1024, no alpha: <the mark, described>.
-- `apps/mobile/assets/android-icon-foreground.png`: <the same mark on transparent, inside the central 66%, in a color that reads on the light bg>.
-- Optional `apps/web/public/favicon.ico`.
-- Source files live at <a repo-relative path such as `docs/brand/`, "kept outside the repo" (no local path), or "none yet">.
+- The mark: <described in words>.
+- `icon.svg` (light) and `icon-dark.svg` (dark), drawn in `docs/brand/render.sh`'s layout, which make-it-yours step 8 copies over the starter's `docs/brand/` sources and renders: <"kept outside the repo until step 8" (no local path), "recolor the starter mark", or "none yet">.
 
 ## Not this
 
@@ -292,33 +298,46 @@ pair is checked. Paste the output under the Colors table. Both
 self-hosted on one platform and must change. One pair on its own is
 handy while adjusting: `bun run .agents/skills/design-direction/contrast.ts '#2447c9' '#ffffff'`.
 
-Then render the artwork from the chosen mark, drawn as two SVGs:
-`icon.svg` (the mark on a full-bleed accent or bg square) and
-`android-icon-foreground.svg` (the mark alone on a transparent
-background, every painted point inside the central 66% — a circle of
-radius 338 in a 1024 viewBox — in a color that reads on the light bg,
-which make-it-yours sets as the adaptive-icon background; that may
-invert the icon's colors). `rsvg-convert` and `magick` (Homebrew
-`librsvg`, `imagemagick`) do the rest; keep the sources and PNGs outside
-`apps/` until make-it-yours step 8 copies them in:
+Look at the display face at the starter's display sizes on the resolver
+board. A face that sets small there (a script, a low x-height) needs
+larger ones: record them on the sheet's Display sizes line, raised on
+web and mobile alike, and make-it-yours step 1 sets them.
+
+Then draw the artwork from the chosen mark as the two sources
+make-it-yours step 8 renders with `docs/brand/render.sh`: `icon.svg`
+(light) and `icon-dark.svg` (dark, used for the dark splash). Each is
+the mark on a full-bleed background square in that mode's colors, in
+the text layout the script edits with `sed`:
+
+- `viewBox="0 0 1024 1024"` exactly;
+- the background is one `<rect ... fill="#rrggbb"/>`, alone on its line
+  and the only `<rect>` in the file;
+- the mark centered with about 150px of margin;
+- no `<text>`: outline any letter in the brand face to `<path>`s, since
+  the renderer would otherwise set it in whatever font the machine has
+  (make-it-yours step 8 has the how).
+
+The script makes every PNG from these two, including the Android
+foreground (the mark without the rect, scaled into the launcher's safe
+zone) and the alpha-free iOS icon, so draw nothing else. `docs/brand/`
+still holds the starter's sources, which make-it-yours step 8 replaces:
+keep the new pair outside the repo until then. A preview needs only
+`rsvg-convert` (Homebrew `librsvg`):
 
 ```sh
-rsvg-convert -w 1024 -h 1024 icon.svg | magick png:- -background '<icon bg>' -alpha remove -alpha off icon.png
-rsvg-convert -w 1024 -h 1024 android-icon-foreground.svg -o android-icon-foreground.png
-magick icon.png -define icon:auto-resize=48,32,16 favicon.ico
-sips -g hasAlpha -g pixelWidth -g pixelHeight icon.png   # hasAlpha: no, 1024 × 1024
+rsvg-convert -w 1024 -h 1024 icon.svg -o icon-preview.png
+sed '/<rect /d' icon.svg | rsvg-convert -w 1024 -h 1024 -o mark-preview.png
 ```
 
-iOS rejects an app icon with an alpha channel, so `icon.png` must
-report `hasAlpha: no`; the Android foreground keeps its alpha. Look at
-the foreground composited on the light bg with the safe-zone circle
-drawn before you call it done.
+Look at the mark on its own as well as on the square: it is also the
+splash and the Android foreground.
 
 ## 4. Hand off to make-it-yours
 
 Run `make-it-yours` with the sheet open: its Inputs are the sheet's
-Names and Colors, step 2 takes the Fonts rows, step 3 the Copy rows,
-step 7 the store, step 8 the Artwork. Commit the sheet with the rebrand.
+Names and Colors, step 1 takes the Display sizes line, step 2 the Fonts
+rows, step 3 the Copy rows, step 7 the store, step 8 the Artwork.
+Commit the sheet with the rebrand.
 
 **Checkpoint:** make-it-yours' final visual check (its step 8) shows the
 resolver card with the sheet's accent on "Join this gathering" and

@@ -52,8 +52,9 @@ verified. Run it first, then fill this list from the sheet.
   step 3.
 - Where people report a vulnerability in your app, and who reviews your
   pull requests: a GitHub repository with private vulnerability reporting
-  turned on, or a security email; and your GitHub handle or team. Step 8's
-  contact-points pass uses them.
+  turned on (GitHub offers it only on public repositories), or a security
+  email; and your GitHub handle or team. Step 8's contact-points pass uses
+  them.
 
 Also do this now (a fresh clone ships only `.example` files, and the
 final boot check needs the real ones):
@@ -63,6 +64,22 @@ cp apps/web/.env.example apps/web/.env
 cp apps/mobile/.env.example apps/mobile/.env
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 ```
+
+And give the local stack its own name, before anything else touches the
+database. `supabase/config.toml` → `project_id` names the Docker
+containers and volumes, and a fork that keeps `withme-starter` shares
+them with every other checkout of the starter on this machine: its
+`db:start` can come up on another checkout's database ("Starting
+database from backup", migrations behind), and the two cannot run side
+by side even on different ports. Pick an id no other checkout uses
+(the wordmark, usually):
+`docker ps -a --format '{{.Names}}' | grep -c "^supabase_db_<new id>$"`
+must print 0 (otherwise the reset below lands on that checkout's stack).
+Stop the running stack first, while `config.toml` still names it:
+`bun run db:stop` (with the id still `withme-starter`, that also stops
+any other checkout of the starter here). Then rename. Then
+`bun run db:start`, then `bun run db:reset && bun run db:seed`: the
+renamed project starts on new, empty volumes.
 
 ## 1. Design tokens — web and mobile move in lockstep
 
@@ -74,10 +91,17 @@ The same palette lives twice and the two files MUST stay value-identical:
 
 Edit both in one sitting. Every *color* key is strictly 1:1
 (`--color-bg` ↔ `bg`, `--color-ink-muted` ↔ `inkMuted`, …) — copy the
-same literal values into both. The non-color tokens (type scale, radii,
-spacing, fonts) also exist in both files but in platform-shaped form
-(`radius`/`space`/`fonts` consts on mobile); keep them in agreement if
-you change them. The shell's heights are layout, not brand, but a new
+same literal values into both. The non-color tokens (radii, spacing,
+fonts, display sizes) also exist in both files but in platform-shaped
+form (`radius`/`space`/`fonts`/`displaySize` consts on mobile); keep them
+in agreement if you change them. The display sizes are the one type
+setting a rebrand may need: `--text-title` and `--text-lg` set only
+display text (names, titles, section headers, the header wordmark), and
+mobile mirrors them as `displaySize` (`title`, and `section`/`wordmark`
+for `--text-lg`). A display face that sets small (a script, a low
+x-height) needs them raised: change the two web tokens and the three
+mobile values together. Body text sizes are mobile literals that stay
+with the body face. The shell's heights are layout, not brand, but a new
 display font or a taller wordmark can outgrow them. `--shell-nav-height`
 (the header, 56px) is mirrored on mobile as `SHELL.headerHeight` in
 `lib/tokens.ts`: the two move together. `--shell-tab-height` (the web
@@ -93,6 +117,13 @@ and dark background values or the native splash will flash the old brand:
 - `apps/mobile/app.json` → `expo.android.adaptiveIcon.backgroundColor`
   (light bg) and the `expo-splash-screen` plugin entry's
   `backgroundColor` (light bg) + `dark.backgroundColor` (dark bg).
+
+The web favicon carries three tokens, in both modes:
+
+- `apps/web/public/favicon.svg` → the `.bg`, `.ink` and `.accent` fills
+  in its `<style>` block: the light bg, ink and accent, and the same three
+  dark values in its `prefers-color-scheme: dark` block. Step 8 redraws its
+  shapes if the mark changes; its colors change here, with the tokens.
 
 And one place copies the light `--color-surface`:
 
@@ -123,8 +154,8 @@ grep -rn --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
   '#c2410c\|#ff6a3d' apps/
 ```
 
-returns nothing (old accent fully evicted from both files; the
-exclusions matter — stale build output under `dist/` still contains the
+returns nothing (old accent fully evicted from both token files and the
+favicon; the exclusions matter — stale build output under `dist/` still contains the
 old values and would false-fail this). Repeat for each old neutral you
 replaced, over the same `apps/` tree so it reaches `app.json` and
 `avatar.ts` too (the starter's light surface `#fffefb` is also
@@ -343,16 +374,8 @@ ends with that new projectId.
   equal the new api worker name — the web worker reaches the API through
   this binding; a mismatch deploys a web app that cannot resolve tags
   server-side.
-- `supabase/config.toml` → `project_id` (optional; names the local
-  Docker stack). Pick an id no other checkout uses:
-  `docker ps -a --format '{{.Names}}' | grep -c "^supabase_db_<new id>$"`
-  must print 0 (otherwise the reset below lands on that checkout's stack).
-  If you rename it, stop the running stack first, while
-  `config.toml` still names it: `bun run db:stop`. Then rename. Then
-  `bun run db:start`, then `bun run db:reset && bun run db:seed`: the
-  renamed project starts on new, empty volumes. A fresh fork's
-  `project_id` is still `withme-starter`, so that stop also stops any
-  other checkout of the starter on this machine.
+- `supabase/config.toml` → `project_id` was renamed before step 1
+  (Inputs); check it no longer says `withme-starter`.
 - The `.env` files you created up front are *stack* config, not brand:
   local values stay as the `.example` files ship them (after step 3,
   `apps/web/.env` still matches `apps/web/.env.example` line for line).
@@ -401,13 +424,22 @@ line, with the same URL. With both dev servers up, `/merch` shows the card,
 
 Every icon is rendered from two SVGs in `docs/brand/`: `icon.svg` (light)
 and `icon-dark.svg` (dark). Each is a background `<rect>` plus the mark,
-on a 1024 canvas, with colors copied from `tokens.css`. Either recolor the
-starter mark to the new tokens or draw a new one with the same structure:
+on a 1024 canvas, with colors copied from `tokens.css`. A sheet from
+`design-direction` brings both, drawn in this format: copy them over the
+starter's. Otherwise recolor the starter mark to the new tokens or draw a
+new one with the same structure:
 one `<rect>` for the background, the mark centered with ~150px of margin.
 The script edits the SVGs as text, so keep `viewBox="0 0 1024 1024"` and
 the background `<rect ... fill="#hex"/>` on its own line, the only `<rect>`
 in the file. It stops with an error if either is missing (its header
 lists the rest of the format).
+`rsvg-convert` draws `<text>` with whatever fonts the machine running it
+has installed, so a letter mark or wordmark set in the brand's display
+face renders in a fallback face. Outline brand-face text to `<path>`s
+before rendering, in the icons and in `social-preview.svg` (below), which
+ships its name and tagline as `<text>`: Inkscape's Object to Path, or
+opentype.js's `font.getPath(text, x, y, size).toPathData()` on the face's
+font file (`@fontsource/<font>` has it).
 Then run `docs/brand/render.sh` from the repo root (it needs `rsvg-convert`
 and ImageMagick 7: `brew install librsvg imagemagick`). It writes:
 
@@ -431,8 +463,8 @@ and ImageMagick 7: `brew install librsvg imagemagick`). It writes:
   Social preview → Edit → Upload an image**.
 
 `apps/web/public/favicon.svg` is hand-written (it switches colors with the
-browser's color scheme): copy the new mark's shapes into it and set its
-light and dark colors by hand.
+browser's color scheme): copy the new mark's shapes into it. Its light and
+dark colors were set in step 1.
 
 ### Contact points
 
@@ -445,10 +477,17 @@ delete it:
   promises) and replace "How to report" and "What to expect" with your
   own channel and response time. Turn on private vulnerability reporting
   in your repository's Settings → Code security, or name a security email.
+  GitHub offers private reporting only on public repositories (the
+  setting is absent, and its API answers 404, on a private one), so
+  until you go public name a security email here, and switch to private
+  reporting at the flip.
   Drop "forks pick up fixes by merging from upstream" unless you do.
 - `.github/ISSUE_TEMPLATE/config.yml`: both `contact_links` URLs go to
   your repository (`…/<your-repo>/discussions`, or delete that entry if
-  Discussions are off, and `…/<your-repo>/security/advisories/new`).
+  Discussions are off, and `…/<your-repo>/security/advisories/new`). On a
+  private repository the advisory link 404s: point that entry at your
+  `SECURITY.md` (`…/<your-repo>/blob/main/SECURITY.md`) until you go
+  public.
 - `.github/ISSUE_TEMPLATE/bug.yml`, `feature.yml` and
   `.github/PULL_REQUEST_TEMPLATE.md`: the `docs/…` and `CONTRIBUTING` links
   point at your repository's copy (bug.yml's demo sign-in follows the seed
@@ -517,9 +556,8 @@ drop, and why a fork leaves it:
 
 The only other acceptable matches, each one a choice you made
 deliberately: the seed identity if you kept it (step 3, and then the
-README demo line and the `.env` example lines with it), an upstream
-attribution link in the README, and `supabase/config.toml`'s
-`project_id` if you kept it (step 6 makes the rename optional).
+README demo line and the `.env` example lines with it), and an upstream
+attribution link in the README.
 
 Not acceptable: `"owner": "vibe-with-me"` in `apps/mobile/app.json`
 while `extra.eas.projectId` is still `cf56d2f1-…`. It means step 5 is
@@ -527,16 +565,23 @@ undone, so the app still points at the upstream EAS project; the sweep
 stays red until step 5 runs.
 
 A fork in the same GitHub org as the starter (`vibe-with-me/<your-repo>`)
-has two more correct matches: the README CI badge naming the fork's own
-repo (step 3), and `"owner": "vibe-with-me"` once step 5 has given
+has more correct matches: every link to the fork's own repository (the
+README CI badge from step 3, and the contact points above, which now say
+`github.com/vibe-with-me/<your-repo>/…` in the issue and PR templates and
+`CONTRIBUTING.md`), and `"owner": "vibe-with-me"` once step 5 has given
 `app.json` the fork's own `projectId`. Append this to the sweep, with
-`<your-repo>` filled in; it drops the owner line only after step 5:
+`<your-repo>` filled in; it drops the fork's own links in every file, and
+the owner line only after step 5:
 
 ```sh
-  | grep -v '^README.md:[0-9]*:.*github\.com/vibe-with-me/<your-repo>/' \
+  | grep -vE 'github\.com/vibe-with-me/<your-repo>([^A-Za-z0-9_-]|$)' \
   | if grep -q cf56d2f1-eaec-406b-be9c-972519a6be84 apps/mobile/app.json; \
     then cat; else grep -v '^apps/mobile/app.json:[0-9]*: *"owner": "vibe-with-me",$'; fi
 ```
+
+If the starter's maintainer really does review the fork's pull requests,
+`.github/CODEOWNERS` keeps `@alex-eisele` and prints too: a deliberate
+match, like the seed identity.
 
 Finally the visual check, which needs BOTH dev servers: in one shell
 `cd apps/api && bun run dev` (the web loaders call the API Worker on

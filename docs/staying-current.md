@@ -28,14 +28,33 @@ the same lines. The rest of this page keeps those rare and small.
 ## One-time setup
 
 A fork made with GitHub's **Fork** button, or a `git clone` of the
-starter, already shares its history. Add the starter as a second remote:
+starter, already shares its history. Add the starter as a second remote,
+and tell `gh` which repository is yours (with an `upstream` remote
+present, `gh pr create` otherwise targets the starter):
 
 ```sh
 git remote add upstream https://github.com/vibe-with-me/withme-starter.git
 git fetch upstream
+gh repo set-default <org>/<app>
 ```
 
 Do this at step 0, before your first skill, and the rest is routine.
+
+**A private app** cannot use the Fork button (a fork of a public
+repository stays public, and GitHub will not fork a repository into the
+organization that owns it). Clone the starter and push it to a new
+private repository; the starter becomes `upstream` and the history is
+shared, so everything below works unchanged:
+
+```sh
+git clone https://github.com/vibe-with-me/withme-starter.git <app>
+cd <app>
+gh repo create <org>/<app> --private
+git remote rename origin upstream
+git remote add origin https://github.com/<org>/<app>.git
+git push -u origin main
+gh repo set-default <org>/<app>
+```
 
 **If your fork has no shared history** (made with "Use this template", or
 copied in as files), git sees two unrelated projects and the first merge

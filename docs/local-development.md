@@ -138,6 +138,16 @@ images from previous CLI versions accumulate in the Docker VM. Prune
 them (`docker image prune -a` removes every unused image; check what else
 you have first) and start again.
 
+**`db:start` prints "Starting database from backup" on a fresh clone.**
+The local stack is named after `project_id` in `supabase/config.toml`,
+and every clone of the starter ships the same one, so this clone came up
+on another checkout's database (`supabase migration list --local` shows
+it behind). `bun run db:reset` rebuilds it from this clone's migrations;
+then `db:seed`. A fork gives itself its own `project_id` in
+`make-it-yours` (before step 1), which also lets two checkouts run side
+by side: with the same `project_id` their container names collide even
+on different ports.
+
 **`db:start` fails with "port is already allocated".** Something else
 holds one of the stack's ports (553xx). The usual culprit is another
 project's Supabase stack: `docker ps --format '{{.Names}} {{.Ports}}' | grep 553`

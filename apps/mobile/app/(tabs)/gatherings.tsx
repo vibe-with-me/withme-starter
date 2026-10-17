@@ -16,7 +16,7 @@ import { api } from '../../lib/api';
 import { parseLocalDateTime, tomorrowEvening, whenAndWhere } from '../../lib/format-time';
 import { goingLine, withLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
-import { fonts, space, useTokens } from '../../lib/tokens';
+import { displaySize, fonts, space, useTokens } from '../../lib/tokens';
 
 /**
  * The Events tab: what is happening in the domain, and your own calendar.
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.display,
-    fontSize: 20,
+    fontSize: displaySize.section,
     letterSpacing: -0.2,
     marginTop: space.s4,
   },

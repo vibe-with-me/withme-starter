@@ -33,7 +33,9 @@ Don't fix the starter's docs from inside this fork; the list goes
 upstream separately.
 
 **Repository.** Clone the starter, create `[owner/repo]` on GitHub, push,
-and add the starter as the `upstream` remote (`docs/staying-current.md`).
+add the starter as the `upstream` remote, and point `gh` at your repo
+with `gh repo set-default` (`docs/run-with-me.md` step 0 has the
+commands, for a public or a private repo).
 One PR per skill step, merged when CI is green.
 
 **Brand** (for `make-it-yours`; run `design-direction` first if the

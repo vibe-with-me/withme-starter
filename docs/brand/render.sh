@@ -3,7 +3,8 @@
 #   icon.svg       light icon (background rect + mark)
 #   icon-dark.svg  dark icon, used only for the dark splash
 # The favicons and store icons come from icon.svg. apps/web/public/favicon.svg
-# is hand-written and switches colors itself: update it separately.
+# is hand-written and switches colors itself: update it separately
+# (make-it-yours sets its colors in step 1 and its shapes in step 8).
 # Edit those, then run from the repo root:  docs/brand/render.sh
 # Needs rsvg-convert and ImageMagick 7 (brew install librsvg imagemagick).
 #
@@ -76,4 +77,4 @@ magick "$tmp/fav-16.png" "$tmp/fav-32.png" "$tmp/fav-48.png" "$public/favicon.ic
 rsvg-convert -w 1280 -h 640 "$brand/social-preview.svg" | magick - -alpha off "${strip[@]}" "$brand/social-preview.png"
 
 echo "Rendered icons into apps/mobile/assets, apps/web/public and docs/brand."
-echo "apps/web/public/favicon.svg is hand-written: update its colors to match."
+echo "apps/web/public/favicon.svg is hand-written: copy a changed mark's shapes into it."
