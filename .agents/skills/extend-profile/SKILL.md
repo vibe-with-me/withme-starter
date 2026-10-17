@@ -1220,7 +1220,7 @@ function PersonRow({
   links,
   children,
 }: {
-  profile: CardProfile;
+  profile: PublicProfile;
   sub?: string | null;
   detail?: string | null;
   /** Connections only: the one list that carries them. */
