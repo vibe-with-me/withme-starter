@@ -373,7 +373,7 @@ their explicit OK**. They are free.
    push; without it, anyone who learns a device token can push to that
    phone. Treat the token as a secret: never commit it.
 4. **A build.** Pushes reach a store or development build, not an EAS
-   Update alone, and never Expo Go on Android. `bunx eas-cli build
+   Update alone, and not Expo Go (unsupported for remote pushes since SDK 53). `bunx eas-cli build
    --profile production` (or `development` for a device build) after the
    credentials exist. Builds beyond the free allotment bill, so ask.
 
