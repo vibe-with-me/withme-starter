@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TERMS_VERSION } from './terms.ts';
 import { PLAIN_TEXT_MESSAGE, isPlainText } from './text.ts';
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
@@ -45,6 +46,10 @@ export const ProfileSchema = z.object({
   display_name: DisplayNameSchema,
   avatar_path: AvatarPathSchema.nullable(),
   bio: BioSchema.nullable(),
+  // Which terms the owner agreed to, and when (stamped by the database).
+  // Null on a profile made before terms existed: the shells ask on next open.
+  terms_version: z.string().nullable(),
+  terms_accepted_at: z.iso.datetime({ offset: true }).nullable(),
   created_at: z.iso.datetime({ offset: true }),
   updated_at: z.iso.datetime({ offset: true }),
 });
@@ -64,10 +69,14 @@ export const PublicProfileSchema = ProfileSchema.pick({
  * Name and bio. The photo has its own endpoints (uploadAvatar /
  * removeAvatar): a path is chosen by the API, never by the client, so this
  * input has no avatar key at all (unknown keys are stripped).
+ *
+ * `terms_version` is the sign-up agreement: creating a profile requires it
+ * (the "I agree" box), and it can only be the current TERMS_VERSION.
  */
 export const UpdateProfileInputSchema = z.object({
   display_name: DisplayNameSchema.optional(),
   bio: BioSchema.nullable().optional(),
+  terms_version: z.literal(TERMS_VERSION).optional(),
 });
 
 /**

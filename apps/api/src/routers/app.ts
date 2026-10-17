@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server';
 import { GATHERINGS_PAGE_SIZE } from '@withme/contract';
 import type { Connection, Gathering, Profile, ProfileLink, Tag } from '@withme/contract';
 import {
+  acceptOwnTerms,
   blockUser,
   decodeFeedCursor,
   deleteGathering,
@@ -22,6 +23,7 @@ import {
   removeAvatarObjects,
   removeConnection,
   replaceOwnLinks,
+  reportUser,
   setOwnAvatarPath,
   unblockUser,
   updateGathering,
@@ -103,6 +105,15 @@ const getProfile = appProcedure.profile.get.handler(async ({ context }) => {
 const updateProfile = appProcedure.profile.update.handler(async ({ input, context }) => {
   const { userId } = context;
   const profile = await run(context, () => upsertOwnProfile(context.db, userId, input));
+  return { profile: profile as Profile };
+});
+
+const profileAcceptTerms = appProcedure.profile.acceptTerms.handler(async ({ input, context }) => {
+  const { userId } = context;
+  const profile = await run(context, () => acceptOwnTerms(context.db, userId, input.version));
+  // No profile yet: creating one carries terms_version itself.
+  if (!profile) throw new ORPCError('BAD_REQUEST', { message: 'Profile required' });
+  context.logger.info('terms accepted');
   return { profile: profile as Profile };
 });
 
@@ -248,6 +259,14 @@ const blocksList = appProcedure.blocks.list.handler(async ({ context }) => {
   return { blocks };
 });
 
+const reportsCreate = appProcedure.reports.create.handler(async ({ input, context }) => {
+  await run(context, () => reportUser(context.db, input));
+  // Ids, names and the reason stay out of the log: the report itself is
+  // the record, and it is the operator's alone (docs/moderation.md).
+  context.logger.info('report filed');
+  return { ok: true as const };
+});
+
 const gatheringsCreate = appProcedure.gatherings.create.handler(async ({ input, context }) => {
   const { data, error } = await context.db.rpc('create_gathering', {
     p_title: input.title,
@@ -341,6 +360,7 @@ export const appRouter = {
   profile: {
     get: getProfile,
     update: updateProfile,
+    acceptTerms: profileAcceptTerms,
     uploadAvatar: profileUploadAvatar,
     removeAvatar: profileRemoveAvatar,
     deleteAccount: profileDeleteAccount,
@@ -354,6 +374,7 @@ export const appRouter = {
   },
   connections: { list: connectionsList, remove: connectionsRemove },
   blocks: { block, unblock, list: blocksList },
+  reports: { create: reportsCreate },
   gatherings: {
     create: gatheringsCreate,
     get: gatheringsGet,

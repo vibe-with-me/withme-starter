@@ -39,6 +39,9 @@ export default defineConfig({
           process.env.SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
         // Pinned empty so a developer's .env can't add the Merch tab under test.
         VITE_STORE_URL: '',
+        // The agreement links to the fork's documents; any https URL will do here.
+        VITE_TERMS_URL: 'https://example.com/terms',
+        VITE_PRIVACY_URL: 'https://example.com/privacy',
       },
       timeout: 180_000,
     },

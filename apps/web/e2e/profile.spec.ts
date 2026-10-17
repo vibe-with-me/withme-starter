@@ -1,7 +1,7 @@
 // Profile: the photo, Links, My tags, and deleting the account (with or without a profile).
 import { fileURLToPath } from 'node:url';
 import { expect, type Page, test } from '@playwright/test';
-import { admin, claimFreshTag, signUp, signUpWithProfile } from './helpers.ts';
+import { admin, agreeToTerms, claimFreshTag, signUp, signUpWithProfile } from './helpers.ts';
 
 /** The auth user's id for an email, or undefined once it is gone. Pages through
  * every auth user: the local stack keeps the test users other suites create. */
@@ -161,6 +161,7 @@ test('Links: added on the profile, shown to a connection, never on the card', as
   await bob.getByRole('button', { name: 'Connect' }).click();
   await bob.waitForURL('**/profile**');
   await bob.getByLabel('Name').fill('Smoke Links Bob');
+  await agreeToTerms(bob);
   await bob.getByRole('button', { name: 'Save' }).click();
   await bob.waitForURL(`**/t/${uid}`);
   await bob.getByRole('button', { name: 'Connect' }).click();

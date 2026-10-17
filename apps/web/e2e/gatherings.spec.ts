@@ -2,7 +2,7 @@
 // host; connect, and the host appears in who's going. The feed lists it to
 // the whole domain.
 import { expect, test, type Locator } from '@playwright/test';
-import { admin, freshUid, signUp } from './helpers.ts';
+import { admin, agreeToTerms, freshUid, signUp } from './helpers.ts';
 
 /** The feed comes a page at a time, and other runs fill the first page:
  * press Load more until the row shows, as a person would. */
@@ -32,6 +32,7 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await signUp(ada, `smoke-host-${stamp}@rls.test`);
   await ada.waitForURL(/\/profile\?/);
   await ada.getByLabel('Name').fill('Smoke Ada');
+  await agreeToTerms(ada);
   await ada.getByRole('button', { name: 'Save' }).click();
   await ada.waitForURL('**/gatherings');
   const adaNav = ada.getByRole('navigation', { name: 'Primary' });
@@ -76,6 +77,7 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await signUp(bob, `smoke-guest-${stamp}@rls.test`);
   await bob.waitForURL(/\/profile\?/); // no profile yet: name first, destination remembered
   await bob.getByLabel('Name').fill('Smoke Bob');
+  await agreeToTerms(bob);
   await bob.getByRole('button', { name: 'Save' }).click();
 
   // A stranger reads the detail: the headcount, no member rows, and Join.

@@ -17,6 +17,7 @@ import { Route as AppConnectionsRouteImport } from './routes/_app.connections'
 import { Route as AppGatheringsRouteImport } from './routes/_app.gatherings'
 import { Route as AppMerchRouteImport } from './routes/_app.merch'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppTermsRouteImport } from './routes/_app.terms'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ClaimUidRouteImport } from './routes/claim.$uid'
 import { Route as TUidRouteImport } from './routes/t.$uid'
@@ -61,6 +62,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTermsRoute = AppTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/gatherings': typeof AppGatheringsRoute
   '/merch': typeof AppMerchRoute
   '/profile': typeof AppProfileRoute
+  '/terms': typeof AppTermsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/gatherings': typeof AppGatheringsRoute
   '/merch': typeof AppMerchRoute
   '/profile': typeof AppProfileRoute
+  '/terms': typeof AppTermsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_app/gatherings': typeof AppGatheringsRoute
   '/_app/merch': typeof AppMerchRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/terms': typeof AppTermsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/gatherings'
     | '/merch'
     | '/profile'
+    | '/terms'
     | '/auth/callback'
     | '/claim/$uid'
     | '/t/$uid'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/gatherings'
     | '/merch'
     | '/profile'
+    | '/terms'
     | '/auth/callback'
     | '/claim/$uid'
     | '/t/$uid'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_app/gatherings'
     | '/_app/merch'
     | '/_app/profile'
+    | '/_app/terms'
     | '/auth/callback'
     | '/claim/$uid'
     | '/t/$uid'
@@ -234,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/terms': {
+      id: '/_app/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AppTermsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -270,6 +289,7 @@ interface AppRouteChildren {
   AppGatheringsRoute: typeof AppGatheringsRoute
   AppMerchRoute: typeof AppMerchRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppTermsRoute: typeof AppTermsRoute
   AppGatheringsIdRoute: typeof AppGatheringsIdRoute
 }
 
@@ -278,6 +298,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGatheringsRoute: AppGatheringsRoute,
   AppMerchRoute: AppMerchRoute,
   AppProfileRoute: AppProfileRoute,
+  AppTermsRoute: AppTermsRoute,
   AppGatheringsIdRoute: AppGatheringsIdRoute,
 }
 
