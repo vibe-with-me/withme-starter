@@ -794,3 +794,37 @@ a.link:hover {
   width: 100%;
   max-width: 100%;
 }
+
+/* --- share code ------------------------------------------------------------ */
+
+/* Dark on light in both schemes (tokens.css), sized for a phone held at arm's length. */
+.share-code {
+  width: 100%;
+  max-width: 16rem;
+  aspect-ratio: 1;
+  border-radius: var(--radius-control);
+}
+
+.share-code__bg {
+  fill: var(--color-code-bg);
+}
+
+.share-code__ink {
+  fill: var(--color-code-ink);
+}
+
+/* the link under the code: long, unbroken, and selectable */
+.share-url {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+  user-select: all;
+  margin: 0;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}

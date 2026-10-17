@@ -198,7 +198,15 @@ describe('scan privacy', () => {
     expect(data).not.toBeNull();
     expect(data!.length).toBeGreaterThan(0);
     const columns = Object.keys(data![0]!);
-    expect(columns.toSorted()).toEqual(['id', 'scanned_at', 'tag_uid', 'tenant_id', 'user_agent']);
+    // scan_method is how the tap arrived (nfc, qr, direct, unknown), not who made it.
+    expect(columns.toSorted()).toEqual([
+      'id',
+      'scan_method',
+      'scanned_at',
+      'tag_uid',
+      'tenant_id',
+      'user_agent',
+    ]);
   });
 
   it('log_scan throttles a single uid at the database floor (60/min)', async () => {

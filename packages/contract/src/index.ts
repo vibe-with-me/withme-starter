@@ -8,6 +8,7 @@ export * from './schemas/gathering.ts';
 export * from './schemas/link.ts';
 export * from './schemas/phone.ts';
 export * from './schemas/profile.ts';
+export * from './schemas/share-code.ts';
 export * from './schemas/tag.ts';
 export * from './schemas/text.ts';
 export { ResolveOutputSchema, publicContract } from './contract/public.ts';

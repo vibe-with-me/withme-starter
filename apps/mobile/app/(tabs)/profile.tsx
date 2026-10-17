@@ -5,7 +5,7 @@ import { AccountSection } from '../../components/AccountSection';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { Links } from '../../components/Links';
 import { MyTags } from '../../components/MyTags';
-import { Button, Card, ErrorText, Field, Title } from '../../components/ui';
+import { Button, Card, ErrorText, Field, Muted, SectionHeader, Title } from '../../components/ui';
 import type { Profile } from '@withme/contract';
 import { api } from '../../lib/api';
 import { safeRedirect } from '../../lib/safe-redirect';
@@ -120,6 +120,14 @@ export default function ProfileScreen() {
           {error ? <ErrorText>{error}</ErrorText> : null}
           <Button label={busy ? 'Saving…' : 'Save'} onPress={save} disabled={busy || !displayName.trim()} />
         </Card>
+        {/* The code opens the card: it needs the card to exist first. */}
+        {exists ? (
+          <Card>
+            <SectionHeader>Your code</SectionHeader>
+            <Muted>A QR code that opens your card. Anyone’s phone camera can scan it.</Muted>
+            <Button label="Show my code" onPress={() => router.push('/share')} />
+          </Card>
+        ) : null}
         {/* Links hang off the profile row: it needs the row to exist first. */}
         {exists ? <Links /> : null}
         {exists ? <MyTags /> : null}

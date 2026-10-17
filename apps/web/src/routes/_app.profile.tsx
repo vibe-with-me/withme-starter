@@ -1,5 +1,5 @@
 import type { Profile } from '@withme/contract';
-import { createFileRoute, useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { AccountSection } from '../components/AccountSection.tsx';
 import { AvatarField } from '../components/AvatarField.tsx';
@@ -11,7 +11,7 @@ import { api } from '../lib/api.ts';
 import { safeReturnTo } from '../lib/auth-guard.ts';
 import { settled } from '../lib/loaded.ts';
 
-/** Profile: identity (photo, name, bio), Links, My tags, Account. */
+/** Profile: identity (photo, name, bio), Your code, Links, My tags, Account. */
 export const Route = createFileRoute('/_app/profile')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Your profile — withme' }] }),
@@ -40,12 +40,29 @@ function ProfilePage() {
   return (
     <div className="stack">
       <IdentityForm profile={profile} />
+      {/* The code opens the card: it needs the card to exist first. */}
+      {profile ? <YourCode /> : null}
       {/* Links hang off the profile row: it needs the row to exist first. */}
       {profile ? <LinksEditor links={links} /> : null}
       {profile ? <MyTags tags={tags} gatherings={gatherings} /> : null}
       {/* For every visitor: a session without a profile can still sign out or delete. */}
       <AccountSection />
     </div>
+  );
+}
+
+/** The way in for someone without a tag, or without NFC on their phone. */
+function YourCode() {
+  return (
+    <section className="card" aria-labelledby="your-code-title">
+      <h2 id="your-code-title" className="section-title">
+        Your code
+      </h2>
+      <p className="hint">A QR code that opens your card. Anyone’s phone camera can scan it.</p>
+      <Link to="/profile/share" className="btn">
+        Show my code
+      </Link>
+    </section>
   );
 }
 

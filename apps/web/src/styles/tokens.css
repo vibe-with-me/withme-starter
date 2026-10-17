@@ -27,6 +27,11 @@
   --color-accent: #c2410c;
   --color-accent-ink: #ffffff;
 
+  /* a share code: dark modules on a light panel in both schemes, because
+     camera apps read a light-on-dark code poorly or not at all */
+  --color-code-ink: #1c1916;
+  --color-code-bg: #fffefb;
+
   /* type */
   --font-display: 'Space Grotesk Variable', 'Avenir Next', 'Helvetica Neue', sans-serif;
   --font-body: 'Inter Variable', -apple-system, 'Segoe UI', sans-serif;

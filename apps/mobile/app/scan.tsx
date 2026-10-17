@@ -7,13 +7,14 @@ import { space, useTokens } from '../lib/tokens';
 
 /**
  * Scan entry point. Native NFC reading appears only in development builds
- * (react-native-nfc-manager is feature-gated); manual UID entry works
- * everywhere, including Expo Go.
+ * (react-native-nfc-manager is feature-gated); a QR code (scan-qr.tsx) and
+ * manual UID entry work everywhere, including Expo Go. `via` tells the
+ * resolver how the tap arrived, for the scan log.
  */
-function open(value: string) {
+function open(value: string, via: 'nfc' | 'direct') {
   const cleaned = value.trim().toUpperCase();
   if (cleaned) {
-    router.push({ pathname: '/t/[uid]', params: { uid: cleaned } });
+    router.push({ pathname: '/t/[uid]', params: { uid: cleaned, via } });
   }
 }
 
@@ -49,7 +50,7 @@ export default function ScanScreen() {
               setReading(true);
               try {
                 const tagUid = await readTagUid();
-                if (tagUid) open(tagUid);
+                if (tagUid) open(tagUid, 'nfc');
               } finally {
                 setReading(false);
               }
@@ -60,6 +61,7 @@ export default function ScanScreen() {
             NFC reading needs a development build — in Expo Go, type the UID printed on the tag.
           </Muted>
         )}
+        <Button label="Scan a QR code" onPress={() => router.push('/scan-qr')} />
         <Field
           label="Tag UID"
           value={uid}
@@ -68,7 +70,7 @@ export default function ScanScreen() {
           autoCorrect={false}
           placeholder="04A3B2C1D05E80"
         />
-        <Button label="Open" onPress={() => open(uid)} disabled={!uid.trim()} />
+        <Button label="Open" onPress={() => open(uid, 'direct')} disabled={!uid.trim()} />
         <Button label="Back" kind="quiet" onPress={() => router.back()} />
       </Card>
     </KeyboardAvoidingView>

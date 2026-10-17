@@ -17,6 +17,7 @@ import {
   PublicProfileSchema,
   UpdateProfileInputSchema,
 } from '../schemas/profile.ts';
+import { ShareCodeSchema } from '../schemas/share-code.ts';
 import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
 
 const getProfile = oc
@@ -181,6 +182,17 @@ const updateMyTag = oc
   // Not yours and nonexistent are the same NOT_FOUND.
   .output(z.object({ tag: TagSchema }));
 
+// Your code: Profile → Your code. A QR-only tag claimed to the caller.
+// get mints it on first use (idempotent); replace retires it and mints a
+// new one, so every copy of the old code opens an inactive tag.
+const getMyShareCode = oc
+  .route({ method: 'GET', path: '/me/share-code', tags: ['Tags'] })
+  .output(ShareCodeSchema);
+
+const replaceMyShareCode = oc
+  .route({ method: 'POST', path: '/me/share-code/replace', tags: ['Tags'] })
+  .output(ShareCodeSchema);
+
 /** Session-scoped surface — every procedure requires a verified Supabase JWT. */
 export const appContract = {
   profile: {
@@ -210,4 +222,5 @@ export const appContract = {
     remove: removeGathering,
   },
   tags: { listMine: listMyTags, update: updateMyTag },
+  shareCode: { get: getMyShareCode, replace: replaceMyShareCode },
 };

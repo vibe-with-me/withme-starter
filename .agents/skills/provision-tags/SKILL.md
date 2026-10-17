@@ -33,6 +33,7 @@ owner's OK).
 | Unknown and unclaimed look alike | `public.resolve_tag` answers `unclaimed` for both (newest definition: the last migration that defines it) |
 | The tap | web `apps/web/src/routes/t.$uid.tsx` → `claim.$uid.tsx`; mobile `apps/mobile/app/t/[uid].tsx` → `claim/[uid].tsx` |
 | The in-app reader | `readTagUid` in `apps/mobile/lib/nfc.ts` — reads the chip's own UID, not the URL (§5) |
+| Share codes (not provisioned) | a QR-only tag row (`kind = 'qr'`) the database mints and claims to its owner on Profile → Your code (`my_share_code` / `replace_my_share_code` in `supabase/migrations/20261016180000_share_codes.sql`). Never made by this script, never `unclaimed`, never in My tags; `docs/nfc-tags.md` § Share codes explains them |
 | After the claim | the owner's Profile → "My tags" on both platforms (web `apps/web/src/components/MyTags.tsx`, mobile `apps/mobile/components/MyTags.tsx`), over `app.tags.listMine` / `app.tags.update`: re-point a tag (the card or one of their gatherings) and "Turn off" / "Turn on" (`status` `disabled` / `claimed`, `OwnerTagStatusSchema` in `packages/contract/src/schemas/tag.ts`). A gathering's detail screen also points all of them at once (`TagPointer` in web `_app.gatherings_.$id.tsx`, mobile `app/gathering/[id].tsx`). No owner control releases a tag back to `unclaimed`; deleting the account does (`delete_my_account`: claimed tags reset, their scans erased) |
 
 ## The rules this runbook will not bend
@@ -370,7 +371,10 @@ shipment. Both kinds of UID live in the same table.
 ## What must not move
 
 - No API route, RPC, policy, or screen creates tags or lists unclaimed ones;
-  provisioning stays a service-role script run by an operator.
+  provisioning stays a service-role script run by an operator. The one
+  exception is a person's own share code, which `my_share_code` mints
+  already claimed to its caller: it is never unclaimed and never listable,
+  so it opens no door this rule guards.
 - `resolve_tag` keeps answering `unclaimed` for an unknown UID exactly as
   for a provisioned one: the public resolver must not reveal which UIDs
   exist.
@@ -398,8 +402,10 @@ shipment. Both kinds of UID live in the same table.
 
 ## Scope notes
 
-- No QR codes, no label layout, no print service: the sheet is a plain table
-  for whoever writes the tags. Printed, that table already puts the
+- No QR sheet, no label layout, no print service: the sheet is a plain table
+  for whoever writes the tags. (The QR code a person shows on Profile → Your
+  code is a share code, a different row the database mints for them; it
+  never passes through this runbook.) Printed, that table already puts the
   capability on paper, and so would a QR sheet if you add one: both inherit
   rule 2 and §4 (shred once the batch has shipped).
 - Re-pointing and turning off a claimed tag belong to its owner (Profile →

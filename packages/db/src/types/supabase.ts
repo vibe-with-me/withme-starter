@@ -312,6 +312,7 @@ export type Database = {
       tag_scans: {
         Row: {
           id: string
+          scan_method: string
           scanned_at: string
           tag_uid: string
           tenant_id: string
@@ -320,6 +321,7 @@ export type Database = {
         ComputedFields: never
         Insert: {
           id?: string
+          scan_method?: string
           scanned_at?: string
           tag_uid: string
           tenant_id?: string
@@ -327,6 +329,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          scan_method?: string
           scanned_at?: string
           tag_uid?: string
           tenant_id?: string
@@ -347,6 +350,7 @@ export type Database = {
           claimed_by: string | null
           created_at: string
           destination: Json | null
+          kind: string
           status: Database["public"]["Enums"]["tag_status"]
           tenant_id: string
           uid: string
@@ -357,6 +361,7 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           destination?: Json | null
+          kind?: string
           status?: Database["public"]["Enums"]["tag_status"]
           tenant_id?: string
           uid: string
@@ -366,6 +371,7 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           destination?: Json | null
+          kind?: string
           status?: Database["public"]["Enums"]["tag_status"]
           tenant_id?: string
           uid?: string
@@ -412,8 +418,13 @@ export type Database = {
       }
       join_gathering: { Args: { p_gathering_id: string }; Returns: undefined }
       log_scan: {
-        Args: { p_uid: string; p_user_agent?: string }
+        Args: { p_scan_method?: string; p_uid: string; p_user_agent?: string }
         Returns: undefined
+      }
+      my_share_code: { Args: Record<PropertyKey, never>; Returns: string }
+      replace_my_share_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       resolve_tag: { Args: { p_uid: string }; Returns: Json }
       send_connect_request: {

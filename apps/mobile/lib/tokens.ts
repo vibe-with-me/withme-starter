@@ -16,6 +16,9 @@ export interface Tokens {
   inkMuted: string;
   accent: string;
   accentInk: string;
+  /** A share code: dark modules on a light panel in both schemes (camera apps need it). */
+  codeInk: string;
+  codeBg: string;
 }
 
 const light: Tokens = {
@@ -27,6 +30,8 @@ const light: Tokens = {
   inkMuted: '#6f6a62',
   accent: '#c2410c',
   accentInk: '#ffffff',
+  codeInk: '#1c1916',
+  codeBg: '#fffefb',
 };
 
 const dark: Tokens = {
@@ -38,6 +43,8 @@ const dark: Tokens = {
   inkMuted: '#a39c91',
   accent: '#ff6a3d',
   accentInk: '#211008',
+  codeInk: '#1c1916',
+  codeBg: '#fffefb',
 };
 
 export function useTokens(): Tokens {

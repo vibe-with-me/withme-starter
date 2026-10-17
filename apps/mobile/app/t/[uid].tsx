@@ -1,4 +1,4 @@
-import type { GatheringSummary, ResolveOutput } from '@withme/contract';
+import type { GatheringSummary, ResolveOutput, ScanMethod } from '@withme/contract';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -10,6 +10,11 @@ import { gatheringHref } from '../../lib/gathering-link';
 import { supabase } from '../../lib/supabase';
 import { space, useTokens } from '../../lib/tokens';
 
+/** A hint is only ever one of the known methods; a deep link with anything else sends none. */
+function scanMethod(via: string | undefined): ScanMethod | undefined {
+  return via === 'nfc' || via === 'qr' || via === 'direct' ? via : undefined;
+}
+
 /**
  * The resolver — a physical tap (deep link) or a scan lands here and a
  * person appears. Unknown and malformed UIDs land on a calm card, never a
@@ -17,7 +22,8 @@ import { space, useTokens } from '../../lib/tokens';
  */
 export default function ResolveScreen() {
   const t = useTokens();
-  const { uid } = useLocalSearchParams<{ uid: string }>();
+  // via: how the tap arrived (scan.tsx, scan-qr.tsx), for the scan log only.
+  const { uid, via } = useLocalSearchParams<{ uid: string; via?: string }>();
   const [result, setResult] = useState<ResolveOutput | 'error' | null>(null);
 
   useEffect(() => {
@@ -27,7 +33,11 @@ export default function ResolveScreen() {
       api.public.resolve({ uid: normalized }),
       // A scan is logged for real taps; failures never break the resolve.
       api.public
-        .logScan({ uid: normalized, user_agent: `withme-mobile/${Platform.OS}` })
+        .logScan({
+          uid: normalized,
+          user_agent: `withme-mobile/${Platform.OS}`,
+          scan_method: scanMethod(via),
+        })
         .catch(() => undefined),
     ])
       .then(async ([resolved]) => {
@@ -55,7 +65,7 @@ export default function ResolveScreen() {
     return () => {
       cancelled = true;
     };
-  }, [uid]);
+  }, [uid, via]);
 
   if (result === null) {
     // The card arrives before its contents: an empty shell the settle

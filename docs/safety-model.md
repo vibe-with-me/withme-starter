@@ -134,17 +134,35 @@ because a real build made that mistake first.
 
 ## Scans are privacy-default
 
-**The promise.** A tap records a user-agent string and a timestamp.
-Nothing else.
+**The promise.** A tap records a user-agent string, a timestamp, and
+whether it came by NFC or a QR code. Nothing else.
 
 **How.** The `tag_scans` table has no columns for location, IP, or
-device identifiers. The API uses the caller's IP as a rate-limit key only
+device identifiers. `scan_method` is how the tap arrived (`nfc`, `qr`,
+`direct`, `unknown`), not who made it. The API uses the caller's IP as a rate-limit key only
 and never stores it. There is no analytics or telemetry in the starter;
 that stance is part of its identity, and the roadmap records the
 decision to skip an analytics skill permanently.
 
-**The test.** The columns do not exist; `tags.test.ts` covers the write
-path.
+**The test.** The columns do not exist (`tags.test.ts` pins the list);
+`tags.test.ts` and `share-code.test.ts` cover the write path.
+
+## A shared code can be taken back
+
+**The promise.** Your QR code (Profile → Your code) shows exactly what a
+tap on your tag shows, and nothing more. If a screenshot of it gets
+somewhere it shouldn't, Replace code makes every copy of the old one open
+an inactive tag.
+
+**How.** A share code is a tag row of kind `qr` claimed to you, resolved
+by the same `resolve_tag`: same card, same block behavior, same limits.
+Replacing it retires the old row (no owner, no destination, no scans), so
+it resolves as `disabled` and `claim_tag` cannot take it. A share code is
+never unclaimed, always points at your card, and you manage it only
+through its two RPCs. [nfc-tags.md](nfc-tags.md) § Share codes has the
+details.
+
+**The test.** `packages/db/test/share-code.test.ts`.
 
 ## Photos cannot point off-site
 
@@ -168,7 +186,9 @@ for every negative case so none can pass vacuously.
 
 **The promise.** Delete your account and your profile, connections,
 requests, blocks, hosted gatherings and memberships, photos, and scan
-history are gone. Your claimed tags return to unclaimed.
+history are gone. Your claimed tags return to unclaimed; your share code
+is retired, so a screenshot of it opens an inactive tag and can never be
+claimed by someone else.
 
 **How.** Profile → Account clears the photo pointer, sweeps the avatar
 files through the Storage API, then calls `delete_my_account()`, a

@@ -50,6 +50,65 @@ Using the chip's own UID is supported for tags claimed on the spot (the
 mobile scan screen reads it); `provision-tags` §5 covers when that makes
 sense and what it costs.
 
+## Share codes (QR)
+
+Not everyone holds a tag, and not every phone reads NFC. Profile → Your
+code shows a QR code that opens your card, on web and mobile; the mobile
+app scans someone else's (the scan button in the header, or the Scan a
+code button under your own code). Web has no scanner: a phone's own
+camera opens the code's URL in the browser, which is the web resolver.
+
+A share code is a tag. It is a row in `public.tags` of kind `qr`, minted
+and claimed to you by the database the first time you open Your code
+(`my_share_code()`, in `supabase/migrations/20261016180000_share_codes.sql`),
+and its URL is the same `/t/{UID}` a sticker carries. That choice is the
+whole safety story: a scan goes through the unchanged `resolve_tag`, so it
+shows exactly what a tap shows, a viewer you blocked gets the same
+"inactive" answer, and the resolver's rate limits apply. There is no
+second public endpoint to keep in step with the first.
+
+What makes it different from a sticker:
+
+- **Nobody provisions it.** The database draws 56 random bits per code;
+  `db:provision` never makes one, and a share code is never `unclaimed`,
+  so `claim_tag` can never take one.
+- **It always opens your card.** A CHECK pins its destination to
+  `{"type": "profile"}`, and owners cannot turn it off or re-point it
+  (`tags_update_own` admits physical tags only). It is not in My tags.
+- **It can be replaced.** A screenshot travels further than a sticker.
+  Replace code (`replace_my_share_code()`, ten an hour) retires the old row
+  and mints a new one. The retired row keeps its UID and nothing else: no
+  owner, no destination, no scans. Every copy of the old code, printed or
+  screenshotted, then opens "This tag is inactive", and nobody can claim
+  it or turn it back on.
+- **Deleting your account retires it too,** instead of returning it to
+  unclaimed. A deleted person's code must never become claimable, or the
+  claimant's card would appear behind every screenshot of it.
+- **Its scans log as `qr`.** `tag_scans.scan_method` takes the values of
+  the SDK's `ScanMethod` (`nfc`, `qr`, `direct`, `unknown`). The database
+  records `qr` for every scan of a share code, whatever the client sends;
+  for a sticker it keeps the client's hint (the mobile app sends `nfc`
+  after an NFC read, `direct` for a typed UID), and `unknown` otherwise.
+
+**The scanner opens only your own codes.** Mobile's `app/scan-qr.tsx` runs
+every code it sees through `tagUidFromUrl` (`@withme/contract`): the scheme
+and host must equal `EXPO_PUBLIC_WEB_URL` exactly, the path must be `/t/`
+plus 14 hex characters, and anything else is refused on screen and never
+opened, not even in a browser. Set `EXPO_PUBLIC_WEB_URL` to the same
+domain your tags encode; without it the share and scan screens say sharing
+is not set up. The code itself is drawn by `lean-qr` on both clients (SVG,
+so it renders in Workers SSR and in Hermes), dark on a light panel in both
+color schemes, because camera apps read a light-on-dark code poorly.
+
+**If a fork needs codes that expire.** A share code is a bearer URL, like
+a sticker: whoever holds a copy opens the card until it is replaced. A
+fork that needs screenshots to die on their own (ticketing, access) can
+show a short-lived signed code instead, an HMAC over the user and a time
+window, verified before resolving. That is the QR counterpart of NTAG 424
+DNA below, and the same place in the resolver is where it would go. It
+costs a server secret and breaks printed codes, which is why the starter
+does not do it.
+
 ## Encoding
 
 1. Provision rows: `provision-tags` walks `bun run db:provision` locally

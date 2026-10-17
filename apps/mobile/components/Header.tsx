@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { displaySize, fonts, SHELL, space, TAP_TARGET, useTokens } from '../lib/tokens';
 
 /**
- * The shared tab header: wordmark left, scan right. There is no home tab, so
+ * The shared tab header: wordmark left, scan (a tag or a QR code) right. There is no home tab, so
  * the physical action stays one tap away from every tab.
  */
 export function Header() {
@@ -26,7 +26,7 @@ export function Header() {
       <Text accessibilityRole="header" style={[styles.wordmark, { color: t.ink }]}>withme</Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Scan a tag"
+        accessibilityLabel="Scan a tag or code"
         hitSlop={8}
         onPress={() => router.push('/scan')}
         style={({ pressed }) => [styles.action, pressed && { opacity: 0.6 }]}

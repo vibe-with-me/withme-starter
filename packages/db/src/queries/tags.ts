@@ -15,11 +15,16 @@ export interface OwnTagRow {
   destination: Json | null;
 }
 
-/** Every tag the caller has claimed, including disabled ones. RLS: tags_select_own. */
+/**
+ * Every physical tag the caller has claimed, including disabled ones. RLS:
+ * tags_select_own. The caller's share code is a tag row too (kind 'qr'), but
+ * it is not a tag they hold: it has its own procedures.
+ */
 export async function listOwnTags(db: Db): Promise<OwnTagRow[]> {
   const { data, error } = await db
     .from('tags')
     .select(OWN_TAG_COLUMNS)
+    .eq('kind', 'nfc')
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data ?? [];

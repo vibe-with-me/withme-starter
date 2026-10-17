@@ -51,8 +51,17 @@
         "expo-image-picker",
         {
           "photosPermission": "Choose a photo for your profile.",
-          "cameraPermission": false,
+          "cameraPermission": "Scan someone's code to open their card.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Scan someone's code to open their card.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
         }
       ]
     ],

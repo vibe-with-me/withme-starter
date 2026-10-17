@@ -66,6 +66,7 @@ const logScan = publicProcedure.logScan.handler(async ({ input, context }) => {
   const { error } = await context.db.rpc('log_scan', {
     p_uid: input.uid,
     p_user_agent: input.user_agent,
+    p_scan_method: input.scan_method,
   });
   if (error) throwFromDbError(error, context.logger);
   return { ok: true as const };

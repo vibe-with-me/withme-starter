@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DestinationSchema } from '../schemas/destination.ts';
 import { GatheringSummarySchema } from '../schemas/gathering.ts';
 import { PublicProfileSchema } from '../schemas/profile.ts';
+import { ScanMethodSchema } from '../schemas/share-code.ts';
 import { TagSchema, TagUidSchema } from '../schemas/tag.ts';
 
 /**
@@ -47,6 +48,8 @@ const logScan = oc
       uid: TagUidSchema,
       // Privacy-default: no GPS, no IP, no fingerprinting — UA string only.
       user_agent: z.string().max(512).optional(),
+      // How the tap arrived; a share code always logs 'qr' regardless.
+      scan_method: ScanMethodSchema.optional(),
     }),
   )
   .output(z.object({ ok: z.literal(true) }));
