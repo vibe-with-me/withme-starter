@@ -748,9 +748,10 @@ may already be red for `@withme/api` and `@vibewithme/nfc` from §1's contract
 change (§4 and §5 close those).
 
 A format-checked card field: the card-tier test's length loop becomes a
-format loop, over `''` and a malformed value, expecting the format
-CHECK's name (see "A field with a format rule"), and its plain-text loop
-drops with the plain-text CHECK (below).
+format loop, over `''`, a malformed value and one longer than the
+pattern allows, expecting the format CHECK's name (see "A field with a
+format rule"), and its plain-text loop drops with the plain-text CHECK
+(below).
 
 ## 3. Migration — both tiers, one additive file
 
@@ -841,7 +842,11 @@ create policy profile_details_update_own on public.profile_details
 
 A format-checked card field replaces the length CHECK with a format CHECK
 whose pattern is the zod regex, class for class (see "A field with a
-format rule"). It drops the plain-text CHECK too: a pattern spelled out
+format rule"). That replacement holds only for a pattern that bounds the
+length itself: anchored at both ends, every quantifier bounded (the
+pace's `[0-9]{1,2}` is; a `+` or `*` is not). With an unbounded
+quantifier, keep the length CHECK and its oversized test beside the
+format CHECK. It drops the plain-text CHECK too: a pattern spelled out
 in explicit classes already refuses control, bidi and invisible
 characters, and with two CHECKs failing on one value the error names
 either. `private.is_plain_text` (from

@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { AccountSection } from '../../components/AccountSection';
 import { AvatarPicker } from '../../components/AvatarPicker';
@@ -24,22 +24,34 @@ export default function ProfileScreen() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Each load gets a generation; only the latest may touch state, so a slow
+  // answer from an earlier focus never lands over a newer one.
+  const loadGeneration = useRef(0);
   const load = useCallback(() => {
+    const generation = ++loadGeneration.current;
     setLoadFailed(false);
     api.app.profile
       .get()
       .then(({ profile }: { profile: Profile | null }) => {
+        if (generation !== loadGeneration.current) return;
         if (profile) {
           setExists(true);
           setDisplayName(profile.display_name);
           setBio(profile.bio ?? '');
           setAvatarPath(profile.avatar_path);
+        } else {
+          setExists(false);
+          setDisplayName('');
+          setBio('');
+          setAvatarPath(null);
         }
         setLoaded(true);
       })
       // A failed load must NOT render the blank create form: saving it
       // would silently overwrite the existing profile.
-      .catch(() => setLoadFailed(true));
+      .catch(() => {
+        if (generation === loadGeneration.current) setLoadFailed(true);
+      });
   }, []);
   // On every focus, not once: a tab stays mounted, so a load on mount alone
   // would keep showing (and the next Save would write back) values changed
@@ -47,6 +59,9 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
+      return () => {
+        loadGeneration.current += 1;
+      };
     }, [load]),
   );
 
