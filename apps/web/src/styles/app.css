@@ -797,7 +797,9 @@ a.link:hover {
 
 /* --- share code ------------------------------------------------------------ */
 
-/* Dark on light in both schemes (tokens.css), sized for a phone held at arm's length. */
+/* Dark modules on a light panel in both schemes, because camera apps read a
+ * light-on-dark code poorly: ink on surface in light, bg on ink in dark. No
+ * token of its own; sized for a phone held at arm's length. */
 .share-code {
   width: 100%;
   max-width: 16rem;
@@ -806,11 +808,21 @@ a.link:hover {
 }
 
 .share-code__bg {
-  fill: var(--color-code-bg);
+  fill: var(--color-surface);
 }
 
 .share-code__ink {
-  fill: var(--color-code-ink);
+  fill: var(--color-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  .share-code__bg {
+    fill: var(--color-ink);
+  }
+
+  .share-code__ink {
+    fill: var(--color-bg);
+  }
 }
 
 /* the link under the code: long, unbroken, and selectable */

@@ -101,8 +101,11 @@ TanStack Start, deployed as a Worker. File routes in `src/routes/`:
 - `_app.tsx`: the signed-in shell. Owns the session guard, the one
   profile fetch, and the chrome. Children are `_app.gatherings.tsx`,
   `_app.gatherings_.$id.tsx`, `_app.connections.tsx`, `_app.merch.tsx`
-  (present only when a store URL is set), `_app.profile.tsx`.
-- `src/components/`: `AppShell.tsx` (header, tab bar, `navItems`),
+  (present only when a store URL is set), `_app.profile.tsx`, and
+  `_app.share.tsx` (Your code, opened from the tab bar's raised button;
+  not a tab).
+- `src/components/`: `AppShell.tsx` (header, tab bar, `navItems`, the
+  Your code button), `ShareCode.tsx` (the QR image),
   `ProfileCard.tsx`, `MyTags.tsx`, `AvatarField.tsx`, `Links.tsx` (the
   Profile → Links editor and a connection's link chips), `AccountSection.tsx`,
   the list and shell state ladders (`ListStates.tsx`, `CalmStates.tsx`).

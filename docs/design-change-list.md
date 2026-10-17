@@ -109,7 +109,7 @@ mode; the other mode keeps its value.
 | 60 | `ErrorText` | `borderWidth: 1, borderColor: t.border` | `borderWidth: 0`; `fontFamily: fonts.bodyMedium` | Row 32. |
 | 61 | `ListLadder` error, `EmptyState` | `ladderError` centered with `gap: space.s2`; empty is a `Muted` | `ladderError` as a row: `flexDirection: 'row', justifyContent: 'space-between', paddingVertical: space.s3`; `EmptyState` with `paddingVertical: space.s5` | Rows 38 and 39. |
 | 62 | `SegmentedTabs` | | unchanged | Already ink, already a 2px rule, already an ink badge. |
-| 63 | The tab bar (React Navigation options in the mobile layout, not ui.tsx) | `borderTopWidth` default | `borderTopWidth: 0, ...shadow.bar.light` in light; `borderTopWidth: 1, borderTopColor: t.border` in dark; active tint `t.ink`, inactive `t.inkMuted`, label `fonts.bodyMedium` 12 | Rows 43 and 44. |
+| 63 | The tab bar (`components/TabBar.tsx`, not ui.tsx) | `borderTopWidth` default | `borderTopWidth: 0, ...shadow.bar.light` in light; `borderTopWidth: 1, borderTopColor: t.border` in dark; active tint `t.ink`, inactive `t.inkMuted`, label `fonts.bodyMedium` 12 | Rows 43 and 44. |
 
 ## 4. Artwork files
 

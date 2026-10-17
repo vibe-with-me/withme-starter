@@ -105,8 +105,10 @@ with the body face. The shell's heights are layout, not brand, but a new
 display font or a taller wordmark can outgrow them. `--shell-nav-height`
 (the header, 56px) is mirrored on mobile as `SHELL.headerHeight` in
 `lib/tokens.ts`: the two move together. `--shell-tab-height` (the web
-bottom bar, 60px) is web-only; the mobile tab bar keeps React
-Navigation's default height. `--shell-max-width` is the content column.
+bottom bar, 60px) is web-only; the mobile tab bar
+(`apps/mobile/components/TabBar.tsx`) sizes its tabs itself (a 49pt
+minimum, like React Navigation's default) and raises the 56pt Your code
+button 20pt above the bar. `--shell-max-width` is the content column.
 The 720px nav breakpoint is the literal `@media (max-width: 719.98px)` in
 `apps/web/src/styles/app.css`, documented in the `tokens.css` comment
 (CSS variables cannot drive media queries): change both or neither.
@@ -233,12 +235,25 @@ names no brand, so there only the title and badge change):
 - Page titles: `apps/web/src/routes/__root.tsx`, `login.tsx`,
   `claim.$uid.tsx`, `_app.connections.tsx`, `_app.gatherings.tsx`,
   `_app.gatherings_.$id.tsx` (or your renamed route files),
-  `_app.profile.tsx`, `_app.merch.tsx` (each route's `head()`).
+  `_app.profile.tsx`, `_app.merch.tsx`, `_app.share.tsx` (each route's
+  `head()`).
 - `apps/mobile/components/Header.tsx` — the wordmark `<Text>`.
 - `apps/mobile/app/t/[uid].tsx` — the `user_agent` prefix
   (`withme-mobile/…`).
 - `apps/mobile/app.json` — the `react-native-nfc-manager` plugin's
   `nfcPermission` string ("Read withme tags…" → "Read Acme tags…").
+- `apps/mobile/app.json` — the `expo-camera` plugin's `cameraPermission`
+  string ("Scan someone's code to open their card."), repeated in the
+  `expo-image-picker` plugin's because both write the same iOS key. It
+  carries no brand; rewrite both together, only for voice.
+- The Your code button (the round QR button in the tab bar) is not a
+  tab: it opens `/share`, and the tab entries never count it. A fork that
+  does not want QR sharing removes it in one place per client:
+  `<ShareButton />` in `apps/web/src/components/AppShell.tsx` and the
+  share `Pressable` in `apps/mobile/components/TabBar.tsx` (the halves
+  then simply meet). The share and scan screens stay reachable from the
+  scan screen and by URL; delete `_app.share.tsx`, `app/share.tsx` and
+  `app/scan-qr.tsx` too to remove the feature entirely.
 - `apps/mobile/app.json` — the `expo-image-picker` plugin's
   `photosPermission` string ("Choose a photo for your profile."), the
   iOS prompt before the photo library opens. It carries no brand;

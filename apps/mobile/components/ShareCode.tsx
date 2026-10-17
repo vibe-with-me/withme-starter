@@ -1,6 +1,7 @@
 import { correction, generate, mode } from 'lean-qr';
 import { toSvgPath } from 'lean-qr/extras/svg';
 import { useMemo } from 'react';
+import { useColorScheme } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { radius, useTokens } from '../lib/tokens';
 
@@ -17,10 +18,15 @@ const MODES = [mode.numeric, mode.alphaNumeric, mode.ascii];
 /**
  * A share code: the same encoder and the same medium error correction as
  * the web (components/ShareCode.tsx there), so both clients draw identical
- * codes. Dark on light in both schemes.
+ * codes. Dark modules on a light panel in both schemes, because camera
+ * apps read a light-on-dark code poorly: ink on surface in light, bg on
+ * ink in dark (the web's .share-code rules). No token of its own.
  */
 export function ShareCodeImage({ url, label, size = 240 }: { url: string; label: string; size?: number }) {
   const t = useTokens();
+  const dark = useColorScheme() === 'dark';
+  const panel = dark ? t.ink : t.surface;
+  const modulesColor = dark ? t.bg : t.ink;
   const { modules, path } = useMemo(() => {
     const code = generate(url, { minCorrectionLevel: correction.M, modes: MODES });
     return { modules: code.size, path: toSvgPath(code) };
@@ -36,8 +42,8 @@ export function ShareCodeImage({ url, label, size = 240 }: { url: string; label:
       accessibilityLabel={label}
       style={{ borderRadius: radius.control, overflow: 'hidden' }}
     >
-      <Rect x={-QUIET} y={-QUIET} width={box} height={box} fill={t.codeBg} />
-      <Path d={path} fill={t.codeInk} />
+      <Rect x={-QUIET} y={-QUIET} width={box} height={box} fill={panel} />
+      <Path d={path} fill={modulesColor} />
     </Svg>
   );
 }

@@ -68,9 +68,13 @@ so the owner can keep what people already recognise.
   - the signed-in shell, `apps/web/src/components/AppShell.tsx` — the
     header wordmark, a list of gathering cards, the bottom tab bar
     (Events, Connections, Merch, Profile; active tab in ink, never
-    accent). Users see Merch only when a store URL is set (a development
-    build shows it as a setup card without one), and the boards always
-    draw it;
+    accent) with the round QR button (Your code) raised out of its
+    middle, between Connections and Merch; on wide web screens the same
+    button floats bottom-right instead. The button is solid ink with a
+    surface-colored icon, never the accent: it is chrome, not a screen's
+    primary action. Users see Merch only when a store URL is set (a
+    development build shows it as a setup card without one), and the
+    boards always draw it;
   - the landing page, `apps/web/src/routes/index.tsx` — the wordmark,
     the one-line promise under it ("Tap a tag. Meet a person. Stay
     connected."), a neutral "Sign in" button (ink on surface, no
@@ -146,8 +150,10 @@ Draw three artboards at 390×844, in light AND dark mode (six boards):
    the wordmark as a footer below the card.
 2. The signed-in shell (apps/web/src/components/AppShell.tsx): a 56px
    header with the wordmark, a page title, two gathering cards, and a
-   60px bottom tab bar (Events, Connections, Merch, Profile). The active
-   tab is drawn in ink, not in the accent. Draw Merch even when there is
+   60px bottom tab bar (Events, Connections, Merch, Profile) with a
+   56px round QR button (Your code) raised out of its middle, between
+   Connections and Merch; on a wide screen it floats bottom-right. The
+   active tab and the button are drawn in ink, not in the accent. Draw Merch even when there is
    no store yet, labelled "appears once a store URL is set", so the owner
    decides about it now instead of discovering it at launch.
 3. The landing page (apps/web/src/routes/index.tsx): the wordmark, the

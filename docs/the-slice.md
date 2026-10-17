@@ -94,7 +94,10 @@ failed loader renders a card inside the shell, never a second `<main>`.
 A new top-level section registers exactly one entry in `navItems`
 (`src/components/AppShell.tsx`, widening its `to` union); that is the
 whole tab. Config-gated tabs follow the Merch entry: present only when
-the env value is set. Detail pages un-nest with the underscore
+the env value is set. The round Your code (QR) button in the middle of
+the bar is not a tab and is not in `navItems`: `<ShareButton />` in the
+same file places it between the two halves, and removing that one line
+removes it from the web shell. Detail pages un-nest with the underscore
 (`_app.gatherings_.$id.tsx` is the real one) so a list page never becomes
 a layout.
 Public and focused flows (`login.tsx`, `claim.$uid.tsx`) stay outside
@@ -118,9 +121,12 @@ the page. In-page segments are links with a search param
 the surface is shared (`t/[uid].tsx` ↔ `t.$uid.tsx`; `scan.tsx` is
 platform-specific). Signed-in top-level screens live in
 `apps/mobile/app/(tabs)/` and register one `Tabs.Screen` in
-`(tabs)/_layout.tsx` (Feather icon, title); detail and focused screens
-stay in `app/` as stack screens so they push over the bar
-(`gathering/[id].tsx`, `claim/[uid].tsx`, `scan.tsx`). A config-gated
+`(tabs)/_layout.tsx` (Feather icon, title); the bar itself is
+`components/TabBar.tsx`, which draws those entries and raises the Your
+code button out of the middle (not a tab; removing its `Pressable`
+removes it). Detail and focused screens stay in `app/` as stack screens
+so they push over the bar (`gathering/[id].tsx`, `claim/[uid].tsx`,
+`scan.tsx`, `share.tsx`). A config-gated
 tab follows the Merch screen: `href: null` when its env value is unset,
 so it is both hidden and unreachable. Screens compose the card primitives from `components/ui.tsx`
 (`Card`, `Title`, `Muted`, `Button` (`inline` inside rows), `Avatar`,

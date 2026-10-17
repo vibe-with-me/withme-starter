@@ -40,7 +40,8 @@ in, the app is four tabs: Events (create a gathering, lists of what's
 happening, yours, past), Connections (requests with Accept/Decline, your
 connections, blocked), Merch (a pointer to an external store, hidden until a
 store URL is set), Profile (photo, name, bio, links to other platforms, your
-tags, account actions). There is a login (email + password, Google, phone
+tags, account actions), with a round QR button (Your code) raised out of
+the middle of the tab bar that shows a code opening your card. There is a login (email + password, Google, phone
 code) and a claim flow for a fresh tag. Web is a responsive app: a top-right
 nav on wide screens, a bottom tab bar under 720px. Mobile is a React Native
 app with the same screens. Both are plain, calm, and one-handed: taps happen
@@ -111,7 +112,9 @@ Space Grotesk's letterforms.
   rings 3:1, in light and dark. Report the ratios.
 - 44px minimum tap target; the 52px primary button stays.
 - Layout and routes stay. The resolver is a centered card; the shell is a 56px
-  header plus a 60px bottom bar on phones and a top-right nav on desktop;
+  header plus a 60px bottom bar on phones (the Your code button raised out
+  of its middle) and a top-right nav on desktop (the button floating
+  bottom-right);
   forms are label-above-field. You may restyle every class and component and
   propose small structural changes (a page title outside the card, a divided
   list instead of boxed rows, a two-tier card) but flag each one as a
@@ -155,7 +158,8 @@ B. Components, both modes, every state. Card. Button: default, accent, quiet,
    default, focus, error, disabled. Avatar at 76 and 44, with photo and with
    the placeholder. List row (a person; a gathering) and the list that holds
    it. Section title. In-page segments with a count badge. Link chip. Shell
-   header, bottom tab bar (active and inactive), desktop nav. Empty state,
+   header, bottom tab bar (active and inactive) with the raised Your code
+   button, desktop nav and the floating button. Empty state,
    loading state, error-with-retry, form error. The one destructive
    confirmation (delete account).
 
