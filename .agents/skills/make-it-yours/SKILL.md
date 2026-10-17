@@ -1,6 +1,6 @@
 ---
 name: make-it-yours
-description: Use when rebranding a withme-starter fork or pointing it at a new vertical — new name, colors, fonts, app identity, or store/EAS ownership. Configuration only; no feature changes.
+description: Use when rebranding a withme-starter fork or pointing it at a new vertical, such as a new name, colors, fonts, app identity, or store and EAS ownership.
 ---
 
 # make-it-yours — rebrand the fork through its dormant seams
@@ -10,8 +10,16 @@ brand-bearing value sits behind a seam this skill walks: design tokens
 (web + mobile in lockstep), self-hosted fonts, the wordmark and copy, app
 identity, and deploy names. Nothing here scaffolds features — if you came
 to add functionality, see `docs/the-slice.md` and the other skills.
+Configuration only: no feature changes.
 
 **REQUIRED BACKGROUND:** the safety discipline in `docs/the-slice.md`. A rebrand moves no boundary: if a copy or config change seems to need a policy, an RPC, or a new card field, stop, because that is another skill's work.
+
+**Checkpoints.** Every step ends with one: run its command and read the
+output before you call the step done (`docs/the-slice.md` → Checkpoints).
+Never edit, skip or loosen a test to make a checkpoint pass; a failing
+checkpoint means the step is not done. When one fails, follow "When a
+checkpoint fails" in the same section: root cause first, one change at a
+time, and after two failed attempts stop and tell the owner.
 
 Execution rules for the whole skill:
 
@@ -221,28 +229,21 @@ plain strings tsc can NOT validate — compare its values against the
 
 ## 3. Wordmark and copy
 
-The brand renders in these places. Use the **wordmark** in the first
-eight (they render it as a mark) and in the README title, and the
-**display name** inside prose sentences (the `nfcPermission` string, and
-any README sentence that names the product — the starter's README prose
-names no brand, so there only the title and badge change):
+Find every place the old brand renders in the app code:
 
-- `apps/web/src/routes/index.tsx` — the `<h1 className="wordmark">`.
-- `apps/web/src/components/AppShell.tsx` — the header wordmark link.
-- `apps/web/src/components/CalmStates.tsx` — the "withme home" link on
-  the not-found and error cards (two places).
-- `apps/web/src/routes/login.tsx` — the `<p className="hint">withme</p>`
-  above the sign-in heading (besides its page title).
-- `apps/web/src/routes/t.$uid.tsx` — `WordmarkFooter`, the only brand
-  mark a stranger who tapped a tag sees.
-- Page titles: `apps/web/src/routes/__root.tsx`, `login.tsx`,
-  `claim.$uid.tsx`, `_app.connections.tsx`, `_app.gatherings.tsx`,
-  `_app.gatherings_.$id.tsx` (or your renamed route files),
-  `_app.profile.tsx`, `_app.merch.tsx`, `_app.share.tsx` (each route's
-  `head()`).
-- `apps/mobile/components/Header.tsx` — the wordmark `<Text>`.
-- `apps/mobile/app/t/[uid].tsx` — the `user_agent` prefix
-  (`withme-mobile/…`).
+```sh
+grep -rni withme apps/web/src apps/mobile/app apps/mobile/components \
+  | grep -vE '@(vibe)?withme/'
+```
+
+Each hit is a mark (the header and landing wordmarks, the resolver
+footer, the login hint, the "withme home" links, every route's page
+title in `head()`, the mobile user-agent prefix `withme-mobile/…`): use
+the **wordmark** there. Use the **display name** inside prose sentences
+(the `nfcPermission` string below, and any README sentence that names the
+product; the starter's README prose names no brand, so there only the
+title and badge change). Then these, which that grep does not reach:
+
 - `apps/mobile/app.json` — the `react-native-nfc-manager` plugin's
   `nfcPermission` string ("Read withme tags…" → "Read Acme tags…").
 - `apps/mobile/app.json` — the `expo-camera` plugin's `cameraPermission`
@@ -504,19 +505,9 @@ ships its name and tagline as `<text>`: Inkscape's Object to Path, or
 opentype.js's `font.getPath(text, x, y, size).toPathData()` on the face's
 font file (`@fontsource/<font>` has it).
 Then run `docs/brand/render.sh` from the repo root (it needs `rsvg-convert`
-and ImageMagick 7: `brew install librsvg imagemagick`). It writes:
-
-- `apps/mobile/assets/icon.png`: `expo.icon`, full bleed, no alpha.
-- `android-icon-foreground.png` + `android-icon-monochrome.png`:
-  `adaptiveIcon.foregroundImage` / `monochromeImage`. The mark is scaled
-  into the launcher's 66% safe zone. `android-icon-background.png` is
-  rendered too but unwired: `adaptiveIcon.backgroundColor` (step 2) is
-  what the launcher shows.
-- `splash-icon.png` + `splash-icon-dark.png`: the `expo-splash-screen`
-  entry's `image` and `dark.image`.
-- `favicon.png`: `expo.web.favicon`.
-- `apps/web/public/favicon.ico` + `apple-touch-icon.png`, linked from
-  `apps/web/src/routes/__root.tsx`.
+and ImageMagick 7: `brew install librsvg imagemagick`). It writes every
+app icon, splash and favicon PNG; `.agents/skills/make-it-yours/reference.md`
+→ What render.sh writes maps each file to the config that uses it.
 
 - `docs/brand/social-preview.png`: the 1280×640 card GitHub shows when the
   repo link is shared. It is rendered from `docs/brand/social-preview.svg`:
@@ -573,13 +564,14 @@ delete it:
   users, add a required reviewer to the environment or remove the
   `push` trigger first (`go-live`, Redeploys).
 
-Then run the full verification gate from `docs/the-slice.md`:
+**Checkpoint (final gate):** the full verification gate from
+`docs/the-slice.md`:
 
 ```sh
 bun run lint && bun run typecheck && bun run test
 ```
 
-all green, plus the final brand sweep — with the identity steps done,
+all three exit 0, plus the final brand sweep — with the identity steps done,
 this now covers everything step 3's checkpoint deferred. It also looks
 for the upstream org, `vibe-with-me` (hyphenated, so `withme` alone
 misses it), and the upstream maintainer, `alex-eisele`, in the contact
@@ -602,49 +594,18 @@ grep -rniE --exclude-dir={node_modules,dist,.expo,.wrangler,.turbo} \
 returns nothing. Fill in the `<wordmark>` line when your wordmark or display
 name contains `withme` (e.g. `'golfwithme|golf with me'`): without it
 every line of your own brand prints, because `withme` matches inside it.
-If neither contains `withme`, delete that line. What the other filters
-drop, and why a fork leaves it:
-
-- `supabase/migrations/` — the first migration's header comment names
-  `withme-starter`. Migrations are history: never edit an applied one.
-- `release.yml`'s `if:` line — the guard that keeps a fork from
-  publishing `@vibewithme/nfc` (Contact points, above). It names the
-  upstream on purpose.
-- `demo-migrate.yml`'s `if:` line — the same guard, keeping a fork from
-  trying to migrate the starter's demo (Contact points, above).
-- `packages/nfc-sdk/` — the SDK (`@vibewithme/nfc`) names the upstream in
-  its `package.json` `repository.url` and in doc comments. A fork that
-  does not publish the SDK leaves them. If you publish it under your
-  own name, drop that filter and fix what it then prints.
-
-The only other acceptable matches, each one a choice you made
-deliberately: the seed identity if you kept it (step 3, and then the
-README demo line and the `.env` example lines with it), and an upstream
-attribution link in the README.
+If neither contains `withme`, delete that line. Why each other filter is
+there, and the matches a fork may keep on purpose (the seed identity, an
+upstream attribution link, `@alex-eisele` in CODEOWNERS when the starter's
+maintainer really reviews the fork): `.agents/skills/make-it-yours/reference.md`
+→ The final sweep. **A fork in the same GitHub org as the starter**
+(`vibe-with-me/<your-repo>`) appends the two extra filter lines from
+that section.
 
 Not acceptable: `"owner": "vibe-with-me"` in `apps/mobile/app.json`
 while `extra.eas.projectId` is still `cf56d2f1-…`. It means step 5 is
 undone, so the app still points at the upstream EAS project; the sweep
 stays red until step 5 runs.
-
-A fork in the same GitHub org as the starter (`vibe-with-me/<your-repo>`)
-has more correct matches: every link to the fork's own repository (the
-README CI badge from step 3, and the contact points above, which now say
-`github.com/vibe-with-me/<your-repo>/…` in the issue and PR templates and
-`CONTRIBUTING.md`), and `"owner": "vibe-with-me"` once step 5 has given
-`app.json` the fork's own `projectId`. Append this to the sweep, with
-`<your-repo>` filled in; it drops the fork's own links in every file, and
-the owner line only after step 5:
-
-```sh
-  | grep -vE 'github\.com/vibe-with-me/<your-repo>([^A-Za-z0-9_-]|$)' \
-  | if grep -q cf56d2f1-eaec-406b-be9c-972519a6be84 apps/mobile/app.json; \
-    then cat; else grep -v '^apps/mobile/app.json:[0-9]*: *"owner": "vibe-with-me",$'; fi
-```
-
-If the starter's maintainer really does review the fork's pull requests,
-`.github/CODEOWNERS` keeps `@alex-eisele` and prints too: a deliberate
-match, like the seed identity.
 
 Finally the visual check. The RLS suite leaves its fixtures behind (test
 users' gatherings fill the Events feed), so after the gate run

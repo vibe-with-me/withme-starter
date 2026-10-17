@@ -106,6 +106,37 @@ Three consequences for contributions:
   profile tiers, the tab registration, the deploy steps) has to update that
   skill in the same PR, or the skill rots.
 
+How a skill is written. Skills must work in any agent that reads
+`.agents/skills/`, so they stand alone: no dependency on another plugin's
+skills.
+
+- **The `description` says when to use the skill, never what it does.**
+  Start with "Use when…" and name the situations that call for it (a new
+  profile field, a rebrand, a first deploy). Do not summarise the steps:
+  an agent that finds the workflow in the description follows that
+  summary instead of reading the skill.
+- **`SKILL.md` is a runbook an agent can read in one pass.** Long code,
+  SQL, templates, worked examples and troubleshooting tables go in files
+  beside it (`reference.md`, `variants.md`, `troubleshooting.md`), linked
+  from the step that needs them. Golf-sized depth on one vertical goes to
+  [docs/run-with-me.md](docs/run-with-me.md) → Variations.
+- **Every step ends with a checkpoint** that names the command and what
+  passing output looks like. Counts and file lists that change as the
+  starter grows are commands, not numbers: say what to run and what its
+  output means. The shared rules (run it before claiming it, never loosen
+  a test, what to do when one fails) live once, in
+  [docs/the-slice.md → Checkpoints](docs/the-slice.md#checkpoints); each
+  skill's preamble points there.
+
+How a skill change is validated. Reading it is not enough: an agent runs
+the changed skill literally, word by word, on a fresh clone of the
+starter (or a throwaway fork), the way Golf With Me's rebuild did. Where
+the skill is missing a step, has steps out of order, or says something
+the code contradicts, the agent writes it down in an `UPSTREAM-SNAGS.md`
+kept outside the PR: what the skill said, what happened, and what it did
+instead. Fix each snag in the skill, then run it again until the run is
+clean. Mention the run and its snag count in the PR description.
+
 [docs/skills-roadmap.md](docs/skills-roadmap.md) records which skills
 exist, which were deliberately skipped, and the decisions behind both.
 

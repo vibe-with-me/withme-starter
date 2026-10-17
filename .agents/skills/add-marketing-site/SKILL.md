@@ -1,6 +1,6 @@
 ---
 name: add-marketing-site
-description: Use when a withme-starter fork needs a public website beside the app — what the tag does, how to get one, and the privacy and support pages the App Store and Google Play ask for. Scaffolds apps/site (Astro, static, on the fork's Cloudflare account) in the app's own design system.
+description: Use when a withme-starter fork needs a public website beside the app, such as a page that explains the tag, a place to get one, or the privacy and support URLs the App Store and Google Play ask for.
 ---
 
 # add-marketing-site — a static site that wears the app's brand
@@ -22,6 +22,15 @@ document; you copy them and rewrite the words.
 **REQUIRED BACKGROUND:** `docs/nfc-tags.md` § "The domain is forever"
 (step 1 depends on it) and `docs/safety-model.md` (every promise the site
 makes comes from there).
+
+**Checkpoints.** Every step ends with one: run its command and read the
+output before you call the step done (`docs/the-slice.md` → Checkpoints).
+Never edit, skip or loosen a test or a check (`check-site-url.mjs`
+included) to make a checkpoint pass; a failing checkpoint means the step
+is not done. When one fails, follow "When a checkpoint fails" in the same
+section: root cause first, one change at a time, and after two failed
+attempts stop and tell the owner. Known symptoms and their causes:
+`.agents/skills/add-marketing-site/troubleshooting.md`.
 
 ## Why Astro, and why only this much of it
 
@@ -144,7 +153,7 @@ isolated linker does not let the config reach Astro's own copy. Keep its
 range in step with `apps/web`'s `vite`.
 
 **Checkpoint:** from the repo root, `bun run lint`, `bun run typecheck`,
-and `bun run build` all pass, the CI sequence. `apps/site/dist/` holds
+and `bun run build` each exit 0, the CI sequence. `apps/site/dist/` holds
 `index.html`, `privacy.html`, `support.html`, `404.html`, and `_astro/`
 with the two font files; `grep -c '<script' apps/site/dist/*.html` prints
 `0` for every page.
@@ -303,6 +312,10 @@ Python; go-live §3 explains why). `view-source` shows
 - The app's landing page can link to the site once it is live. That is a
   one-line edit in `apps/web/src/routes/index.tsx`, not part of this skill.
 
+**Checkpoint:** each URL entered in the listings loads in a browser and
+shows the page it names (`/support#delete-account` scrolls to the deletion
+steps).
+
 ## Redeploys and keeping it true
 
 `cd apps/site && bun run build && bun run deploy`. A token or font
@@ -318,16 +331,4 @@ blog, a sitemap, and anything that sells (the store stays a link, per
 
 ## Gotcha index
 
-| Symptom | Cause |
-|---|---|
-| Site keeps the old accent after a token change | No `@withme/site#build` task in `turbo.json`; turbo replayed a cached build (step 2) |
-| A new `PUBLIC_*` value does not show up | The same: turbo neither hashes `.env` files nor lists `PUBLIC_*` without the package task |
-| `bun run lint` fails on `apps/site/.astro/types.d.ts` | `.astro` missing from `.oxlintrc.json` `ignorePatterns` and `.gitignore` |
-| `/privacy` answers 307 to `/privacy/` | `build.format: 'file'` was removed from `astro.config.mjs` |
-| Canonical link says `/index` or `.html` | The `canonical` line in `Base.astro` was changed |
-| `bun run deploy`: "The build's canonical URL is http://localhost:4321/" | `PUBLIC_SITE_URL` missing from `apps/site/.env.production`; set it and rebuild |
-| Canonical link says `localhost` in production | Deployed with a bare `wrangler deploy` past the check, or `astro.config.mjs` reads `process.env` directly (the config runs before Astro loads `.env` files; keep the `loadEnv` call) |
-| `Cannot find module 'vite' imported from …/astro.config.mjs` | `vite` dropped from `apps/site/package.json` devDependencies |
-| Taps on old tags 404 after the site took their hostname | The site took the tags' hostname without `public/_redirects` (step 1) |
-| "Open the app" or "Get tags" missing | The button is dormant: set `PUBLIC_APP_URL` / `PUBLIC_STORE_URL` and rebuild |
-| Deploy lands on another account | No `account_id` pinned in `apps/site/wrangler.jsonc` |
+Symptom → cause: `.agents/skills/add-marketing-site/troubleshooting.md`.

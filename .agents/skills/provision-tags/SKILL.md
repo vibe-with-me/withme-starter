@@ -1,6 +1,6 @@
 ---
 name: provision-tags
-description: Use when an operator needs physical NFC tags ready to encode, sell, or hand out for a withme-starter app or fork — batch-provisioning unclaimed tag rows, the encode list of https://<domain>/t/{UID} URLs, and a printable sheet, locally or against production.
+description: Use when an operator needs physical NFC tags ready to encode, sell, or hand out for a withme-starter app or fork, locally or in production.
 ---
 
 # provision-tags — make tags the app will recognize
@@ -21,6 +21,12 @@ code: every step runs the shipped script against the shipped schema.
 enumeration; operator actions on the service role only) and, for
 production, `.agents/skills/go-live/SKILL.md` §1 (the keys file, the
 owner's OK).
+
+**Checkpoints.** Every step ends with one: run its command and read the
+output before you call the step done (`docs/the-slice.md` → Checkpoints).
+A failing checkpoint means the batch is not ready. When one fails, follow
+"When a checkpoint fails" in the same section: root cause first, one
+change at a time, and after two failed attempts stop and tell the owner.
 
 ## What is already in the starter (the map)
 
@@ -245,11 +251,11 @@ For each row of `provisioned-tags.html` (print it or open it locally):
    NFC writer app).
 2. Read the tag back in the writer app and compare the URL with the sheet
    row. Then lock the tag read-only — irreversible, so compare first.
-3. Tap it with a phone: the OS opens `https://<your-domain>/t/<UID>` and the
-   page shows "Claim this tag" with the UID (after a sign-in if that
-   browser is signed out) — compare it with the sheet. **Do not press
-   "Claim tag"** on a tag that is going to someone else: the first claim
-   owns it.
+3. Tap it with a phone. **Checkpoint:** the OS opens
+   `https://<your-domain>/t/<UID>` and the page shows "Claim this tag"
+   with the UID (after a sign-in if that browser is signed out), the same
+   UID as the sheet row. **Do not press "Claim tag"** on a tag that is
+   going to someone else: the first claim owns it.
 
 ## 4. Ship and retire the list
 
@@ -262,54 +268,14 @@ you keep the CSV, delete `provisioned-tags.html` and `provision.log` from
 the batch directory: both carry the same UIDs. A printed sheet is the
 same bearer list on paper: shred it once the batch has shipped.
 
+**Checkpoint:** `ls "$OUT"` answers `No such file or directory`, or lists
+only the CSV you chose to keep.
+
 If a `provisioned-tags.*` file was ever committed, deleting it does not
 remove it from history: every UID in it that is still unclaimed is
-compromised. With the owner's OK (the stop in §2), run in the project's SQL
-editor, with exactly the UIDs from that file:
-
-```sql
-delete from public.tags
-where uid in ('04A1B2C3D4E5F6', '04A1B2C3D4E5F7') and status = 'unclaimed'
-returning uid;
-```
-
-Or `update public.tags set status = 'disabled' where …` with the same
-`where`, to keep the rows. Either way nobody can claim those tags any
-more; replace them from a new batch.
-
-Those statements skip the list's claimed UIDs, and someone holding the
-list may have claimed one before its tag reached the customer. Have the
-owner review them in the SQL editor, not a terminal or CI log, with the
-same UIDs:
-
-```sql
-select t.uid, t.claimed_by, t.updated_at, p.display_name
-from public.tags t join public.profiles p on p.id = t.claimed_by
-where t.uid in ('04A1B2C3D4E5F6', '04A1B2C3D4E5F7');
-```
-
-The schema keeps no claim time: `updated_at` is the row's last change (the
-claim, or a later destination or on/off change). The owner checks each
-claimant against who was sent that tag. A claim by the customer who has
-the tag is legitimate: leave it, since disabling it takes their tag away.
-For a claim the owner judges illegitimate, and only with the owner's OK
-for that UID:
-
-```sql
-update public.tags
-set status = 'disabled', claimed_by = null, destination = null
-where uid = '04A1B2C3D4E5F6' and claimed_by = '<claimed_by from the review>'
-returning uid;
-```
-
-No row back means the tag changed hands since the review (its owner
-deleted their account, and someone may have claimed it since): run the
-review again.
-
-Clearing `claimed_by` matters: a disabled row that keeps its owner stays
-in that account's My tags, which can switch it back on. The tag then
-resolves as disabled and nobody can claim it. Send the rightful holder a
-new tag from a fresh batch.
+compromised. Stop and tell the owner, then follow
+`.agents/skills/provision-tags/reference.md` → A leaked encode list (with
+the owner's OK at each write).
 
 A claimed tag's UID keeps resolving (that is the product) but can no
 longer be claimed — until its owner deletes their account, which releases
@@ -353,7 +319,7 @@ docker exec "$DB" psql -U postgres -c "<that sql>"
 docker exec "$DB" psql -U postgres -tAc "select count(*) from public.tags where uid = '<that UID>' and status = 'unclaimed'"
 ```
 
-The count prints `1`. `/t/<that UID>` is no check: an unknown UID
+**Checkpoint:** the count prints `1`. `/t/<that UID>` is no check: an unknown UID
 redirects to the claim page just the same, by design.
 
 In production, stop first, as in §2: show the owner the project ref, each

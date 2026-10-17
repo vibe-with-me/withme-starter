@@ -444,3 +444,25 @@ What stays off the table in every one of them: a list of members you have
 not met, a feed, a ranking, a recommendation. The skills will not build
 those, and [the safety model](safety-model.md) explains why the promises
 above depend on it.
+
+### Golf in more depth: a typed handicap
+
+Golf With Me's handicap is the worked example of `extend-profile`'s
+"typed field" variant (`.agents/skills/extend-profile/variants.md`), with
+nothing required beyond the name:
+
+- **Storage.** `numeric(3,1)` with `profiles_handicap_range check
+  (handicap is null or handicap between -10.0 and 54.0)`. A plus handicap
+  (better than scratch) is stored negative: +2.4 is `-2.4`.
+- **Contract.** `HandicapSchema = z.number().min(-10).max(54).multipleOf(0.1)`,
+  with `parseHandicap(text)` and `formatHandicap(value)` beside it.
+  `parseHandicap('+2.4')` returns `-2.4`; blank returns `null`; anything
+  else that is not one or two digits with an optional tenth, or falls
+  outside the schema, returns `undefined`. `formatHandicap` prints one
+  decimal and a plus handicap with a plus: `14.2`, `0.0`, `+2.4`. The
+  round-trip test walks every tenth from -10.0 to 54.0.
+- **Forms and card.** The field stays text, seeded with `formatHandicap`,
+  with `keyboardType="numbers-and-punctuation"` on mobile so the `+` key
+  exists. A `golfLine` helper in the contract builds the card line,
+  "Handicap +2.4 · Riverside Muni" (either part alone when only one is
+  set), and both `cardLine` files return it.

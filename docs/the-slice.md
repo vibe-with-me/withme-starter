@@ -9,6 +9,40 @@ The V1 invariant still binds extensions: nothing that ranks, recommends,
 aggregates, or monetizes. Dormant seams (tenant, theming) stay dormant —
 extend through them, never around them.
 
+## Checkpoints
+
+Every step in a skill ends with a checkpoint: a command, and what its
+output looks like when the step is done. The rule is the same in every
+skill:
+
+- **Run it and read the output before you say the step is done.** A
+  checkpoint you did not run this session has not passed, and neither has
+  one whose output you did not read to the end (the failure count, the
+  exit code, the last line). "It should pass" is not a result.
+- **Never edit, skip or loosen a test to make a checkpoint pass.** That
+  includes the RLS suite, the e2e harnesses, and a test the skill told you
+  to write. A failing checkpoint means the step is not done.
+- **A checkpoint that expects red** (a skill that writes its tests first)
+  passes only when the named tests fail for the stated reason. A new test
+  that passes before the code exists asserts nothing: fix the test.
+
+### When a checkpoint fails
+
+1. **Find the root cause before you change anything.** Read the whole
+   error: the code (`PGRST204`, `42501`), the file and line, the first
+   failure rather than the last. Reproduce it with the same command.
+2. **Compare against the starter's working version of the same file.**
+   The starter is green, so the difference between your file and its
+   version on `main` (`git diff main -- <file>`, or the skill's code
+   block) is usually the bug: a key dropped from a copied function body,
+   a field missing from one fixture, a renamed label one spec still uses.
+3. **Change one thing at a time,** then rerun the same checkpoint. Two
+   changes at once leave you not knowing which one mattered.
+4. **After two failed attempts, stop and tell the owner** what failed,
+   the output, and what you tried. Do not stack a third workaround on the
+   first two, and never loosen a policy, a grant, a CHECK or a test to
+   get past it: those are the safety model.
+
 ## The slice, in order
 
 **1. Contract.** Types come first and live in one place:

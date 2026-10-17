@@ -1,6 +1,6 @@
 ---
 name: customize-gathering
-description: Use when a withme-starter fork wants its gathering to speak the vertical's language — rename the user-facing nouns (round, tailgate, table, meetup), add fields (course, venue, capacity), or adjust the create form — without touching the safety semantics that ship in core.
+description: Use when a withme-starter fork wants its gathering in the vertical's language, such as renaming it (a round, a tailgate, a meetup), giving it fields (a course, a venue, a capacity), or changing the create form.
 ---
 
 # customize-gathering — make the core gathering yours
@@ -24,13 +24,20 @@ move.
 **REQUIRED BACKGROUND:** `docs/the-slice.md`. Fields follow the slice in
 order (contract → migration → tests → API → web → mobile → e2e).
 
+**Checkpoints.** Every step ends with one: run its command and read the
+output before you call the step done (`docs/the-slice.md` → Checkpoints).
+Never edit, skip or loosen a test to make a checkpoint pass; a failing
+checkpoint means the step is not done. When one fails, follow "When a
+checkpoint fails" in the same section: root cause first, one change at a
+time, and after two failed attempts stop and tell the owner.
+
 ## What is in core (the map)
 
 | Layer | Files |
 | --- | --- |
 | Contract | `packages/contract/src/schemas/gathering.ts`; `schemas/destination.ts` (`GatheringDestinationSchema`); `contract/app.ts` (`gatherings.*`, `tags.*`); `contract/public.ts` (`gathering` summary on resolve) |
 | Migration | `supabase/migrations/20261008120000_add_gatherings.sql`, then `20261014220000_gatherings_domain_wide.sql` (the listing, the connections-only member policy, the headcount, the symmetric join check) |
-| RLS tests | `packages/db/test/gatherings.test.ts` (26); `account.test.ts`, `blocks.test.ts`, `links.test.ts` and `plain-text.test.ts` also create gatherings |
+| RLS tests | `packages/db/test/gatherings.test.ts`; `account.test.ts`, `blocks.test.ts`, `links.test.ts` and `plain-text.test.ts` also create gatherings |
 | Queries / API | `packages/db/src/queries/gatherings.ts`, `queries/tags.ts`; `apps/api/src/routers/app.ts` |
 | SDK mirror | `packages/nfc-sdk/src/client.ts` (`Destination`, `GatheringSummary`) |
 | Web | `apps/web/src/routes/_app.gatherings.tsx`, `_app.gatherings_.$id.tsx`, the branch in `t.$uid.tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts` ("N going", "With …"), `components/AppShell.tsx` (`navItems[0]`) |
@@ -46,14 +53,13 @@ grep -rn --exclude-dir={node_modules,dist,.turbo,.expo,.wrangler} \
   'create_gathering\|gatherings\.create' packages apps supabase/seed
 ```
 
-In core that prints six db test files (`gatherings.test.ts`: five calls
-plus the anon test's expected message; `account.test.ts` and
-`plain-text.test.ts`: two calls each; one in `blocks.test.ts` and in
-`links.test.ts`; and `grants.test.ts`, whose hit is the function's name in
-a list, not a call), the API handler, both create screens, the API e2e
-(§12 and §17), the seed, and the generated
-`packages/db/src/types/supabase.ts` (rewritten by `db:types`). Every call
-among them fails with `PGRST202` until it passes a new required argument.
+Read its output as three kinds of hit. A call (`.rpc('create_gathering', {…})`
+or `gatherings.create({…})`, in db tests, the API handler, both create
+screens, the API e2e and the seed) must pass the new argument: until it
+does, it fails with `PGRST202`, because PostgREST resolves a function by
+its named arguments. A string that only names the function (an expected
+error message, the list in `grants.test.ts`) needs nothing. The generated
+`packages/db/src/types/supabase.ts` is rewritten by `db:types`.
 
 ## 1. Nouns
 
@@ -159,10 +165,10 @@ are internal identifiers: leave them.
 The `/t/<uid>` resolver URL and the `gathering` destination type do not
 change: tags already in the field keep working.
 
-**Checkpoint:** `bun run lint && bun run typecheck`, then
+**Checkpoint:** `bun run lint && bun run typecheck` both exit 0, then
 `bun run db:reset && bun run db:seed` (the local stack's state is
 otherwise unknown, and the Playwright specs sign in as the seeded users),
-then `cd apps/web && bunx playwright test` in a shell with
+then `cd apps/web && bunx playwright test` reports every spec passed, in a shell with
 `SUPABASE_SERVICE_ROLE_KEY` exported (`docs/local-development.md#the-service-role-key`;
 without it Playwright stops before running a spec).
 
@@ -194,9 +200,7 @@ In slice order:
    bidi and invisible characters" test does), and add the field to the existing
    fixtures and expectations that build a whole gathering, a summary, or a
    create input — a required key breaks them. `grep -n starts_at
-   packages/contract/test/schemas.test.ts` finds them (in core: the
-   resolve output's `gathering`, the `gathering` fixture, the summary-keys
-   list, and the create-trim `toEqual`).
+   packages/contract/test/schemas.test.ts` finds them.
    The summary crosses the anonymous resolve boundary: never put private
    data in it.
 2. **Migration (additive).** New file:
@@ -223,10 +227,9 @@ In slice order:
    parameter after a defaulted one). Copy the whole body of its **newest**
    definition,
    `grep -lE 'create (or replace )?function public\.create_gathering' supabase/migrations/*.sql | sort | tail -1`,
-   not the gatherings migration's: in core the newest is
-   `20261016120000_abuse_limits_and_erasure.sql`, whose body holds the
-   per-host limits (the `gathering_create_attempts` ledger, 5 creations an
-   hour, 20 upcoming at once). The older body has neither, and copying it
+   not the gatherings migration's: in core the newest body holds the
+   per-host limits (the `gathering_create_attempts` ledger, creations an
+   hour and upcoming at once). An older body has neither, and copying it
    drops both without a word. Restate every attribute:
    `returns jsonb language plpgsql volatile security definer set search_path = ''`.
    The contract's `min(1)` does not bind the RPC: anyone signed in can
@@ -271,20 +274,19 @@ In slice order:
    Then `bun run db:reset && bun run db:seed && bun run db:types` and commit
    `packages/db/src/types/supabase.ts`. `db:types` pipes the generator
    through the repo's pinned prettier, so the file keeps one format
-   whatever the CLI emits (2.120.0 emits it unformatted and prints
-   "Generated TypeScript is unformatted"), and a new column is a small
-   diff that merges cleanly with the starter's later changes. Check that
-   what changed is the new column (`Row`/`Insert`/`Update`) and the new
-   `p_` argument (`grep -n course_name` on the file). A newer generator
-   may also add something to every table alike: harmless.
+   whatever the CLI emits, and a new column is a small diff that merges
+   cleanly with the starter's later changes. A newer generator may also
+   add something to every table alike: harmless.
+
+   **Checkpoint:** `db:reset` prints `Finished supabase db reset`,
+   `db:seed` exits 0, and `grep -n course_name packages/db/src/types/supabase.ts`
+   shows the column in the gatherings `Row`, `Insert` and `Update` and the
+   new `p_course_name` argument.
 3. **Tests.** Every db test that calls the RPC passes the new argument —
    the caller grep under the map lists them, and every one answers
-   `PGRST202` until it does (PostgREST resolves a function by its named
-   arguments). In core: `gatherings.test.ts`'s `createGathering()` helper
-   and its other direct calls, the anon call in 'anon can neither create
-   nor join' included; `account.test.ts`'s two calls;
-   `plain-text.test.ts`'s two; and one each in `blocks.test.ts` and
-   `links.test.ts`. The anon test already asserts the grant's refusal
+   `PGRST202` until it does. `gatherings.test.ts`'s `createGathering()`
+   helper covers most of its calls; the anon call in 'anon can neither
+   create nor join' is a direct one. The anon test already asserts the grant's refusal
    (`permission denied for function create_gathering`), which step 2's
    re-issued revoke keeps: pass it the new argument and nothing else
    changes. A field with a CHECK gets a rejected-at-the-boundary case
@@ -297,6 +299,9 @@ In slice order:
    assertion for the new field to an existing test (e.g. the anonymous
    resolve summary) is fine. Beyond the new argument, the existing tests
    pass untouched — if one does not, you moved a safety mechanism.
+
+   **Checkpoint:** `cd packages/db && bun test` prints `0 fail`, with the
+   new boundary cases among the passes.
 4. **Queries / API.** `queries/gatherings.ts` (`GatheringPatch`);
    `routers/app.ts` (`gatheringsCreate` passes the new `p_` argument).
    The two detail screens each declare their own local
@@ -307,6 +312,7 @@ In slice order:
    `packages/nfc-sdk/src/client.ts` `GatheringSummary`.
    `bun run --cwd packages/nfc-sdk typecheck` fails until you do; the vitest
    run would not catch it (type-level assertions).
+   **Checkpoint:** that typecheck exits 0.
 6. **Screens.** Web: a `field` in the create form and `EditForm`, the row
    `sub` line, the detail header; the resolver line comes from
    `gatheringLine()` in `lib/format-time.ts`. Mobile mirrors in
@@ -335,8 +341,8 @@ In slice order:
    anonymous summary. In `apps/web/e2e`, a required field needs a fill in
    every Playwright step that creates a gathering, or the create fails:
    a grep for the title field's label, or the label you gave it in §1
-   (`grep -rn "getByLabel('Title')" apps/web/e2e` in core), finds them
-   (`gatherings.spec.ts` and `profile.spec.ts` in core). The seed was
+   (`grep -rn "getByLabel('Title')" apps/web/e2e` in core), finds them;
+   fill the field after each one that creates a gathering. The seed was
    done in step 2, and that edit can carry §1's new seed title too.
 
 Now run the root `bun run typecheck`, not only the packages': the API e2e
@@ -345,7 +351,10 @@ rebuilds it (until then the e2e sees the old `GatheringSummary`). Run
 earlier, it is red in the expected places: the mobile create screen until
 step 6, and `handshake.e2e.ts` until step 7.
 
-Then the verification gate from `docs/the-slice.md`.
+**Checkpoint:** the verification gate from `docs/the-slice.md`
+(`bun run lint && bun run typecheck && bun run test`, all three exit 0),
+then the API e2e ending `handshake e2e: all checks passed` and
+`cd apps/web && bun run test:e2e` with every spec passed.
 
 ## 3. What must not move
 

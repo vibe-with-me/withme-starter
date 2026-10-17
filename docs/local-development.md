@@ -136,6 +136,9 @@ cd apps/web && bun run preview  # the production build locally (needs the API Wo
 
 ## When something goes wrong
 
+The fixes below are for the local stack. A skill checkpoint that fails
+for another reason: [When a checkpoint fails](the-slice.md#when-a-checkpoint-fails).
+
 **`db:start` fails with "no space left" or Docker errors.** Old Supabase
 images from previous CLI versions accumulate in the Docker VM. Prune
 them (`docker image prune -a` removes every unused image; check what else
