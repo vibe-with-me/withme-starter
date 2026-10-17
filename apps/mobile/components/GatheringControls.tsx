@@ -49,7 +49,8 @@ export function GatheringControls({
         label="Spots (optional)"
         value={spots}
         onChangeText={onSpots}
-        keyboardType="number-pad"
+        // Not number-pad: it has no return key, so the keyboard could not close.
+        keyboardType="numbers-and-punctuation"
         maxLength={3}
         placeholder="No limit"
         accessibilityHint={SPOTS_HELP}
