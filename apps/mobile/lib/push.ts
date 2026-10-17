@@ -106,25 +106,28 @@ export async function declinePushOffer(): Promise<void> {
  */
 export async function forgetThisDevice(): Promise<() => Promise<void>> {
   const choice = await readChoice();
+  let unregistering: Promise<unknown> = Promise.resolve();
   try {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     if (token) {
-      await Promise.race([
-        api.app.push.unregister({ token }),
-        new Promise((resolve) => setTimeout(resolve, 3000)),
-      ]);
+      unregistering = api.app.push.unregister({ token }).catch(() => undefined);
+      await Promise.race([unregistering, new Promise((resolve) => setTimeout(resolve, 3000))]);
     }
   } catch {
     // Signing out matters more than this request.
   }
   await AsyncStorage.multiRemove([TOKEN_KEY, CHOICE_KEY]).catch(() => undefined);
   return async () => {
+    // A slow unregister must land before the token is registered again,
+    // or it would delete the restored row.
+    await unregistering;
     try {
       // The OS grant is still there, so turning back on asks nothing.
       if (choice === 'on') await turnPushOn();
       else if (choice === 'off') await AsyncStorage.setItem(CHOICE_KEY, 'off');
     } catch {
-      // The next launch re-registers if the choice was restored.
+      // Keep the opt-in, so the next launch registers again.
+      if (choice === 'on') await AsyncStorage.setItem(CHOICE_KEY, 'on').catch(() => undefined);
     }
   };
 }
