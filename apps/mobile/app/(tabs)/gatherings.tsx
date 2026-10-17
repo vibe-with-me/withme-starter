@@ -155,7 +155,9 @@ export default function GatheringsScreen() {
       >
         <View style={styles.rowBody}>
           <Text style={[styles.rowName, { color: t.ink }]}>{gathering.title}</Text>
-          <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
+          {/* Two lines, as on web: the status and date never fill both, so the
+              location's link always starts on a visible line. */}
+          <Text numberOfLines={2} style={[styles.rowSub, { color: t.inkMuted }]}>
             {line.head}
             {where ? (
               <>
