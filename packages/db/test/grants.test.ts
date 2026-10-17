@@ -138,10 +138,18 @@ describe('table privileges', () => {
   // private.settings holds the push access token and the outbound URLs:
   // no client role holds any privilege on any private table.
   it('anon and authenticated hold no privilege on any private table', async () => {
+    // has_table_privilege resolves PUBLIC grants and role membership, which
+    // information_schema.role_table_grants does not.
     const rows: { name: string }[] = await sql`
-      select distinct table_schema || '.' || table_name || ':' || grantee as name
-      from information_schema.role_table_grants
-      where table_schema = 'private' and grantee in ('anon', 'authenticated', 'public')
+      select t.schemaname || '.' || t.tablename || ':' || r.role as name
+      from pg_tables t
+      cross join (values ('anon'), ('authenticated')) as r(role)
+      where t.schemaname = 'private'
+        and has_table_privilege(
+          r.role,
+          format('%I.%I', t.schemaname, t.tablename),
+          'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER'
+        )
       order by 1`;
     expect(rows.map((r) => r.name)).toEqual([]);
   });
