@@ -183,8 +183,9 @@ const updateMyTag = oc
   .output(z.object({ tag: TagSchema }));
 
 // Your code: Profile → Your code. A QR-only tag claimed to the caller.
-// get mints it on first use (idempotent); replace retires it and mints a
-// new one, so every copy of the old code opens an inactive tag.
+// get mints it on first use: idempotent, but NOT side-effect free, so
+// never cache, prefetch or preload it. replace retires it and mints a new
+// one, so every copy of the old code opens an inactive tag.
 const getMyShareCode = oc
   .route({ method: 'GET', path: '/me/share-code', tags: ['Tags'] })
   .output(ShareCodeSchema);

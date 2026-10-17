@@ -139,7 +139,10 @@ whether it came by NFC or a QR code. Nothing else.
 
 **How.** The `tag_scans` table has no columns for location, IP, or
 device identifiers. `scan_method` is how the tap arrived (`nfc`, `qr`,
-`direct`, `unknown`), not who made it. The API uses the caller's IP as a rate-limit key only
+`direct`, `unknown`), not who made it. For a physical tag it is the
+client's own hint and anyone can send any value, so it is advisory:
+nothing may branch on it. Only a share code's `qr` is set by the
+database. The API uses the caller's IP as a rate-limit key only
 and never stores it. There is no analytics or telemetry in the starter;
 that stance is part of its identity, and the roadmap records the
 decision to skip an analytics skill permanently.
