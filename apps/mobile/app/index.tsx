@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { useTermsGate } from '../lib/terms-gate';
+import { useTermsStatus } from '../lib/terms-gate';
 import { useSession } from '../lib/use-session';
 
 /**
@@ -9,8 +9,10 @@ import { useSession } from '../lib/use-session';
  */
 export default function Index() {
   const { session, loading } = useSession();
-  const { needsTerms, checking } = useTermsGate(!!session);
-  if (loading || checking) return null;
+  // Read-only: the root layout owns the terms checks (see useTermsGate).
+  const terms = useTermsStatus();
+  if (loading) return null;
   if (!session) return <Redirect href="/login" />;
-  return <Redirect href={needsTerms ? '/terms-update' : '/gatherings'} />;
+  if (terms === 'unknown') return null;
+  return <Redirect href={terms === 'needs' ? '/terms-update' : '/gatherings'} />;
 }

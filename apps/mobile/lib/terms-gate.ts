@@ -49,7 +49,14 @@ export function markTermsCurrent(): void {
   set('current');
 }
 
-/** The gate for the root layout. `checking` is true until the first answer for this session. */
+/**
+ * The gate for the root layout, and only the root layout: it owns the checks
+ * for the session it is given. Every other screen reads the answer with
+ * useTermsStatus. A second owner would reset the shared state with its own
+ * session view, and a screen whose useSession is still loading (index on a
+ * cold start) would set it back to `unknown` after the root's check answered,
+ * leaving the root on its splash for good.
+ */
 export function useTermsGate(signedIn: boolean): { needsTerms: boolean; checking: boolean } {
   const current = useSyncExternalStore(subscribe, () => state);
   useEffect(() => {
@@ -65,4 +72,9 @@ export function useTermsGate(signedIn: boolean): { needsTerms: boolean; checking
     return () => subscription.remove();
   }, [signedIn]);
   return { needsTerms: signedIn && current === 'needs', checking: signedIn && current === 'unknown' };
+}
+
+/** The root gate's current answer, read-only: `unknown` until its first check for this session answers. */
+export function useTermsStatus(): GateState {
+  return useSyncExternalStore(subscribe, () => state);
 }
