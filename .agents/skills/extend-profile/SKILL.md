@@ -79,7 +79,7 @@ your vertical's words before you start and keep the shapes.
 | SDK | `PublicProfileCard` in `packages/nfc-sdk/src/client.ts` | never |
 | Web (`apps/web/src/`) | `components/ProfileCard.tsx`, `lib/card-line.ts`, `routes/_app.profile.tsx`, `routes/claim.$uid.tsx` | `routes/_app.profile.tsx`, `routes/_app.connections.tsx` (its local `PersonRow`) |
 | Mobile (`apps/mobile/`) | `app/t/[uid].tsx`, `lib/card-line.ts`, `app/(tabs)/profile.tsx`, `app/claim/[uid].tsx` | `app/(tabs)/profile.tsx`, `app/(tabs)/connections.tsx`, `PersonRow` in `components/ui.tsx` |
-| Gate | `isProfileComplete` (contract) → web `routes/_app.tsx` (`ShellRoute`), mobile `app/(tabs)/_layout.tsx` | — |
+| Gate | `isProfileComplete` (contract) → `shellGate` (contract) in web `routes/_app.tsx` (`ShellRoute`), mobile `app/(tabs)/_layout.tsx` | — |
 | Seed / e2e | `supabase/seed/index.ts`; `apps/api/e2e/handshake.e2e.ts`; every profile-creating step in `apps/web/e2e/` (§8 finds them) | same seed block and API e2e; `apps/web/e2e/handshake.spec.ts` |
 
 Outside the tabs, mobile `gathering/[id].tsx` (join) and `t/[uid].tsx`
@@ -128,19 +128,23 @@ is green in the starter. Then:
   `z.object({ profile: ProfileSchema, details: ProfileDetailsSchema.nullable() })`.
 
 Now rerun `bun test`. It is red, and the failures are exactly the tests
-that parse a profile card fixture: the new key is required-nullable, so
-every existing fixture fails without it. That is the key doing its job.
+that parse a profile card fixture or a connection: the new keys are
+required-nullable, so every existing fixture fails without them. That is the key doing its job.
 In `packages/contract/test/schemas.test.ts`:
 
 - add `affiliation: null` to every profile-card fixture the failing tests
   parse (`grep -n "display_name:" packages/contract/test/schemas.test.ts`
   lists the candidates);
+- in "a connection always carries links, and the card never does", the
+  positive case parses a connection, which now requires `details` too:
+  make it `{ ...connection, links: [], details: null }`. The assertion is
+  unchanged; the fixture gains the new key;
 - add `'affiliation'` to the expected keys in "exposes only card-safe
   fields", in its alphabetical place (the test sorts with `.toSorted()`):
   `['affiliation', 'avatar_path', 'bio', 'display_name', 'id']`;
 - append the `profile tiers` describe (reference.md → §1 Contract tests),
-  and add `ConnectionSchema`, `isProfileComplete`, and `type Profile` to
-  the file's import from `'../src/index.ts'`.
+  and add `isProfileComplete` and `type Profile` to the file's import
+  from `'../src/index.ts'` (it already imports `ConnectionSchema`).
 
 **Checkpoint:** `cd packages/contract && bun test` prints `0 fail`, and
 its pass count is the baseline plus the tests you appended.
@@ -181,9 +185,13 @@ now asserts nothing: fix it before going on. Typecheck may be red for
 
 ## 3. Migration — both tiers, one additive file
 
-New file `supabase/migrations/<UTC-timestamp>_extend_profile.sql`. Its
-timestamp (`date -u +%Y%m%d%H%M%S`) must sort after the newest existing
-migration, which `ls supabase/migrations | tail -1` prints.
+New file `supabase/migrations/<timestamp>_extend_profile.sql`. Its
+timestamp must sort after the newest existing migration, which
+`ls supabase/migrations | tail -1` prints. Start from
+`date -u +%Y%m%d%H%M%S`, but the starter stamps migrations by hand and
+some sit later in the day than the clock: when the clock's value does not
+sort after the newest file, use the newest file's timestamp plus one
+minute (`20261017200000` → `20261017200100`).
 
 1. The card column, the `profile_details` table, its trigger, grants and
    policies: reference.md → §3 Migration, verbatim apart from your
@@ -191,14 +199,16 @@ migration, which `ls supabase/migrations | tail -1` prints.
 2. **Every function that builds a card** gets the card tier. Find them:
 
    ```sh
-   grep -nE "create (or replace )?function public\.|'display_name', v_profile\.display_name" \
-     $(grep -l "'display_name', v_profile.display_name" supabase/migrations/*.sql)
+   grep -nE "create (or replace )?function public\.|'display_name', v_[a-z_]+\.display_name" \
+     $(grep -lE "'display_name', v_[a-z_]+\.display_name" supabase/migrations/*.sql)
    ```
 
    Every `'display_name'` line belongs to the nearest
-   `function public.…` line above it; those are the card builders (in the
-   starter, `resolve_tag` and `accept_connect_request`). For each one,
-   find its **newest** definition:
+   `function public.…` line above it; those are the card builders. In the
+   starter: `resolve_tag` and `accept_connect_request` (the card as
+   `v_profile`), and `report_user`, whose `reports.snapshot` is the card
+   as the reporter saw it (`v_target`), so a moderator reads what was on
+   it. For each one, find its **newest** definition:
 
    ```sh
    grep -lE 'create (or replace )?function public\.<name>' supabase/migrations/*.sql | grep -v _extend_profile | sort | tail -1
@@ -207,13 +217,19 @@ migration, which `ls supabase/migrations | tail -1` prints.
    The grep decides, never a file name you remember: another skill
    (customize-gathering redefines `resolve_tag`) may have written a newer
    body. The `grep -v` matters when you redo this migration: it already
-   defines both functions and would otherwise be its own newest.
+   defines these functions and would otherwise be its own newest.
 3. Copy each newest definition whole to the end of this migration, as
    `create or replace function`, restating every attribute (`language
    plpgsql`, `stable` or `volatile`, `security definer`, `set search_path =
    ''`), under a comment naming its source (`-- Newest: <file>.`). Then:
    - in the `'profile', jsonb_build_object(…)` add
      `'affiliation', v_profile.affiliation`;
+   - in `report_user`, in the `snapshot`'s `jsonb_build_object(…)` add
+     `'affiliation', v_target.affiliation` (the card tier only: the
+     snapshot never carries `profile_details`), and add
+     `affiliation: null` to the exact snapshot in
+     `packages/db/test/reports.test.ts` ("stores the report with a
+     snapshot of the card", the `toEqual` that names `'Original bio'`);
    - in `accept_connect_request` only: declare `v_details jsonb := null;`,
      add after the `select * into v_profile …` line
 
@@ -307,13 +323,16 @@ type-level).
     },
   ```
 
-  and `ShellRoute` (the layout's component, which already sends a session
-  without a profile to `/profile` with a `<Navigate>`) widens its check to
-  `if (!isProfileComplete(profile) && pathname !== '/profile') {`. Keep it
-  in the component: the comment above `ShellRoute` explains why a `throw
-  redirect` from the loader blanks the page. Make that comment's opening
-  line say "without a complete profile (`isProfileComplete`)" and "create
-  or finish one".
+  and `ShellRoute` (the layout's component) passes the completion rule to
+  the gate it already calls: `shellGate(profile, pathname)` becomes
+  `shellGate(profile, pathname, isProfileComplete)`. Do not write your
+  own `if` around it: `shellGate` (contract, `schemas/terms.ts`) orders
+  the profile gate before the terms gate so an incomplete profile on old
+  terms reaches `/terms`, then `/profile`, instead of bouncing between
+  them. Keep the redirect in the component: the comment above
+  `ShellRoute` explains why a `throw redirect` from the loader blanks the
+  page. Make that comment's opening line say "without a complete profile
+  (`isProfileComplete`)" and "create or finish one".
 - `apps/web/src/routes/_app.profile.tsx`. Only `ProfilePage`'s read and
   `IdentityForm` change. `ProfilePage` reads
   `const { profile, details } = useLoaderData({ from: '/_app' });` and
@@ -331,14 +350,19 @@ type-level).
     do not special-case the empty field.
   - the `<h1>`:
     `{!profile ? 'Create your profile' : isProfileComplete(profile) ? 'Your profile' : 'Finish your profile'}`
-  - Save's `disabled`: `busy || !displayName.trim() || !affiliation.trim()`
-  - the fields after Bio, before the status line: reference.md → §6 Web
-    profile fields (labels, ids and placeholders in your words).
+  - Save's `disabled` gains `|| !affiliation.trim()` and keeps the
+    terms agreement:
+    `busy || !displayName.trim() || !affiliation.trim() || (creating && !agreed)`.
+    The payload keeps its `...(creating ? { terms_version: TERMS_VERSION } : {})`.
+  - the fields after Bio, before the `TermsCheckbox`: reference.md → §6
+    Web profile fields (labels, ids and placeholders in your words).
 - `apps/web/src/routes/claim.$uid.tsx`, the inline first-profile form:
   every place that creates a profile asks for the required fields. Add an
-  `affiliation` state and the same Affiliation field after Name, send
-  `{ display_name: displayName.trim(), affiliation: affiliation.trim() }`,
-  disable Continue with `busy || !displayName.trim() || !affiliation.trim()`,
+  `affiliation` state and the same Affiliation field after Name, add
+  `affiliation: affiliation.trim()` to the update beside `display_name`
+  and `terms_version` (creating a profile without `terms_version` is
+  refused), disable Continue with
+  `busy || !displayName.trim() || !affiliation.trim() || !agreed`,
   retitle the form "First, your card", and make its catch say "Could not
   save your profile. Try again."
 - `apps/web/src/lib/card-line.ts`: `cardLine` returns the card tier as one
@@ -375,7 +399,9 @@ reports zero findings).
   a field no safety rule reads. A fork that wants a hard gate re-checks on
   tab focus and owns that UX.
 - `apps/mobile/app/(tabs)/profile.tsx`. Only the identity `Card` changes.
-  - Imports: `import { isProfileComplete, type Profile, type ProfileDetails } from '@withme/contract'`;
+  - Imports: `isProfileComplete` and `type ProfileDetails` join the
+    `@withme/contract` import (`TERMS_VERSION` and `type Profile` stay:
+    `save` still sends the terms on first create);
     `Muted` joins the `../../components/ui` import.
   - State: `affiliation` and `contact` (strings), and
     `const [current, setCurrent] = useState<Profile | null>(null);`. Not
@@ -393,15 +419,18 @@ reports zero findings).
     `onChangeText={edit(setAffiliation)}` (`edit(setContact)` for the
     contact).
   - `save`: `const saved = await api.app.profile.update({ … })` with the
-    web payload, then `setCurrent(saved.profile)` on the next line, before
-    the `redirect` branch, so it runs on both paths.
+    web payload (its `terms_version` spread kept), then
+    `setCurrent(saved.profile)` on the next line, before the `redirect`
+    branch, so it runs on both paths.
   - `Title`:
     `{!current ? 'Create your profile' : isProfileComplete(current) ? 'Your profile' : 'Finish your profile'}`.
-  - Save: `disabled={busy || !displayName.trim() || !affiliation.trim()}`.
+  - Save: `disabled={busy || !displayName.trim() || !affiliation.trim() || (!exists && !agreed)}`
+    (the terms condition stays).
   - The fields after Bio: reference.md → §7 Mobile profile fields.
 - `apps/mobile/app/claim/[uid].tsx`: an `affiliation` state and the
-  Affiliation `Field` after Name, sent with the name as on web; Continue
-  disabled until both are filled; the `Title` becomes "First, your card",
+  Affiliation `Field` after Name, sent with the name and `terms_version`
+  as on web; Continue gains `|| !affiliation.trim()` beside its `!agreed`;
+  the `Title` becomes "First, your card",
   and `createProfile`'s error becomes "Could not save your profile. Try
   again."
 - `apps/mobile/lib/card-line.ts`: the same `cardLine` as web. Every list
@@ -432,9 +461,11 @@ then `bun run db:reset && bun run db:seed`.
   `/t/04AAAAAAAAAAAA`, tap Connect, sign up, tap Connect again on the
   tag: Profile opens, and Save lands on the tag again, not on Profile;
 - the same through Join: `04BBBBBBBBBBBB` points at Ada's gathering, so
-  sign-up lands on "Join this gathering?", Join opens Profile, and Save
-  returns to "Join this gathering?" (your vertical's word after
-  customize-gathering's URL step).
+  sign-up lands on the gathering's page (its title, "Who's going", and a
+  Join button: gatherings are listed to every signed-in user), Join opens
+  Profile, and Save returns to that page (your vertical's word after
+  customize-gathering's URL step). The "Join this gathering?" card shows
+  only when the gathering is not found (blocked or missing).
 
 A brand-new sign-up that lands on Events instead, with `PGRST303` in the
 API log, is the local stack's PostgREST, not the gate:
@@ -500,10 +531,10 @@ and `cd apps/web && bun run test:e2e` reports every spec passed.
    user per tabs mount, while web's `ShellRoute` re-checks on every render;
    the mobile difference is deliberate (§7).
 8. The new table carries the tenant seam, and every policy predicates on it.
-9. Any later migration that redefines `resolve_tag` or
-   `accept_connect_request` copies the newest definition (this migration
-   once it exists). An older body silently drops the card tier, the
-   `details` hand-off, and accept's `links`.
+9. Any later migration that redefines `resolve_tag`,
+   `accept_connect_request` or `report_user` copies the newest definition
+   (this migration once it exists). An older body silently drops the card
+   tier, the `details` hand-off, and accept's `links`.
 10. Every new free-text column carries the plain-text CHECK, and its zod
     schema the `isPlainText` refine.
 

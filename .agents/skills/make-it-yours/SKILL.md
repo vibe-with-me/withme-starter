@@ -138,6 +138,16 @@ The web favicon carries three tokens, in both modes:
   dark values in its `prefers-color-scheme: dark` block. Step 8 redraws its
   shapes if the mark changes; its colors change here, with the tokens.
 
+The light shadows are tinted with the ink, so a new ink moves them too:
+
+- `apps/web/src/styles/tokens.css` → `--shadow-card` and `--shadow-bar`
+  in `:root`: every `rgba(28, 25, 22, …)` becomes the new light ink's
+  channels at the same alpha.
+- `apps/mobile/lib/tokens.ts` → `shadow.card.light.shadowColor` and
+  `shadow.bar.light.shadowColor` (`'#1c1916'`): the new light ink.
+
+The dark shadows are plain black; leave them.
+
 And one place copies the light `--color-surface`:
 
 - `apps/web/src/lib/avatar.ts` → `PHOTO_FILL`, the fill baked under a
@@ -241,8 +251,7 @@ footer, the login hint, the "withme home" links, every route's page
 title in `head()`, the mobile user-agent prefix `withme-mobile/…`): use
 the **wordmark** there. Use the **display name** inside prose sentences
 (the `nfcPermission` string below, and any README sentence that names the
-product; the starter's README prose names no brand, so there only the
-title and badge change). Then these, which that grep does not reach:
+product). Then these, which that grep does not reach:
 
 - `apps/mobile/app.json` — the `react-native-nfc-manager` plugin's
   `nfcPermission` string ("Read withme tags…" → "Read Acme tags…").
@@ -281,12 +290,15 @@ title and badge change). Then these, which that grep does not reach:
   line in `apps/web/.env.example` AND in the `apps/web/.env` you copied
   from it up front: edit the line in both files (the step 8 sweep greps
   both).
-- `README.md` and `apps/mobile/README.md`, if you keep them — but not by
-  blind substitution: the root README's `withme` occurrences include the
-  title (`# withme-starter` becomes the wordmark, `# acme`), the
-  upstream repo URL in the CI badge (needs your **fork's
-  URL**), `@withme/*` and `@vibewithme/nfc` package names which stay, and the demo-credentials
-  line which must match the seed (previous bullet).
+- `README.md`: the starter's README describes the starter (its pitch,
+  `git clone …/withme-starter`, the Run With Me worked example with its
+  `runwithme` names, Vibe With Me's story), so no substitution makes it
+  your app's. Replace it with your own: the wordmark as the title
+  (`# acme`), a CI badge pointing at your **fork's URL**, a line on what
+  the app is, the local quickstart, the demo-credentials line (it must
+  match the seed, previous bullet), and one attribution line such as
+  `Built from [withme-starter](https://github.com/vibe-with-me/withme-starter).`,
+  the one upstream match the checkpoint below accepts.
   `apps/mobile/README.md`'s occurrences are all `@withme/*` names — no
   change there.
 - `LICENSE` — line 3 names the starter's copyright holder,

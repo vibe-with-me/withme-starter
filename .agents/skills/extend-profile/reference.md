@@ -697,7 +697,7 @@ the photo endpoints keep returning `{ profile }` alone.
 
 ## §6 Web profile fields
 
-In `IdentityForm` (`apps/web/src/routes/_app.profile.tsx`), after Bio, before the status line:
+In `IdentityForm` (`apps/web/src/routes/_app.profile.tsx`), after Bio, before the `TermsCheckbox`:
 
 ```tsx
 <div className="field">
@@ -792,20 +792,21 @@ useEffect(() => {
 
 ## §7 Mobile profile fields
 
-`apps/mobile/app/(tabs)/profile.tsx`, after the Bio `Field`:
+`apps/mobile/app/(tabs)/profile.tsx`, after the Bio `Field` (`edit(…)` marks the
+form dirty, so the reload on focus keeps what someone is typing):
 
 ```tsx
 <Field
   label="Affiliation"
   value={affiliation}
-  onChangeText={setAffiliation}
+  onChangeText={edit(setAffiliation)}
   maxLength={80}
   placeholder="Your club, team, or company"
 />
 <Field
   label="Contact"
   value={contact}
-  onChangeText={setContact}
+  onChangeText={edit(setContact)}
   maxLength={120}
   autoCapitalize="none"
   placeholder="Phone, email, or handle"

@@ -54,8 +54,9 @@ When every new field is optional, `REQUIRED_PROFILE_FIELDS =
   completes and a blank one does not; "a typed required value counts …
   even 0" drops (keep it only when a typed field is required).
 - §6, §7: the claim pages stay as they are (the name alone, "First, your
-  name", the name error copy), and Save's `disabled` stays
-  `busy || !displayName.trim()` on both Profile forms.
+  name", the name error copy), and Save's `disabled` stays as the
+  starter has it (the name and, on first create, the terms agreement) on
+  both Profile forms.
 - §7: the seeded users are already complete. The seed edit is for the
   card only; the "would send Lin to 'Finish your profile'" check does
   not apply.
