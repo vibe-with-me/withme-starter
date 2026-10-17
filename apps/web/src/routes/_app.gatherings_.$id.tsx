@@ -310,14 +310,17 @@ function GatheringDetail({
             ) : null}
           </>
         ) : null}
-        {mode === 'view' && !isHost && !reported ? (
+        {/* After a report, Report goes; Block host stays unless that report blocked. */}
+        {mode === 'view' && !isHost && !reported?.blocked ? (
           <div className="row-actions">
-            <ReportButton
-              profileId={gathering.host_id}
-              gatheringId={gathering.id}
-              name="the host"
-              onDone={(blocked) => setReported({ blocked })}
-            />
+            {reported ? null : (
+              <ReportButton
+                profileId={gathering.host_id}
+                gatheringId={gathering.id}
+                name="the host"
+                onDone={(blocked) => setReported({ blocked })}
+              />
+            )}
             <button
               type="button"
               className="btn btn--quiet"
