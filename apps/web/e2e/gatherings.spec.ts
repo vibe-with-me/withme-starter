@@ -58,12 +58,20 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await expect(adaYours.getByText(title)).toBeVisible();
 
   // --- ...and she points her tag at it from the detail ---------------------------
-  await adaYours.getByRole('link', { name: 'Open' }).click();
+  await adaYours.getByRole('link', { name: 'Open', exact: true }).click();
   await ada.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
   const detailPath = new URL(ada.url()).pathname;
   await expect(ada.getByRole('heading', { name: title })).toBeVisible();
   await expect(ada.getByText('1 going')).toBeVisible();
   await expect(ada.getByText('Host', { exact: true })).toBeVisible();
+  // The location searches a maps app for its text, encoded, in a new tab.
+  const maps = ada.getByRole('link', { name: 'The roof, opens in Maps' });
+  await expect(maps).toHaveAttribute(
+    'href',
+    'https://www.google.com/maps/search/?api=1&query=The%20roof',
+  );
+  await expect(maps).toHaveAttribute('target', '_blank');
+  await expect(maps).toHaveAttribute('rel', 'noopener noreferrer');
   await ada.getByRole('button', { name: 'Point my tags at this gathering' }).click();
   await expect(ada.getByRole('button', { name: 'Point my tags back to my profile' })).toBeVisible();
 

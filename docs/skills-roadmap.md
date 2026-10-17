@@ -132,6 +132,21 @@ In the order a new fork usually runs them:
   walked on a device yet.
 - **Connect from a gathering tag.** The resolver's gathering branch offers
   Join or Open, not Connect.
+- **Map view (a future skill, not core).** Coordinates and a map for
+  gatherings. Core ships only the cheap part: a gathering's free-text
+  location opens the viewer's maps app as a search (`mapsSearchUrl` in the
+  contract), with no coordinates, keys or new service. A map stays out of
+  core because:
+  - tiles and geocoding need a provider with keys, terms and usually
+    billing, which breaks the promise that trying the starter needs no
+    accounts;
+  - the exact coordinates of upcoming gatherings say where people will be,
+    so the skill must decide who sees the exact spot, when (after joining,
+    say) and at what precision;
+  - it fits some verticals (golf courses, tailgate lots, run routes) and
+    not others;
+  - a "near me" view would use the viewer's location and drift toward the
+    discovery feed the README rules out.
 
 ## Deferred or skipped, on purpose
 

@@ -411,6 +411,19 @@ a.link:hover {
   white-space: nowrap;
 }
 
+/* A gathering's location: a link in ink inside a muted line, never the
+   accent (tokens.css). The pin is ink like the text beside it. */
+.maps-link {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.maps-link .platform-icon {
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
 /* --- lists (connections / requests / blocks) ------------------------------ */
 
 .section-title {

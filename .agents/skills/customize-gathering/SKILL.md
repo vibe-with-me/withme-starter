@@ -325,13 +325,15 @@ In slice order:
    in §1), `lib/format-time.ts`. The display lines are composed in both
    apps' `lib/format-time.ts`: rows and the detail
    header call `whenAndWhere()` ("when · where"), and the resolver card
-   calls `gatheringLine()` ("Title · when · where"). Join the field there,
-   not in each screen. For the worked example: add
-   `courseWhenAndWhere(g)` =
-   `[g.course_name, whenAndWhere(g)].filter(Boolean).join(' · ')`
-   ("Course · when · where"; `''` shows nothing), call it from the rows
-   and the detail header, and have `gatheringLine()` use it, so the tag
-   card reads "Title · Course · when · where".
+   calls `gatheringLine()` ("Title · when · where"). Both return a
+   `MetaLine` (the text before the location, the location, the text after)
+   that `GatheringMeta` renders with the location as a Maps link. Join the
+   field there, not in each screen. For the worked example, put
+   `g.course_name` in `whenAndWhere()`'s `before` (an empty `''` shows
+   nothing) at each call: the rows (`[mark, g.course_name]`), the detail
+   header (`[g.course_name]`) and `gatheringLine()`
+   (`[g.title, g.course_name]`), so the tag card reads
+   "Title · Course · when · where".
    The join preview ("Join this gathering?") does not fetch the gathering:
    it shows display-only hints, `title` and `starts_at`, that the tag
    screen passes along. Web: `t.$uid.tsx`'s Join `Link` `search`, read by

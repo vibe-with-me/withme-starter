@@ -49,9 +49,28 @@ export function parseLocalDateTime(date: string, time: string): string | null {
   return when.toISOString();
 }
 
-/** "Thu, Oct 9 · 7:00 PM · Location" (the location only when set). */
-export function whenAndWhere(g: { starts_at: string; location: string | null }): string {
-  return [formatStartsAt(g.starts_at) ?? g.starts_at, g.location].filter(Boolean).join(' · ');
+/**
+ * A gathering's meta line in three parts, so a screen can render the
+ * location as a Maps link: "Hosting · Thu, Oct 9 · 7:00 PM", "The roof",
+ * "1 going". Shown joined by " · "; an empty part is left out.
+ */
+export interface MetaLine {
+  head: string;
+  location: string | null;
+  tail: string;
+}
+
+/** "Thu, Oct 9 · 7:00 PM · Location" (the location only when set), `before` and `after` around it. */
+export function whenAndWhere(
+  g: { starts_at: string; location: string | null },
+  before: (string | null)[] = [],
+  after: (string | null)[] = [],
+): MetaLine {
+  return {
+    head: [...before, formatStartsAt(g.starts_at) ?? g.starts_at].filter(Boolean).join(' · '),
+    location: g.location,
+    tail: after.filter(Boolean).join(' · '),
+  };
 }
 
 /** One line for a gathering: "Title · Thu, Oct 9 · 7:00 PM · Location". */
@@ -59,6 +78,6 @@ export function gatheringLine(g: {
   title: string;
   starts_at: string;
   location: string | null;
-}): string {
-  return [g.title, whenAndWhere(g)].join(' · ');
+}): MetaLine {
+  return whenAndWhere(g, [g.title]);
 }

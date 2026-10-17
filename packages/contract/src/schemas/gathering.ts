@@ -116,3 +116,51 @@ export type CreateGatheringInput = z.infer<typeof CreateGatheringInputSchema>;
 export type UpdateGatheringInput = z.infer<typeof UpdateGatheringInputSchema>;
 export type ListGatheringsInput = z.infer<typeof ListGatheringsInputSchema>;
 export type GatheringsPage = z.infer<typeof GatheringsPageSchema>;
+
+/** Where a gathering's location opens: the browser, Apple Maps, or the Android maps chooser. */
+export const MAPS_SEARCH_PLATFORMS = ['web', 'ios', 'android'] as const;
+export type MapsSearchPlatform = (typeof MAPS_SEARCH_PLATFORMS)[number];
+
+/**
+ * The URL that searches a maps app for a gathering's location, or null for a
+ * blank one. No coordinates and no key: the text itself is the query.
+ *
+ * The location is the host's free text, so it is only ever one encoded query
+ * value, never a path, host or scheme. A lone surrogate becomes U+FFFD first,
+ * where encodeURIComponent would throw.
+ *
+ * Web uses Google's documented Maps URL: one link that opens the Google Maps
+ * app where it is installed and the website everywhere else, Android and
+ * desktop included. maps.apple.com is the better link only on Apple devices.
+ */
+export function mapsSearchUrl(location: string, platform: MapsSearchPlatform): string | null {
+  const text = wellFormed(location.trim());
+  if (text === '') return null;
+  const query = encodeURIComponent(text);
+  switch (platform) {
+    case 'web':
+      return `https://www.google.com/maps/search/?api=1&query=${query}`;
+    case 'ios':
+      return `maps:?q=${query}`;
+    case 'android':
+      return `geo:0,0?q=${query}`;
+  }
+}
+
+/** Each unpaired surrogate replaced by U+FFFD: String.prototype.toWellFormed, which Hermes lacks. */
+function wellFormed(value: string): string {
+  let out = '';
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    const next = value.charCodeAt(i + 1);
+    if (code >= 0xd800 && code <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) {
+      out += value.slice(i, i + 2);
+      i++;
+    } else if (code >= 0xd800 && code <= 0xdfff) {
+      out += '�';
+    } else {
+      out += value[i];
+    }
+  }
+  return out;
+}

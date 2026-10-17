@@ -2,6 +2,7 @@ import type { GatheringSummary } from '@withme/contract';
 import { createFileRoute, Link, notFound, redirect, useHydrated, useNavigate } from '@tanstack/react-router';
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { useEffect, useState } from 'react';
+import { GatheringMeta } from '../components/GatheringMeta.tsx';
 import { ProfileCard } from '../components/ProfileCard.tsx';
 import { ReportButton } from '../components/ReportDialog.tsx';
 import { api } from '../lib/api.ts';
@@ -103,7 +104,11 @@ function WordmarkFooter() {
 /** The server knows neither the viewer's timezone nor locale: the title alone until hydrated. */
 function GatheringLine({ gathering }: { gathering: GatheringSummary }) {
   const hydrated = useHydrated();
-  return <p className="hint">{hydrated ? gatheringLine(gathering) : gathering.title}</p>;
+  return (
+    <p className="hint">
+      {hydrated ? <GatheringMeta line={gatheringLine(gathering)} /> : gathering.title}
+    </p>
+  );
 }
 
 /**
