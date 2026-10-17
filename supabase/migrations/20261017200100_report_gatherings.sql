@@ -14,7 +14,9 @@
 --     host, another tenant, or no such id) answers exactly like a stored
 --     report and stores nothing, as report_user does for an unknown person.
 --   * The host reporting their own gathering is refused (22023), as
---     reporting yourself is.
+--     reporting yourself is. The reason and the text are checked first, the
+--     same way for every id (22023), so no constraint error can carry the
+--     host's card back (the leak 20261017200000 closed in report_user).
 --   * It shares report_user's ledger: 10 reports per rolling day in all.
 --   * p_block blocks the host in the same step, with reveals_card decided
 --     by the same private.sees_card rule. The block hides the gathering
@@ -54,6 +56,20 @@ begin
   end if;
   if p_gathering is null then
     raise exception 'gathering required' using errcode = '22023';
+  end if;
+
+  -- Checked before anything about the gathering is read, as report_user
+  -- does since 20261017200000: a CHECK failing on the insert would answer
+  -- with the row, the host's card in it. Keep equal to the table's CHECKs.
+  if p_reason is null or p_reason not in (
+    'harassment', 'hate', 'sexual_content', 'violence', 'child_safety',
+    'underage', 'spam', 'impersonation', 'other'
+  ) then
+    raise exception 'unknown reason' using errcode = '22023';
+  end if;
+  if v_details is not null
+     and (char_length(v_details) > 1000 or not private.is_plain_text(v_details, true)) then
+    raise exception 'details must be plain text, at most 1000 characters' using errcode = '22023';
   end if;
 
   -- The same ledger as report_user, counted before the id is looked up.

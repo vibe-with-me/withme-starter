@@ -86,8 +86,27 @@ describe('report_user', () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
     expect((await report(alice, alice.id)).error?.code).toBe('22023');
-    expect((await report(alice, bob.id, { p_reason: 'rude' })).error?.code).toBe('23514');
-    expect((await report(alice, bob.id, { p_details: 'a‮b' })).error?.code).toBe('23514');
+    expect((await report(alice, bob.id, { p_reason: 'rude' })).error?.code).toBe('22023');
+    expect((await report(alice, bob.id, { p_details: 'a‮b' })).error?.code).toBe('22023');
+    expect((await report(alice, bob.id, { p_details: 'x'.repeat(1001) })).error?.code).toBe('22023');
+    expect(await reportsAbout(bob.id)).toEqual([]);
+  });
+
+  it('a bad reason or text answers the same for a real person and an unknown id, and reveals nothing', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob Hidden');
+    await admin.from('profiles').update({ bio: 'Secret bio' }).eq('id', bob.id);
+    // Bob blocked Alice: his card is hers to see nowhere.
+    expect((await bob.client.from('blocks').insert({ blocker_id: bob.id, blocked_id: alice.id })).error).toBeNull();
+    const ghost = crypto.randomUUID();
+
+    for (const extra of [{ p_reason: 'rude' }, { p_details: 'a‮b' }, { p_details: 'x'.repeat(1001) }]) {
+      const real = await report(alice, bob.id, extra);
+      const fake = await report(alice, ghost, extra);
+      expect(real).toEqual(fake);
+      // A check-constraint error would carry the failing row: Bob's name, bio and photo path.
+      expect(JSON.stringify(real)).not.toMatch(/Bob Hidden|Secret bio|avatar_path/);
+    }
     expect(await reportsAbout(bob.id)).toEqual([]);
   });
 
@@ -220,6 +239,20 @@ describe('report_gathering', () => {
     expect(await reportsAbout(hider.id)).toEqual([]);
   });
 
+  it('a bad reason or text is refused before the lookup, with no card in the error', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Secret Host');
+    const gathering = await createGathering(host);
+    for (const extra of [{ p_reason: 'rude' }, { p_details: 'a\u202eb' }, { p_details: 'x'.repeat(1001) }]) {
+      const real = await reportGathering(alice, gathering, extra);
+      const ghost = await reportGathering(alice, crypto.randomUUID(), extra);
+      expect(real.error?.code).toBe('22023');
+      expect(ghost).toEqual(real);
+      expect(JSON.stringify(real)).not.toContain('Secret Host');
+    }
+    expect(await reportsAbout(host.id)).toEqual([]);
+  });
+
   it('refuses the host reporting their own gathering, and anon', async () => {
     const host = await createTestUser('Host');
     const gathering = await createGathering(host);
@@ -287,6 +320,20 @@ describe('reports and account deletion', () => {
       snapshot: { display_name: 'Bob' },
     });
     expect(Date.now() - Date.parse(kept!.reported_deleted_at!)).toBeLessThan(60_000);
+  });
+
+  it('a profile cannot be deleted on its own to cut reports loose from a login that stays', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    expect((await report(alice, bob.id)).error).toBeNull();
+
+    // /rest/v1/profiles?id=eq.<bob> DELETE, then a fresh profile on the same login.
+    await bob.client.from('profiles').delete().eq('id', bob.id);
+    const { data: still } = await admin.from('profiles').select('id').eq('id', bob.id);
+    expect(still).toEqual([{ id: bob.id }]);
+    const rows = await reportsAbout(bob.id);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.reported_deleted_at).toBeNull();
   });
 
   it('purges them once the window has passed, on the next report or deletion', async () => {

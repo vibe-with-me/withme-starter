@@ -124,7 +124,10 @@ whether someone exists.
 privilege revoked from anon and authenticated, so only the service role
 reads it. Reports enter through `report_user`, a security-definer function.
 It answers an id that is not a person in the tenant exactly as it answers a
-real one (nothing is stored), so it is not an existence oracle. It counts
+real one (nothing is stored), so it is not an existence oracle. It checks
+the reason and the text before it reads anything about the id, so a bad
+argument is the same 22023 for everyone and never a constraint error (whose
+details would carry the reported card). It counts
 attempts in a private ledger, 10 per rolling day, before it looks the id
 up: the publishable key reaches PostgREST directly, so the limit has to be
 inside the function, as `claim_tag`'s is. Its block option inserts the same
@@ -320,7 +323,10 @@ are private).
 
 **How.** Profile → Account clears the photo pointer, sweeps the avatar
 files through the Storage API, then calls `delete_my_account()`, a
-security-definer function that cascades in one transaction.
+security-definer function that cascades in one transaction. It is the
+only door: no client role may delete a profile row directly, since that
+would skip the ledgers and the photo check and cut reports loose from a
+login that stays.
 
 **The test.** `packages/db/test/account.test.ts` and `cascade.test.ts`.
 
