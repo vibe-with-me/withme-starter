@@ -321,7 +321,8 @@ export type Database = {
           details: string | null
           id: string
           reason: string
-          reported_id: string
+          reported_deleted_at: string | null
+          reported_id: string | null
           reporter_id: string | null
           resolution_note: string | null
           resolved_at: string | null
@@ -335,7 +336,8 @@ export type Database = {
           details?: string | null
           id?: string
           reason: string
-          reported_id: string
+          reported_deleted_at?: string | null
+          reported_id?: string | null
           reporter_id?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
@@ -348,7 +350,8 @@ export type Database = {
           details?: string | null
           id?: string
           reason?: string
-          reported_id?: string
+          reported_deleted_at?: string | null
+          reported_id?: string | null
           reporter_id?: string | null
           resolution_note?: string | null
           resolved_at?: string | null

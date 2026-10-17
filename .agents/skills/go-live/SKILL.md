@@ -434,10 +434,15 @@ store app:
   version line of your terms (`packages/contract/src/schemas/terms.ts`).
   Change it, and deploy all three apps together, whenever you change the
   terms in a way people must agree to again.
+- [ ] **Report notifications.** Create a Slack or Discord incoming
+  webhook for a channel the report owner watches, and set it in the
+  hosted database (SQL Editor, the owner's OK first: a production write):
+  `update private.report_config set webhook_url = '<webhook URL>';`.
+  Checkpoint: file a report from a test account; the channel shows "A
+  report was filed: <id>", and nothing else. Never commit the URL.
 - [ ] **A named report owner.** Someone runs the "Open reports" query
   (`docs/moderation.md`) at least once a day, every day, with a named
-  stand-in, and acts within 24 hours. Write both names here. If nobody
-  can, add the notification `docs/moderation.md` describes first.
+  stand-in, and acts within 24 hours. Write both names here.
 - [ ] **Published contact information.** The contact email in your terms,
   and a support URL on the App Store and Play listings that reaches a
   person.

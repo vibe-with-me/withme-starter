@@ -142,16 +142,26 @@ adds any, list them here.]
 ### 3. How long we keep it
 
 Until you delete your account. Deleting it deletes your profile, photos,
-connections, requests, blocks, gatherings, and tag history. Reports
-**about** you are deleted with your account. Reports you **filed** are kept
-without your name or account attached, so a report about someone abusive
-still counts after you leave.
+connections, requests, blocks, gatherings, and tag history, at once.
+
+Two exceptions, both for keeping people safe (our legitimate interest in
+acting on abuse):
+
+- Reports **about** you are kept for 90 days after you delete your account,
+  without the link to your account but with what your card said when you
+  were reported, then deleted. This stops someone erasing reports against
+  them by deleting their account, and lets us recognise them if they
+  return.
+- Reports you **filed** are kept without your name or account attached, so
+  a report about someone abusive still counts after you leave.
 
 ### 4. Who processes it for us
 
 [App name] runs on Supabase (database, sign-in, photo storage) and
 Cloudflare (the app's servers). [Your email or SMS provider, if you set one
-up for sign-in.] [Add any other provider.]
+up for sign-in.] [The chat service that receives report notifications, if
+you set one up: it receives a report's id only, never names or content.]
+[Add any other provider.]
 
 ### 5. Your rights
 

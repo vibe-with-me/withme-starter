@@ -19,11 +19,23 @@
 --     limit lives in the RPC (the claim_tag pattern), not the API Worker.
 --   * Each report keeps a snapshot of the card as it was (name, bio, photo
 --     path), so a later edit cannot erase what was reported.
---   * Account deletion: the reporter's reports are anonymised (reporter_id
+--   * Account deletion, reporter: their reports are anonymised (reporter_id
 --     set null; reason, text and snapshot stay), so a report about someone
---     abusive survives the person who filed it leaving. Reports about a
---     person are deleted with that person's account, with the rest of
---     their data. The ledger is cleared by delete_my_account.
+--     abusive survives the person who filed it leaving.
+--   * Account deletion, reported person: their reports are kept for 90
+--     days (reported_id set null, reported_deleted_at stamped, snapshot
+--     kept), then purged. Deleting an account must not be a way to erase
+--     every report against it before the operator reads them; 90 days is
+--     the legitimate-interest window for acting on abuse (a returning
+--     abuser, a request from the authorities). The purge is lazy, the way
+--     request expiry is (the stack has no background jobs): every report
+--     and every profile deletion first deletes the expired rows.
+--   * The ledger is cleared by delete_my_account.
+--   * Optional notification: private.report_config holds one webhook URL,
+--     unset by default (the private.push_config shape). When set, every new
+--     report POSTs {"text", "content"} naming the report id only, through
+--     pg_net (asynchronous, transactional: a report that rolls back sends
+--     nothing). Slack and Discord incoming webhooks both read it.
 --
 -- Terms (profiles.terms_version, profiles.terms_accepted_at):
 --   * Which version of the fork's terms the person agreed to, and when. The
@@ -88,11 +100,13 @@ create table public.reports (
   tenant_id uuid not null default private.current_tenant_id(),
   -- Null once the reporter deletes their account (anonymised, kept).
   reporter_id uuid references public.profiles (id) on delete set null,
-  -- Deleted with the reported person's account.
-  reported_id uuid not null references public.profiles (id) on delete cascade,
+  -- Null once the reported person deletes their account; the row is kept
+  -- for 90 days from reported_deleted_at, then purged.
+  reported_id uuid references public.profiles (id) on delete set null,
+  reported_deleted_at timestamptz,
   reason text not null constraint reports_reason_known check (reason in (
     'harassment', 'hate', 'sexual_content', 'violence', 'child_safety',
-    'spam', 'impersonation', 'other'
+    'underage', 'spam', 'impersonation', 'other'
   )),
   details text constraint reports_details_shape check (
     details is null
@@ -107,7 +121,10 @@ create table public.reports (
   resolution_note text,
   resolved_at timestamptz,
   created_at timestamptz not null default now(),
-  constraint reports_distinct_parties check (reporter_id is null or reporter_id <> reported_id)
+  constraint reports_distinct_parties check (reporter_id is null or reporter_id <> reported_id),
+  -- Stamped (by the profile delete trigger below) before the foreign key
+  -- clears reported_id, so a cleared row always carries its clock.
+  constraint reports_reported_deleted_stamped check (reported_id is not null or reported_deleted_at is not null)
 );
 
 create index reports_open_idx on public.reports (created_at) where status = 'open';
@@ -118,6 +135,86 @@ alter table public.reports enable row level security;
 -- No policies: deny-all for every role RLS applies to. The revoke makes the
 -- intent explicit and keeps PostgREST from even describing the table.
 revoke all on public.reports from public, anon, authenticated;
+
+create index reports_expiring_idx on public.reports (reported_deleted_at)
+  where reported_deleted_at is not null;
+
+-- Reports about deleted accounts, past the 90-day window.
+create function private.purge_expired_reports()
+returns void
+language sql
+volatile
+security definer
+set search_path = ''
+as $$
+  delete from public.reports
+   where reported_id is null
+     and reported_deleted_at < now() - interval '90 days'
+$$;
+
+-- Stamp the window's start on reports about an account being deleted,
+-- before the foreign key's set null runs.
+create function private.on_profile_deleted_reports()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform private.purge_expired_reports();
+  update public.reports set reported_deleted_at = now() where reported_id = old.id;
+  return old;
+end
+$$;
+
+create trigger profiles_before_delete_reports
+  before delete on public.profiles
+  for each row execute function private.on_profile_deleted_reports();
+
+-- ============================================================ notification ==
+
+create extension if not exists pg_net with schema extensions;
+
+create table private.report_config (
+  id boolean primary key default true check (id),
+  -- Unset by default: no report leaves the database until the operator
+  -- sets it (go-live). https in production; http for the local test mock.
+  webhook_url text check (webhook_url is null or webhook_url ~ '^https?://')
+);
+insert into private.report_config (webhook_url) values (null);
+alter table private.report_config enable row level security;
+
+create function private.notify_report()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_url text;
+  v_message text := 'A report was filed: ' || new.id::text;
+begin
+  select webhook_url into v_url from private.report_config;
+  if v_url is null then
+    return new;
+  end if;
+  -- The id only: no names, no reason, no text. The operator reads the row.
+  -- A failure to queue never blocks the report itself.
+  begin
+    perform net.http_post(
+      url := v_url,
+      body := jsonb_build_object('text', v_message, 'content', v_message)
+    );
+  exception when others then
+    null;
+  end;
+  return new;
+end
+$$;
+
+create trigger reports_after_insert_notify
+  after insert on public.reports
+  for each row execute function private.notify_report();
 
 create table private.report_attempts (
   user_id uuid not null,
@@ -161,6 +258,8 @@ begin
     raise exception 'rate limit exceeded' using errcode = 'P0004';
   end if;
   insert into private.report_attempts (user_id) values (v_user);
+
+  perform private.purge_expired_reports();
 
   select * into v_target
     from public.profiles
@@ -229,8 +328,9 @@ begin
   delete from private.claim_attempts where user_id = v_user;
   delete from private.gathering_create_attempts where host_id = v_user;
   delete from private.report_attempts where user_id = v_user;
-  -- Reports this person filed are anonymised and reports about them are
-  -- deleted, by the reports foreign keys, when the profile row goes.
+  -- Reports this person filed are anonymised, and reports about them start
+  -- their 90 days, by the reports foreign keys and the profile delete
+  -- trigger, when the profile row goes.
   delete from auth.users where id = v_user;
 end
 $$;

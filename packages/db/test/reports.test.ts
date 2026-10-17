@@ -2,7 +2,8 @@
 // service role) ever reads it. The reporter cannot read it back, the reported
 // person never learns of it, anon sees nothing, and the call answers the same
 // way for an id that is not a person (no existence oracle).
-import { beforeAll, describe, expect, it } from 'bun:test';
+import { SQL } from 'bun';
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import {
   admin,
   anonClient,
@@ -158,11 +159,94 @@ describe('reports and account deletion', () => {
     expect(rows[0]).toMatchObject({ reporter_id: null, reason: 'harassment', details: 'Details stay' });
   });
 
-  it('reports about a person go with their account', async () => {
+  it('reports about a person outlive their account deletion, for 90 days', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
-    expect((await report(alice, bob.id)).error).toBeNull();
+    expect((await report(alice, bob.id, { p_details: 'Threats' })).error).toBeNull();
+    const [filed] = await reportsAbout(bob.id);
+
     expect((await bob.client.rpc('delete_my_account')).error).toBeNull();
-    expect(await reportsAbout(bob.id)).toEqual([]);
+
+    const { data: kept } = await admin.from('reports').select('*').eq('id', filed!.id).single();
+    expect(kept).toMatchObject({
+      reporter_id: alice.id,
+      reported_id: null,
+      details: 'Threats',
+      snapshot: { display_name: 'Bob' },
+    });
+    expect(Date.now() - Date.parse(kept!.reported_deleted_at!)).toBeLessThan(60_000);
+  });
+
+  it('purges them once the window has passed, on the next report or deletion', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    const carol = await createTestUser('Carol');
+    expect((await report(alice, bob.id)).error).toBeNull();
+    expect((await report(alice, carol.id)).error).toBeNull();
+    const [aboutBob] = await reportsAbout(bob.id);
+    const [aboutCarol] = await reportsAbout(carol.id);
+    expect((await bob.client.rpc('delete_my_account')).error).toBeNull();
+    expect((await carol.client.rpc('delete_my_account')).error).toBeNull();
+
+    // Bob's clock ran out; Carol's has not.
+    const longAgo = new Date(Date.now() - 91 * 24 * 3600 * 1000).toISOString();
+    await admin.from('reports').update({ reported_deleted_at: longAgo }).eq('id', aboutBob!.id);
+
+    const dave = await createTestUser('Dave');
+    expect((await report(dave, crypto.randomUUID())).error).toBeNull();
+
+    const { data: left } = await admin
+      .from('reports')
+      .select('id')
+      .in('id', [aboutBob!.id, aboutCarol!.id]);
+    expect(left).toEqual([{ id: aboutCarol!.id }]);
+  });
+});
+
+describe('the report webhook', () => {
+  const DB_URL =
+    process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
+  const sql = new SQL(DB_URL);
+  const received: unknown[] = [];
+  const hook = Bun.serve({
+    port: 0,
+    hostname: '0.0.0.0',
+    async fetch(request) {
+      received.push(await request.json());
+      return new Response('ok');
+    },
+  });
+
+  beforeAll(async () => {
+    await sql`update private.report_config set webhook_url = ${`http://host.docker.internal:${hook.port}/hook`}`;
+  });
+  afterAll(async () => {
+    await sql`update private.report_config set webhook_url = null`;
+    await hook.stop(true);
+    await sql.close();
+  });
+
+  async function nextDelivery(): Promise<unknown> {
+    for (let i = 0; i < 200 && received.length === 0; i++) await Bun.sleep(50);
+    return received.shift();
+  }
+
+  it('posts the report id only: no names, no reason, no text', async () => {
+    const alice = await createTestUser('Alice Webhook');
+    const bob = await createTestUser('Bob Webhook');
+    expect((await report(alice, bob.id, { p_details: 'secret words' })).error).toBeNull();
+    const [row] = await reportsAbout(bob.id);
+
+    const body = await nextDelivery();
+    const message = `A report was filed: ${row!.id}`;
+    expect(body).toEqual({ text: message, content: message });
+    expect(JSON.stringify(body)).not.toMatch(/Webhook|secret|harassment/);
+  });
+
+  it('an id that is not a person sends nothing', async () => {
+    const alice = await createTestUser('Alice');
+    expect((await report(alice, crypto.randomUUID())).error).toBeNull();
+    await Bun.sleep(1000);
+    expect(received).toEqual([]);
   });
 });

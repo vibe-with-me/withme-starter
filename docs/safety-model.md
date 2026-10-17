@@ -134,9 +134,20 @@ was, so editing a name afterwards does not erase what was reported.
 **Account deletion.** Reports you filed are **anonymised**, not deleted:
 the reporter column is cleared, and the reason, your words and the
 snapshot stay. Victims often leave first, and a report about someone
-abusive should not disappear when they do. Reports **about** you are
-deleted with your account, like the rest of your data. Your report ledger
-is cleared by `delete_my_account`.
+abusive should not disappear when they do. Reports **about** you are kept
+for **90 days** after you delete your account (the link to your account is
+cleared; the reason, the reporter's words and the snapshot of your card
+stay), then deleted. Otherwise deleting an account would erase every
+report against it before anyone read them. The basis is legitimate
+interest: acting on abuse, recognising someone who returns, and answering
+the authorities. The purge runs lazily, as request expiry does: every
+new report and every account deletion first deletes the rows past their
+window. Your report ledger is cleared by `delete_my_account`.
+
+**Notification.** `private.report_config` holds one optional webhook URL,
+unset by default. When it is set, each new report POSTs the report's id
+and nothing else (no names, no reason, no text) through pg_net, so the
+operator learns a report exists and reads it in Studio.
 
 **The test.** `packages/db/test/reports.test.ts`, and the report steps in
 `apps/api/e2e/handshake.e2e.ts` and `apps/web/e2e/reports.spec.ts`.
@@ -226,8 +237,9 @@ for every negative case so none can pass vacuously.
 
 **The promise.** Delete your account and your profile, connections,
 requests, blocks, hosted gatherings and memberships, photos, scan
-history, and reports about you are gone. Your claimed tags return to
-unclaimed. Reports you filed stay, anonymised (see Reports are private).
+history are gone. Your claimed tags return to unclaimed. Reports you
+filed stay, anonymised; reports about you stay 90 days, then go (see
+Reports are private).
 
 **How.** Profile → Account clears the photo pointer, sweeps the avatar
 files through the Storage API, then calls `delete_my_account()`, a

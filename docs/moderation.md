@@ -33,7 +33,7 @@ appropriate.
 | Terms users agree to, saying abuse is not tolerated | Sign-up checkbox and the re-ask screen; placeholder text in [terms-template.md](terms-template.md) |
 | Report a person | **Report** on every card (resolver, connections, requests, blocked list), web and mobile |
 | Block a person | **Block** on connections; **Also block** in the report step |
-| Act within 24 hours | You. This page |
+| Act within 24 hours | You: a webhook tells you, a daily check backs it up. This page |
 | Published contact information | The terms and privacy pages (`[contact email]`), and your App Store and Play listings' support URL |
 | A filter for objectionable material | Not shipped. See [Adding a filter](#adding-a-filter) |
 | Account deletion | Profile → Account |
@@ -48,11 +48,30 @@ reason, what the reporter wrote, and a snapshot of the reported card as it
 was when they reported it (`snapshot`: name, bio, photo path), so an edit
 afterwards does not erase what was reported.
 
+If the reported person deletes their account, the report stays for 90 days
+(`reported_id` null, `reported_deleted_at` set, the snapshot intact), then
+is purged. A reporter who deletes their account leaves their reports
+behind with `reporter_id` null.
+
 ## How you find out
 
-The starter sends no notifications: a mail or chat integration is a
-service, and the starter adds none. You check. Pick one person who owns
-this, and make it part of their day:
+**A webhook (recommended).** Point `private.report_config` at a Slack or
+Discord incoming webhook (both free) and every new report posts "A report
+was filed: <id>" to that channel. The id only: no names, no reason, no
+text, so the channel never holds what the report says. In the SQL Editor:
+
+```sql
+update private.report_config
+   set webhook_url = 'https://hooks.slack.com/services/…';  -- or a Discord webhook URL
+```
+
+Treat the URL as a secret (anyone holding it can post to the channel): it
+lives in the database, never in the repository. Set it to `null` to turn
+notifications off. Delivery goes through pg_net and is not retried, so
+the daily check below still stands.
+
+**The daily check.** Pick one person who owns this, and make it part of
+their day:
 
 - **Studio:** Table Editor → `reports`, filtered to `status = open`.
 - **SQL:** save this in the SQL Editor as "Open reports" and run it:
@@ -71,13 +90,9 @@ select r.created_at,
  order by r.created_at;
 ```
 
-Run it at least once a day, every day the app is live. That is what makes
-the 24-hour promise true. If one daily check is not enough for your
-traffic, or nobody can promise it, add a notification before launch: a
-Supabase Database Webhook on `reports` inserts calling a Worker that mails
-you (Cloudflare Email Routing can send to your own verified address at no
-cost) is the shortest path. Keep names and report text out of the
-notification itself; send the report id and read the row in Studio.
+Run it at least once a day, every day the app is live, webhook or not:
+that is what makes the 24-hour promise true when a notification is
+missed.
 
 The API also logs `report filed` (no ids, no names) in the API Worker's
 logs, which tells you reports are arriving but not what they say.
@@ -96,7 +111,8 @@ logs, which tells you reports are arriving but not what they say.
      (profile, connections, gatherings, photos' pointer, tags released).
      Remove their photo files from Storage → avatars → `<their id>/`
      first, since the cascade does not reach Storage. Reports about them
-     go with the account, so record what you did before you delete.
+     stay for 90 days with `reported_id` cleared; record what you did
+     (step 4) before you delete, while the id still links them.
    - *Nothing breaks the rules*: dismiss it.
 4. **Record it.** Mark the report with what you did:
 
@@ -107,6 +123,10 @@ update public.reports
        resolved_at = now()
  where id = '<report id>';
 ```
+
+An `underage` report says someone seems younger than your terms allow
+(section 2). If what their card shows, or what they tell you when you ask
+at the contact email, confirms it, remove the account.
 
 Child safety reports (`reason = 'child_safety'`) come first. Depending on
 where you operate, you may be legally required to report child sexual abuse

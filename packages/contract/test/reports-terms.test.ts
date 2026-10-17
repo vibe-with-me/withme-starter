@@ -34,6 +34,7 @@ describe('CreateReportInputSchema', () => {
       'sexual_content',
       'violence',
       'child_safety',
+      'underage',
       'spam',
       'impersonation',
       'other',
