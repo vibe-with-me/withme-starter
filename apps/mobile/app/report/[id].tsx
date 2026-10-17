@@ -49,8 +49,15 @@ export default function ReportScreen() {
         details: details.trim() === '' ? undefined : details.trim(),
         block: blocked,
       };
-      if (gathering) await api.app.gatherings.report({ id: gathering, ...report });
-      else await api.app.reports.create({ reported_id: params.id, ...report });
+      if (gathering) {
+        await api.app.gatherings.report({ id: gathering, ...report });
+        // A gathering hidden since the page loaded files nothing, and so
+        // blocks nothing: block the host directly (idempotent) so "blocked"
+        // is true whatever the report found.
+        if (report.block) await api.app.blocks.block({ user_id: params.id });
+      } else {
+        await api.app.reports.create({ reported_id: params.id, ...report });
+      }
       setSent({ blocked });
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;

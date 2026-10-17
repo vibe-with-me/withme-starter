@@ -71,8 +71,15 @@ export function ReportButton({
         details: details.trim() === '' ? undefined : details.trim(),
         block: canBlock && block,
       };
-      if (gatheringId) await api.app.gatherings.report({ id: gatheringId, ...report });
-      else await api.app.reports.create({ reported_id: profileId, ...report });
+      if (gatheringId) {
+        await api.app.gatherings.report({ id: gatheringId, ...report });
+        // A gathering hidden since the page loaded files nothing, and so
+        // blocks nothing: block the host directly (idempotent) so "blocked"
+        // is true whatever the report found.
+        if (report.block) await api.app.blocks.block({ user_id: profileId });
+      } else {
+        await api.app.reports.create({ reported_id: profileId, ...report });
+      }
       const blocked = canBlock && block;
       dialog.current?.close();
       setState('idle');
