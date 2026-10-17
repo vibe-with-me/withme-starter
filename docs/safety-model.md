@@ -152,8 +152,8 @@ decision to skip an analytics skill permanently.
 
 ## A shared code can be taken back
 
-**The promise.** Your QR code (Profile → Your code) shows exactly what a
-tap on your tag shows, and nothing more. If a screenshot of it gets
+**The promise.** Your QR code (the Your code button in the tab bar)
+shows exactly what a tap on your tag shows, and nothing more. If a screenshot of it gets
 somewhere it shouldn't, Replace code makes every copy of the old one open
 an inactive tag.
 

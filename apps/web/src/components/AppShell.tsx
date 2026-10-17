@@ -1,6 +1,6 @@
 import { Link, Outlet } from '@tanstack/react-router';
-import { Calendar, ShoppingBag, User, Users, type LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Calendar, QrCode, ShoppingBag, User, Users, type LucideIcon } from 'lucide-react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useAccountSwitching } from '../lib/account-scope.ts';
 import { ErrorBody, PendingBody } from './CalmStates.tsx';
 
@@ -27,6 +27,48 @@ export const navItems: readonly [NavItem, ...NavItem[]] = [
   { to: '/profile', label: 'Profile', icon: User },
 ];
 
+// The share button sits in the middle of the bar; with an odd count the
+// extra tab goes left, and the right-hand tabs grow to match the left half's
+// width (app.css reads --nav-grow under 720px) so the button stays centered.
+const shareSlot = Math.ceil(navItems.length / 2);
+const rightGrow = shareSlot / Math.max(navItems.length - shareSlot, 1);
+
+function navLink({ to, label, icon: Icon }: NavItem, index: number) {
+  const grow = index + 1 > shareSlot ? rightGrow : 1;
+  return (
+    <Link
+      key={to}
+      to={to}
+      className="shell-nav__item"
+      style={{ '--nav-grow': grow } as CSSProperties}
+      /* TanStack sets aria-current itself; this only replaces its default className="active". */
+      activeProps={{ 'aria-current': 'page' }}
+    >
+      <Icon aria-hidden="true" />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+/**
+ * Your code, one tap from every tab: the handshake for someone without a
+ * tag. Not a tab (it has no section of its own). app.css raises it out of
+ * the bottom bar on phones and floats it bottom-right on wide screens.
+ */
+function ShareButton() {
+  return (
+    <Link
+      to="/share"
+      className="share-fab"
+      aria-label="Your code"
+      title="Your code"
+      activeProps={{ 'aria-current': 'page' }}
+    >
+      <QrCode aria-hidden="true" />
+    </Link>
+  );
+}
+
 /**
  * The signed-in chrome. Rendered by the pathless `_app` layout route around
  * the active tab, or around `children` when the layout itself is pending or
@@ -50,18 +92,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
         {switching ? <PendingBody /> : (children ?? <Outlet />)}
       </main>
       <nav className="shell-nav" aria-label="Primary">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            className="shell-nav__item"
-            /* TanStack sets aria-current itself; this only replaces its default className="active". */
-            activeProps={{ 'aria-current': 'page' }}
-          >
-            <Icon aria-hidden="true" />
-            <span>{label}</span>
-          </Link>
-        ))}
+        {navItems.slice(0, shareSlot).map(navLink)}
+        <ShareButton />
+        {navItems.slice(shareSlot).map((item, i) => navLink(item, shareSlot + i))}
       </nav>
     </div>
   );

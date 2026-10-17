@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
-import { Text } from 'react-native';
 import { Header } from '../../components/Header';
-import { fonts, useShadow, useTokens } from '../../lib/tokens';
+import { TabBar } from '../../components/TabBar';
+import { useTokens } from '../../lib/tokens';
 
 type FeatherName = ComponentProps<typeof Feather>['name'];
 
@@ -17,51 +18,31 @@ function icon(name: FeatherName) {
   );
 }
 
-// Active = ink weight, never the accent (mirrors the web nav rule in app.css).
-function label({
-  focused,
-  color,
-  children,
-}: {
-  focused: boolean;
-  color: ColorValue;
-  children: string;
-}) {
-  return (
-    <Text style={{ color, fontSize: 12, fontFamily: focused ? fonts.bodySemiBold : fonts.bodyMedium }}>
-      {children}
-    </Text>
-  );
-}
-
 // Module scope, not inside TabsLayout: react/no-unstable-nested-components.
 function header() {
   return <Header />;
 }
 
+function tabBar(props: BottomTabBarProps) {
+  return <TabBar {...props} />;
+}
+
 /**
  * The signed-in tabs. Adding a top-level section = one Tabs.Screen here plus
  * a file in this folder (docs/the-slice.md step 6). Detail screens stay in
- * app/ as stack screens so they push over the bar.
+ * app/ as stack screens so they push over the bar, as the share button's
+ * screen does.
  */
 export default function TabsLayout() {
   const t = useTokens();
-  const shadow = useShadow();
   return (
     <Tabs
+      // The bar draws the tabs from these options and raises the share button
+      // out of its middle (components/TabBar.tsx).
+      tabBar={tabBar}
       screenOptions={{
         header,
         sceneStyle: { backgroundColor: t.bg },
-        // The bar floats on a shadow in light; in dark (no bar shadow) it keeps the hairline.
-        tabBarStyle: {
-          backgroundColor: t.surface,
-          borderTopColor: t.border,
-          borderTopWidth: shadow.bar ? 0 : 1,
-          ...shadow.bar,
-        },
-        tabBarActiveTintColor: t.ink,
-        tabBarInactiveTintColor: t.inkMuted,
-        tabBarLabel: label,
       }}
     >
       <Tabs.Screen name="gatherings" options={{ title: 'Events', tabBarIcon: icon('calendar') }} />

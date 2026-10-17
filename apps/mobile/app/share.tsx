@@ -16,7 +16,7 @@ function goBack() {
 }
 
 /**
- * Profile → Your code. A QR code that opens your card, for someone without
+ * Your code, opened from the tab bar's raised button. A QR code that opens your card, for someone without
  * a tag or without NFC: their phone's camera opens the same resolver a tap
  * does. The code is a tag row of its own (app.shareCode); replacing it makes
  * every copy of the old one, screenshots included, open an inactive tag.
@@ -27,6 +27,8 @@ export default function ShareScreen() {
   const insets = useSafeAreaInsets();
   const [uid, setUid] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // A code opens a card: without a profile there is nothing to open yet.
+  const [noProfile, setNoProfile] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -37,7 +39,10 @@ export default function ShareScreen() {
     api.app.shareCode
       .get()
       .then((code) => setUid(code.uid))
-      .catch(() => setLoadFailed(true));
+      .catch((e: { code?: string }) => {
+        if (e.code === 'BAD_REQUEST') setNoProfile(true);
+        else setLoadFailed(true);
+      });
   };
   // oxlint-disable-next-line exhaustive-deps
   useEffect(load, []);
@@ -75,6 +80,12 @@ export default function ShareScreen() {
           <Muted>
             Set EXPO_PUBLIC_WEB_URL to your web app’s address; a code opens a page there.
           </Muted>
+        </Card>
+      ) : noProfile ? (
+        <Card>
+          <Title>Your code</Title>
+          <Muted>Your code opens your card. Make your card first.</Muted>
+          <Button label="Create your profile" onPress={() => router.dismissTo('/profile')} />
         </Card>
       ) : loadFailed ? (
         <Card>

@@ -1,5 +1,5 @@
 import { tagUrl } from '@withme/contract';
-import { createFileRoute, Link, useLoaderData, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useLoaderData, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
 import { ShareCodeImage } from '../components/ShareCode.tsx';
@@ -7,16 +7,18 @@ import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 
 /**
- * Profile → Your code. A QR code that opens your card, for someone without
+ * Your code, opened from the shell's floating button. A QR code that opens your card, for someone without
  * a tag or without NFC: their phone's camera opens the same resolver a tap
  * does. Show only; phones scan with the system camera, so the web app has
  * no scanner. The code is a tag row of its own (app.shareCode), so
  * replacing it makes every copy of the old one, screenshots included, open
  * an inactive tag.
  */
-export const Route = createFileRoute('/_app/profile_/share')({
+export const Route = createFileRoute('/_app/share')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Your code — withme' }] }),
+  // A code opens a card, so it needs the card: the _app layout already sends
+  // a session without a profile to create one, carrying this URL back.
   loader: () => asSignedInAccount(() => api.app.shareCode.get()),
   component: SharePage,
 });
@@ -27,9 +29,21 @@ function SharePage() {
   // router's cache cannot keep a retired code. Until that reload lands (or
   // if it fails), the uid replace() returned is the live one.
   const loaded = Route.useLoaderData();
-  const router = useRouter();
   const [replaced, setReplaced] = useState<string | null>(null);
   const uid = replaced ?? loaded.uid;
+  return <ShareCard uid={uid} name={profile?.display_name} onReplaced={setReplaced} />;
+}
+
+function ShareCard({
+  uid,
+  name,
+  onReplaced,
+}: {
+  uid: string;
+  name: string | undefined;
+  onReplaced: (uid: string | null) => void;
+}) {
+  const router = useRouter();
   const [status, setStatus] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -52,12 +66,12 @@ function SharePage() {
     try {
       const next = await api.app.shareCode.replace();
       // The old code is retired from here on, whatever the reload does.
-      setReplaced(next.uid);
+      onReplaced(next.uid);
       setConfirming(false);
       setStatus('New code ready. The old one no longer opens your card.');
       try {
         await router.invalidate({ sync: true });
-        setReplaced(null);
+        onReplaced(null);
       } catch {
         // Keep showing next.uid; the loader catches up on the next visit.
       }
@@ -76,7 +90,7 @@ function SharePage() {
     <div className="stack">
       <section className="card" aria-labelledby="share-title">
         <h1 id="share-title">Your code</h1>
-        <ShareCodeImage url={url} label={`QR code that opens ${profile?.display_name ?? 'your'} card`} />
+        <ShareCodeImage url={url} label={name ? `QR code that opens ${name}’s card` : 'QR code that opens your card'} />
         <p className="hint">
           Point a phone’s camera at it. It opens your card, the same one a tap on your tag shows.
         </p>
@@ -119,9 +133,6 @@ function SharePage() {
           </button>
         )}
       </section>
-      <p className="hint">
-        <Link to="/profile">Back to your profile</Link>
-      </p>
     </div>
   );
 }

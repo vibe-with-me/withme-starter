@@ -707,7 +707,7 @@ a.link:hover {
   }
 
   .shell-nav__item {
-    flex: 1 1 0;
+    flex: var(--nav-grow, 1) 1 0;
     flex-direction: column;
     justify-content: center;
     gap: var(--space-1);
@@ -827,4 +827,64 @@ a.link:hover {
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
+}
+
+/* --- the share button (shell) ------------------------------------------- */
+
+/* Your code, from every tab. Solid ink, like the default button: the accent
+ * stays with a screen's primary action. Wide screens float it bottom-right;
+ * under 720px it rises out of the middle of the bottom bar. */
+.share-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 11;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-card);
+  transition: opacity var(--motion-press-duration) ease;
+}
+
+.share-fab:hover {
+  opacity: 0.92;
+}
+
+.share-fab:active {
+  opacity: 0.85;
+}
+
+/* Room under the last card so the floating button never covers it (wide
+ * screens; under 720px the bottom bar already reserves its height). */
+@media (min-width: 720px) {
+  .shell-main {
+    padding-bottom: calc(56px + var(--space-5) * 2);
+  }
+}
+
+.share-fab svg {
+  width: 26px;
+  height: 26px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-fab {
+    transition: none;
+  }
+}
+
+@media (max-width: 719.98px) {
+  .share-fab {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    margin: calc(-1 * var(--space-5)) var(--space-2) 0;
+  }
 }

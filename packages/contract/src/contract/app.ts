@@ -182,7 +182,7 @@ const updateMyTag = oc
   // Not yours and nonexistent are the same NOT_FOUND.
   .output(z.object({ tag: TagSchema }));
 
-// Your code: Profile → Your code. A QR-only tag claimed to the caller.
+// Your code: the tab bar's raised button. A QR-only tag claimed to the caller.
 // get mints it on first use: idempotent, but NOT side-effect free, so
 // never cache, prefetch or preload it. replace retires it and mints a new
 // one, so every copy of the old code opens an inactive tag.

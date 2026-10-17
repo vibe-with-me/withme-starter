@@ -52,10 +52,14 @@ sense and what it costs.
 
 ## Share codes (QR)
 
-Not everyone holds a tag, and not every phone reads NFC. Profile → Your
-code shows a QR code that opens your card, on web and mobile; the mobile
-app scans someone else's (the scan button in the header, or the Scan a
-code button under your own code). Web has no scanner: a phone's own
+Not everyone holds a tag, and not every phone reads NFC. The round QR
+button raised out of the middle of the tab bar (bottom-right on wide web
+screens) shows Your code: a QR code that opens your card, one tap from
+every tab, on web and mobile. It is not a tab; it opens `/share`
+(web `_app.share.tsx`, mobile `app/share.tsx`, the bar in
+`components/TabBar.tsx` and `AppShell.tsx`). The mobile app scans someone
+else's code (the scan button in the header, or the Scan a code button
+under your own code). Web has no scanner: a phone's own
 camera opens the code's URL in the browser, which is the web resolver.
 
 A share code is a tag. It is a row in `public.tags` of kind `qr`, minted
