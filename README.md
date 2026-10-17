@@ -39,10 +39,10 @@ minutes ([Try it](#try-it-locally)).
 
 | Building block | What it does for your users |
 | --- | --- |
-| **Tags** | Each physical tag carries one permanent URL, `https://<your-domain>/t/{UID}`. What the tag points at lives in the database, so you can re-point a tag forever without touching the sticker. |
+| **Tags** | Each physical tag carries one permanent URL, `https://<your-domain>/t/{UID}`. Where a tap lands, the tag's **destination**, lives in the database: your card by default, or a gathering you're in, so the tap becomes the invitation. Re-point a tag forever without touching the sticker; a fork can add its own destination types (the `add-destination-type` skill). |
 | **The card** | A name, a photo, a short bio. The only thing a stranger sees after a tap. Reachable by tapping a tag or through an existing connection, never by browsing. |
 | **The handshake** | Tap → "Connect" → the other person accepts → you are connected. Requests expire after a week. Either side can remove a connection, quietly. |
-| **Gatherings** | A host creates one ("Rooftop listening session") and everyone in the domain sees it in the Events tab: title, time, place, a headcount. Who's going shows only the people you have connected with. A tap on a member's tag is still the invitation. No browse surface for people, ever. |
+| **Gatherings** | A host creates one ("Rooftop listening session") and everyone in the domain sees it in the Events tab: title, time, place, a headcount. Who's going shows only the people you have connected with. Point your tags at a gathering and a tap shows your card plus the invite. No browse surface for people, ever. |
 | **Blocks** | Absolute and invisible. A blocked person sees exactly what a stranger sees, and gets no signal that anything happened. |
 | **Notifications** | Three pushes on the phone, and nothing else, ever: someone sent you a request, someone accepted yours, people joined your gathering. Off until you turn them on; one switch in Profile turns them off. The database sends them, so no way of calling the app skips the block check. |
 | **Profile & account** | Photo upload, "My tags" (re-point or turn off), account deletion that cascades through everything and releases your tags. |
