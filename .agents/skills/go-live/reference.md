@@ -20,7 +20,10 @@ const apiUrl = env.VITE_API_URL ?? '';
 const remote = (url: string | undefined) => {
   try {
     const u = new URL(url ?? '');
-    return u.protocol === 'https:' && !/^(localhost|127\.|10\.|192\.168\.|\[)/.test(u.hostname) ? u.origin : null;
+    // Loopback, private (10/8, 172.16/12, 192.168/16), link-local, any IPv6
+    // literal, and *.local / *.localhost names.
+    const local = /^(localhost|0\.|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|\[)|\.(local|localhost)$/;
+    return u.protocol === 'https:' && !local.test(u.hostname) ? u.origin : null;
   } catch {
     return null;
   }
