@@ -13,18 +13,22 @@ export function reportThanks(name: string, blocked: boolean): string {
 }
 
 /**
- * Report a person: a reason from the fixed list, optional words, and the
- * offer to block them in the same step. A native modal <dialog>, so it works
+ * Report a person, or a gathering (filed against its host): a reason from
+ * the fixed list, optional words, and the offer to block them in the same
+ * step. A native modal <dialog>, so it works
  * the same inside a card and inside a list row. The report goes to the
  * fork's operator only; the person is never told.
  */
 export function ReportButton({
   profileId,
+  gatheringId,
   name,
   canBlock = true,
   onDone,
 }: {
   profileId: string;
+  /** Report this gathering instead; `profileId` is its host and `name` how to say them. */
+  gatheringId?: string;
   name: string;
   /** False where they are already blocked (the Blocked list). */
   canBlock?: boolean;
@@ -62,12 +66,20 @@ export function ReportButton({
     if (!reason) return;
     setState('sending');
     try {
-      await api.app.reports.create({
-        reported_id: profileId,
+      const report = {
         reason,
         details: details.trim() === '' ? undefined : details.trim(),
         block: canBlock && block,
-      });
+      };
+      if (gatheringId) {
+        await api.app.gatherings.report({ id: gatheringId, ...report });
+        // A gathering hidden since the page loaded files nothing, and so
+        // blocks nothing: block the host directly (idempotent) so "blocked"
+        // is true whatever the report found.
+        if (report.block) await api.app.blocks.block({ user_id: profileId });
+      } else {
+        await api.app.reports.create({ reported_id: profileId, ...report });
+      }
       const blocked = canBlock && block;
       dialog.current?.close();
       setState('idle');
@@ -99,11 +111,12 @@ export function ReportButton({
         >
           <form className="stack" onSubmit={submit}>
             <h2 id={titleId} className="section-title">
-              Report {name}
+              {gatheringId ? 'Report this gathering' : `Report ${name}`}
             </h2>
             <p className="hint">
-              Only the people who run this app see reports. {name} isn’t told who reported them, or
-              that anyone did.
+              {gatheringId
+                ? 'Only the people who run this app see reports. The host isn’t told who reported it, or that anyone did.'
+                : `Only the people who run this app see reports. ${name} isn’t told who reported them, or that anyone did.`}
             </p>
             <fieldset className="choices">
               <legend>What’s wrong?</legend>

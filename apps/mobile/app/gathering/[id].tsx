@@ -1,4 +1,11 @@
-import type { Destination, Gathering, GatheringMember, Tag } from '@withme/contract';
+import {
+  isGatheringFull,
+  type Destination,
+  type Gathering,
+  type GatheringMember,
+  type GatheringVisibility,
+  type Tag,
+} from '@withme/contract';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -11,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GatheringControls } from '../../components/GatheringControls';
 import { GatheringMeta } from '../../components/GatheringMeta';
 import { Button, Card, ErrorText, Field, Muted, PersonRow, Title } from '../../components/ui';
 import { api } from '../../lib/api';
@@ -22,14 +30,15 @@ import {
   whenAndWhere,
 } from '../../lib/format-time';
 import { gatheringHref } from '../../lib/gathering-link';
-import { goingLine } from '../../lib/going';
+import { FULL_LABEL, audienceMark, goingLine, parseSpots } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
 import { displaySize, fonts, space, useTokens } from '../../lib/tokens';
 
 type ScreenState =
   | { kind: 'loading' }
   | { kind: 'failed' }
-  // Blocked either way with the host, or missing — the same NOT_FOUND, so
+  // Blocked either way with the host, connections-only and not for this
+  // viewer, or missing — the same NOT_FOUND, so
   // the screen offers a calm join (which answers "not available") instead
   // of an error. A stranger who found the gathering in the feed gets the
   // detail, with Join on it.
@@ -58,7 +67,7 @@ export default function GatheringScreen() {
   const params = useLocalSearchParams<{ id: string; title?: string; starts_at?: string }>();
   const id = (params.id ?? '').trim();
   const [state, setState] = useState<ScreenState>({ kind: 'loading' });
-  const [join, setJoin] = useState<'idle' | 'joining' | 'failed' | 'unavailable'>('idle');
+  const [join, setJoin] = useState<'idle' | 'joining' | 'failed' | 'unavailable' | 'full'>('idle');
   const inFlight = useRef(false);
 
   const load = useCallback(async () => {
@@ -113,8 +122,8 @@ export default function GatheringScreen() {
         <Card settle>
           <Title>Join this gathering?</Title>
           {hint ? <Muted>{hint}</Muted> : null}
-          {join === 'unavailable' ? (
-            <Muted>This gathering isn't available.</Muted>
+          {join === 'unavailable' || join === 'full' ? (
+            <Muted>{join === 'full' ? 'This gathering is full.' : "This gathering isn't available."}</Muted>
           ) : (
             <Button
               kind="connect"
@@ -142,7 +151,8 @@ export default function GatheringScreen() {
                   await api.app.gatherings.join({ id });
                   await load();
                 } catch (error) {
-                  setJoin((error as { code?: string }).code === 'NOT_FOUND' ? 'unavailable' : 'failed');
+                  const code = (error as { code?: string }).code;
+                  setJoin(code === 'NOT_FOUND' ? 'unavailable' : code === 'CONFLICT' ? 'full' : 'failed');
                 } finally {
                   // runs on the /profile early return too: back from Profile, Join taps again
                   inFlight.current = false;
@@ -163,6 +173,8 @@ interface GatheringPatch {
   title: string;
   starts_at: string;
   location: string | null;
+  visibility: GatheringVisibility;
+  capacity: number | null;
 }
 
 function GatheringDetail({
@@ -186,6 +198,7 @@ function GatheringDetail({
   const isHost = userId === gathering.host_id;
   // The member list is the viewer's view, so the viewer's own row is in it iff they joined.
   const isMember = userId !== null && members.some((member) => member.profile.id === userId);
+  const full = isGatheringFull(gathering, memberCount);
 
   async function join() {
     setBusy(true);
@@ -200,11 +213,16 @@ function GatheringDetail({
       await api.app.gatherings.join({ id: gathering.id });
       await reload();
     } catch (error) {
-      setActionError(
-        (error as { code?: string }).code === 'NOT_FOUND'
-          ? "This gathering isn't available."
-          : "That didn't go through. Try again.",
-      );
+      const code = (error as { code?: string }).code;
+      if (code === 'CONFLICT') {
+        // The last spot went while this screen was open: show the new headcount.
+        await reload();
+        setActionError('Someone took the last spot.');
+      } else {
+        setActionError(
+          code === 'NOT_FOUND' ? "This gathering isn't available." : "That didn't go through. Try again.",
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -249,6 +267,22 @@ function GatheringDetail({
     );
   }
 
+  function confirmBlock() {
+    Alert.alert(
+      'Block the host?',
+      "This gathering and any they host disappear for you, and they aren't told. You can undo it in Connections → Blocked.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          // A blocker cannot see the gathering any more: back to the list.
+          onPress: () => run(() => api.app.blocks.block({ user_id: gathering.host_id }), 'list'),
+        },
+      ],
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: t.bg }}
@@ -278,7 +312,11 @@ function GatheringDetail({
             <>
               <Title>{gathering.title}</Title>
               <GatheringMeta line={whenAndWhere(gathering)} />
-              <Muted>{goingLine(memberCount)}</Muted>
+              <Muted>
+                {[goingLine(memberCount, gathering.capacity), audienceMark(gathering.visibility)]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Muted>
             </>
           )}
           {/* Members only: a tag whose owner is not a member degrades to the
@@ -301,8 +339,28 @@ function GatheringDetail({
             />
           ) : null}
           {/* Joining is the consent moment: the accent's job, as on the resolver. */}
-          {!editing && !isMember ? (
+          {!editing && !isMember && full ? <Button kind="quiet" label={FULL_LABEL} disabled onPress={() => {}} /> : null}
+          {!editing && !isMember && !full ? (
             <Button kind="connect" label={busy ? 'Joining…' : 'Join'} disabled={busy} onPress={join} />
+          ) : null}
+          {/* Report and Block (Guideline 1.2): everyone sees a gathering, so
+              anyone but the host can report it or block the person behind it. */}
+          {!editing && !isHost ? (
+            <>
+              <Button
+                label="Report"
+                kind="quiet"
+                disabled={busy}
+                accessibilityLabel="Report this gathering"
+                onPress={() =>
+                  router.push({
+                    pathname: '/report/[id]',
+                    params: { id: gathering.host_id, gathering: gathering.id },
+                  })
+                }
+              />
+              <Button label="Block host" kind="quiet" disabled={busy} onPress={confirmBlock} />
+            </>
           ) : null}
           {!editing ? <Button label="Back" kind="quiet" onPress={goBack} /> : null}
         </Card>
@@ -342,6 +400,8 @@ function EditFields({
   const [title, setTitle] = useState(gathering.title);
   const [when, setWhen] = useState(() => toDateAndTime(new Date(gathering.starts_at)));
   const [location, setLocation] = useState(gathering.location ?? '');
+  const [visibility, setVisibility] = useState(gathering.visibility);
+  const [spots, setSpots] = useState(gathering.capacity === null ? '' : String(gathering.capacity));
   const [error, setError] = useState<string | null>(null);
   return (
     <>
@@ -361,10 +421,17 @@ function EditFields({
         keyboardType="numbers-and-punctuation"
       />
       <Field label="Location (optional)" value={location} onChangeText={setLocation} maxLength={160} />
+      <GatheringControls
+        visibility={visibility}
+        onVisibility={setVisibility}
+        spots={spots}
+        onSpots={setSpots}
+        editing
+      />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button
         label={busy ? 'Saving…' : 'Save'}
-        disabled={busy || !title.trim()}
+        disabled={busy || !title.trim() || parseSpots(spots) === undefined}
         onPress={() => {
           const startsAt = parseLocalDateTime(when.date, when.time);
           if (!startsAt) {
@@ -376,6 +443,8 @@ function EditFields({
             title: title.trim(),
             starts_at: startsAt,
             location: location.trim() === '' ? null : location.trim(),
+            visibility,
+            capacity: parseSpots(spots) ?? null,
           });
         }}
       />

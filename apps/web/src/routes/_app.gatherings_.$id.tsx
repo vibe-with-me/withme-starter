@@ -1,18 +1,28 @@
-import type { Destination, Gathering, GatheringMember, Tag } from '@withme/contract';
+import {
+  isGatheringFull,
+  type Destination,
+  type Gathering,
+  type GatheringMember,
+  type GatheringVisibility,
+  type Tag,
+} from '@withme/contract';
 import { createFileRoute, useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
+import { GatheringControls } from '../components/GatheringControls.tsx';
 import { GatheringMeta } from '../components/GatheringMeta.tsx';
 import { Avatar } from '../components/ProfileCard.tsx';
+import { ReportButton, reportThanks } from '../components/ReportDialog.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { cardLine } from '../lib/card-line.ts';
 import { formatStartsAt, toDateTimeLocal, whenAndWhere } from '../lib/format-time.ts';
-import { goingLine } from '../lib/going.ts';
+import { FULL_LABEL, audienceMark, goingLine, parseSpots } from '../lib/going.ts';
 
 type LoaderResult =
   | { kind: 'detail'; gathering: Gathering; members: GatheringMember[]; memberCount: number }
-  // Blocked either way with the host, or missing — the same NOT_FOUND, so
+  // Blocked either way with the host, connections-only and not for this
+  // viewer, or missing — the same NOT_FOUND, so
   // the page offers a calm join (which answers "not available": a hidden
   // gathering cannot be joined) instead of an error. A stranger who found
   // the gathering in the feed gets the detail, with Join on it.
@@ -71,7 +81,9 @@ function JoinCard() {
   const { id } = Route.useParams();
   const { title, starts_at } = Route.useSearch();
   const router = useRouter();
-  const [join, setJoin] = useState<'idle' | 'joining' | 'failed' | 'unavailable'>('idle');
+  const [join, setJoin] = useState<'idle' | 'joining' | 'failed' | 'unavailable' | 'full'>(
+    'idle',
+  );
   const hint = [title ?? null, starts_at ? formatStartsAt(starts_at) : null]
     .filter(Boolean)
     .join(' · ');
@@ -80,8 +92,10 @@ function JoinCard() {
     <div className="card card--settle">
       <h1>Join this gathering?</h1>
       {hint ? <p className="hint">{hint}</p> : null}
-      {join === 'unavailable' ? (
-        <p className="hint">This gathering isn't available.</p>
+      {join === 'unavailable' || join === 'full' ? (
+        <p className="hint">
+          {join === 'full' ? 'This gathering is full.' : "This gathering isn't available."}
+        </p>
       ) : (
         <button
           type="button"
@@ -95,7 +109,8 @@ function JoinCard() {
               // re-fetch (sync) so this card never lingers over stale data.
               await router.invalidate({ sync: true });
             } catch (error) {
-              setJoin((error as { code?: string }).code === 'NOT_FOUND' ? 'unavailable' : 'failed');
+              const code = (error as { code?: string }).code;
+              setJoin(code === 'NOT_FOUND' ? 'unavailable' : code === 'CONFLICT' ? 'full' : 'failed');
             }
           }}
         >
@@ -110,6 +125,8 @@ interface GatheringPatch {
   title: string;
   starts_at: string;
   location: string | null;
+  visibility: GatheringVisibility;
+  capacity: number | null;
 }
 
 function GatheringDetail({
@@ -125,13 +142,17 @@ function GatheringDetail({
 }) {
   const navigate = useNavigate();
   const router = useRouter();
-  const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete'>('view');
+  const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete' | 'confirm-block'>('view');
+  // Set after a report; a report that also blocked hides the gathering, so
+  // the page then shows only the thanks and the way back.
+  const [reported, setReported] = useState<null | { blocked: boolean }>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const isHost = viewerId === gathering.host_id;
   // The member list is the viewer's view, so the viewer's own row is in it iff they joined.
   const isMember = viewerId !== null && members.some((member) => member.profile.id === viewerId);
+  const full = isGatheringFull(gathering, memberCount);
 
   async function join() {
     setBusy(true);
@@ -141,11 +162,18 @@ function GatheringDetail({
       // Wait for the re-fetch (sync) so Join never lingers over a joined gathering.
       await router.invalidate({ sync: true });
     } catch (error) {
-      setActionError(
-        (error as { code?: string }).code === 'NOT_FOUND'
-          ? "This gathering isn't available."
-          : 'That didn’t go through. Try again.',
-      );
+      const code = (error as { code?: string }).code;
+      if (code === 'CONFLICT') {
+        // The last spot went while this page was open: show the new headcount.
+        await router.invalidate({ sync: true });
+        setActionError('Someone took the last spot.');
+      } else {
+        setActionError(
+          code === 'NOT_FOUND'
+            ? "This gathering isn't available."
+            : 'That didn’t go through. Try again.',
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -178,6 +206,20 @@ function GatheringDetail({
     }
   }
 
+  async function blockHost() {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await api.app.blocks.block({ user_id: gathering.host_id });
+      // The gathering is hidden from a blocker: back to the list (replace,
+      // so Back does not return to a gathering that is now NOT_FOUND).
+      navigate({ to: '/gatherings', replace: true });
+    } catch {
+      setActionError('That didn’t go through. Try again.');
+      setBusy(false);
+    }
+  }
+
   async function leave() {
     setBusy(true);
     setActionError(null);
@@ -190,6 +232,25 @@ function GatheringDetail({
       setActionError('That didn’t go through. Try again.');
       setBusy(false);
     }
+  }
+
+  // A report that also blocked hides the gathering from the viewer, as Block
+  // host does: what is left is the thanks and the way back.
+  if (reported?.blocked) {
+    return (
+      <div className="card card--settle">
+        <p className="hint" role="status">
+          {reportThanks('the host', true)}
+        </p>
+        <button
+          type="button"
+          className="btn btn--quiet"
+          onClick={() => navigate({ to: '/gatherings', replace: true })}
+        >
+          Back to gatherings
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -208,7 +269,11 @@ function GatheringDetail({
             <p className="hint">
               <GatheringMeta line={whenAndWhere(gathering)} />
             </p>
-            <p className="hint">{goingLine(memberCount)}</p>
+            <p className="hint">
+              {[goingLine(memberCount, gathering.capacity), audienceMark(gathering.visibility)]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
           </>
         )}
         {/* Members only: a tag whose owner is not a member degrades to the
@@ -272,10 +337,64 @@ function GatheringDetail({
           </button>
         ) : null}
         {/* Joining is the consent moment: the accent's job, as on the resolver. */}
-        {mode === 'view' && !isMember ? (
+        {mode === 'view' && !isMember && full ? (
+          <button type="button" className="btn btn--quiet" disabled>
+            {FULL_LABEL}
+          </button>
+        ) : null}
+        {mode === 'view' && !isMember && !full ? (
           <button type="button" className="btn btn--connect" disabled={busy} onClick={join}>
             {busy ? 'Joining…' : 'Join'}
           </button>
+        ) : null}
+        {/* Report and Block (Guideline 1.2): everyone sees a gathering, so
+            anyone but the host can report it or block the person behind it. */}
+        {reported ? (
+          <p className="hint" role="status">
+            {reportThanks('the host', false)}
+          </p>
+        ) : null}
+        {/* After a report, Report goes; Block host stays (one that blocked returned above). */}
+        {mode === 'view' && !isHost ? (
+          <div className="row-actions">
+            {reported ? null : (
+              <ReportButton
+                profileId={gathering.host_id}
+                gatheringId={gathering.id}
+                name="the host"
+                onDone={(blocked) => setReported({ blocked })}
+              />
+            )}
+            <button
+              type="button"
+              className="btn btn--quiet"
+              disabled={busy}
+              onClick={() => setMode('confirm-block')}
+            >
+              Block host
+            </button>
+          </div>
+        ) : null}
+        {mode === 'confirm-block' ? (
+          <>
+            <p className="bio">
+              Block the host? This gathering and any they host disappear for you, and they aren’t
+              told. You can undo it in Connections → Blocked.
+            </p>
+            <div className="row-actions">
+              <button type="button" className="btn" disabled={busy} onClick={blockHost}>
+                {busy ? 'Blocking…' : 'Block'}
+              </button>
+              <button
+                type="button"
+                className="btn btn--quiet"
+                disabled={busy}
+                onClick={() => setMode('view')}
+              >
+                Cancel
+              </button>
+            </div>
+          </>
         ) : null}
       </div>
 
@@ -320,6 +439,8 @@ function EditForm({
   const [title, setTitle] = useState(gathering.title);
   const [startsAt, setStartsAt] = useState(() => toDateTimeLocal(new Date(gathering.starts_at)));
   const [location, setLocation] = useState(gathering.location ?? '');
+  const [visibility, setVisibility] = useState(gathering.visibility);
+  const [spots, setSpots] = useState(gathering.capacity === null ? '' : String(gathering.capacity));
   return (
     <form
       className="stack"
@@ -329,6 +450,8 @@ function EditForm({
           title: title.trim(),
           starts_at: new Date(startsAt).toISOString(),
           location: location.trim() === '' ? null : location.trim(),
+          visibility,
+          capacity: parseSpots(spots) ?? null,
         });
       }}
     >
@@ -361,8 +484,19 @@ function EditForm({
           onChange={(e) => setLocation(e.target.value)}
         />
       </div>
+      <GatheringControls
+        visibility={visibility}
+        onVisibility={setVisibility}
+        spots={spots}
+        onSpots={setSpots}
+        editing
+      />
       <div className="row-actions">
-        <button className="btn" type="submit" disabled={busy || !title.trim() || !startsAt}>
+        <button
+          className="btn"
+          type="submit"
+          disabled={busy || !title.trim() || !startsAt || parseSpots(spots) === undefined}
+        >
           {busy ? 'Saving…' : 'Save'}
         </button>
         <button className="btn btn--quiet" type="button" disabled={busy} onClick={onCancel}>

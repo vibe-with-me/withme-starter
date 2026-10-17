@@ -32,7 +32,8 @@ appropriate.
 | --- | --- |
 | Terms users agree to, saying abuse is not tolerated | Sign-up checkbox and the re-ask screen; placeholder text in [terms-template.md](terms-template.md) |
 | Report a person | **Report** on every card (resolver, connections, requests, blocked list), web and mobile |
-| Block a person | **Block** on connections; **Also block** in the report step |
+| Report a gathering | **Report** on every gathering you don't host, web and mobile. Filed against the host, with the gathering kept |
+| Block a person | **Block** on connections; **Block host** on a gathering; **Also block** in the report step |
 | Act within 24 hours | You: a webhook tells you, a daily check backs it up. This page |
 | Published contact information | The terms and privacy pages (`[contact email]`), and your App Store and Play listings' support URL |
 | A filter for objectionable material | Not shipped. See [Adding a filter](#adding-a-filter) |
@@ -47,6 +48,13 @@ learns of it, and nothing about it is public
 reason, what the reporter wrote, and a snapshot of the reported card as it
 was when they reported it (`snapshot`: name, bio, photo path), so an edit
 afterwards does not erase what was reported.
+
+A report about a gathering is filed against its host. It carries the
+gathering's id in `gathering_id` and the gathering as it was in
+`snapshot -> 'gathering'` (title, start time, location). Every signed-in
+person sees every gathering, so this is the report a scam ("$20 on Venmo
+to hold your spot") or a lure to a place arrives as. `gathering_id` is
+cleared if the gathering is deleted; the snapshot stays.
 
 If the reported person deletes their account, the report stays for 90 days
 (`reported_id` null, `reported_deleted_at` set, the snapshot intact), then
@@ -91,7 +99,9 @@ select r.created_at,
        r.reason,
        r.details,
        r.snapshot ->> 'display_name' as reported_name,
+       r.snapshot -> 'gathering' ->> 'title' as gathering_title,
        r.reported_id,
+       r.gathering_id,
        case when r.reported_id is not null
             then count(*) over (partition by r.reported_id)
        end as open_reports_about_them,
@@ -117,6 +127,12 @@ logs, which tells you reports are arriving but not what they say.
    - *Content only* (a name, bio or photo): edit it out in Studio, or ask
      them to. For a photo, delete the file in Storage → avatars and set
      `profiles.avatar_path` to null.
+   - *A gathering*: delete it, which removes it from everyone's Events tab
+     and tags aimed at it fall back to their owners' profiles
+     (`delete from public.gatherings where id = '<gathering_id>';`). A
+     host who posts scams or lures is an account problem too: read their
+     other gatherings (`select * from public.gatherings where host_id =
+     '<reported_id>';`) before you decide.
    - *The account*: delete the user in Authentication → Users. Deleting
      the auth user cascades exactly as the person's own deletion does
      (profile, connections, gatherings, photos' pointer, tags released).

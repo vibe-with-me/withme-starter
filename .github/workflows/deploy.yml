@@ -1,0 +1,218 @@
+name: Deploy
+
+# Opt-in production deploy for a fork: the go-live "Redeploys" steps, in
+# their required order. Migrations first, then the API worker, then the web
+# worker (it reaches the API through a service binding), then an EAS Update.
+# Each job waits for the one before it, so a failure stops the chain.
+#
+# Off until you turn it on: every job's `if:` names `your-org/your-repo`,
+# which matches no repository. Put your own `owner/name` there (all four
+# jobs) and create the `production` environment that go-live → Automated
+# redeploys lists. The starter itself never runs this file; its demo
+# database is migrated by demo-migrate.yml, and a fork that turns this on
+# deletes that file (the migrate job below does the same work).
+#
+# A run starts by hand: Actions → Deploy → Run workflow, branch main. That
+# dispatch is the approval. With `preview` ticked, a run only prints the
+# migrations that would apply and stops: run that first, read it, then run
+# again without it. Environment required reviewers are enforced
+# only on public repositories and GitHub Enterprise; on a private
+# Team-plan repository the setting saves and does nothing, so do not
+# count on it.
+on:
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: Preview only (print the migrations that would apply, deploy nothing)
+        type: boolean
+        default: false
+      mobile:
+        description: Publish an EAS Update (untick when the change needs a new store build instead)
+        type: boolean
+        default: true
+  # Public or seed-only demos only: uncomment to deploy every merge to
+  # main. Never on an app with real users: migrations can delete data, and
+  # no one reads the dry run before the push.
+  # push:
+  #   branches: [main]
+
+# Two deploys must never run at once; a newer run waits for the older one.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    # Your repository, and only main: a manual run from another branch would
+    # deploy code no one has merged.
+    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      # Reads SUPABASE_DB_PASSWORD from the environment, keeping it off the
+      # command line.
+      - name: Link the project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Dry run (what will apply)
+        run: |
+          set -o pipefail
+          supabase db push --dry-run 2>&1 | tee dry-run.txt
+          {
+            echo '### Migrations to apply'
+            echo '```'
+            cat dry-run.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # --yes answers the CLI's own prompt, which has no one to read it.
+      # Never --include-seed, and never `supabase config push`
+      # (supabase/config.toml holds local-only auth values).
+      - name: Push migrations
+        if: ${{ !inputs.preview }}
+        run: supabase db push --yes
+
+  api:
+    needs: migrate
+    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main' && !inputs.preview
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Pins the account, so a token that can see several never deploys to
+      # the wrong one.
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      API_URL: ${{ vars.VITE_API_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Worker secrets (SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, CORS_ORIGIN)
+      # persist across deploys; this never touches them. Cloudflare's API
+      # intermittently returns 502/504/524, so retry (go-live section 2).
+      - name: Deploy the API worker
+        working-directory: apps/api
+        run: |
+          for attempt in 1 2 3 4; do
+            bunx wrangler deploy && exit 0
+            echo "wrangler deploy failed (attempt $attempt of 4)" >&2
+            [ "$attempt" -lt 4 ] && sleep 30
+          done
+          exit 1
+
+      - name: Health check
+        if: env.API_URL != ''
+        run: |
+          body="$(curl -fsS --retry 5 --retry-delay 10 --retry-all-errors "$API_URL/health")"
+          echo "$body"
+          test "$body" = '{"ok":true}'
+
+  web:
+    needs: api
+    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main' && !inputs.preview
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      # Compiled into the bundle every visitor downloads: public values only
+      # (go-live section 3). Unset variables build as empty, which the app
+      # treats as absent.
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_TERMS_URL: ${{ vars.VITE_TERMS_URL }}
+      VITE_PRIVACY_URL: ${{ vars.VITE_PRIVACY_URL }}
+      VITE_STORE_URL: ${{ vars.VITE_STORE_URL }}
+      VITE_DEMO_CREDENTIALS: ${{ vars.VITE_DEMO_CREDENTIALS }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # A missing core value builds a site that cannot reach its backend.
+      - name: Check the build values
+        run: |
+          for name in VITE_API_URL VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "The production environment has no $name variable" >&2
+              exit 1
+            fi
+          done
+
+      # Builds the workspace packages the web app imports first.
+      - name: Build the web app
+        run: bunx turbo run build --filter=@withme/web
+
+      - name: Deploy the web worker
+        working-directory: apps/web
+        run: |
+          for attempt in 1 2 3 4; do
+            bunx wrangler deploy && exit 0
+            echo "wrangler deploy failed (attempt $attempt of 4)" >&2
+            [ "$attempt" -lt 4 ] && sleep 30
+          done
+          exit 1
+
+  mobile:
+    needs: web
+    if: >-
+      github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main' &&
+      !inputs.preview && (github.event_name == 'push' || inputs.mobile)
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_UPDATE_BRANCH: ${{ vars.EAS_UPDATE_BRANCH }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The EXPO_PUBLIC_* values come from the EAS project's `production`
+      # environment variables (go-live section 5), not from a file: there is
+      # no apps/mobile/.env.production here. The message is the commit's
+      # subject, read from git rather than the event payload.
+      - name: Publish the EAS Update
+        working-directory: apps/mobile
+        run: |
+          : "${EAS_UPDATE_BRANCH:?The production environment has no EAS_UPDATE_BRANCH variable}"
+          npx -y eas-cli@24.13.0 update --branch "$EAS_UPDATE_BRANCH" --environment production \
+            --message "$(git log -1 --format=%s)" --non-interactive

@@ -172,6 +172,132 @@ describe('report_user', () => {
   });
 });
 
+async function createGathering(host: TestUser, title = 'Free afterparty, $20 to hold a spot') {
+  const { data, error } = await host.client.rpc('create_gathering', {
+    p_title: title,
+    p_starts_at: new Date(Date.now() + 86_400_000).toISOString(),
+    p_location: 'Back lot',
+  });
+  expect(error).toBeNull();
+  return (data as { id: string }).id;
+}
+
+function reportGathering(
+  reporter: TestUser,
+  gathering: string,
+  extra: Record<string, unknown> = {},
+) {
+  return reporter.client.rpc('report_gathering', {
+    p_gathering: gathering,
+    p_reason: 'spam',
+    ...extra,
+  });
+}
+
+describe('report_gathering', () => {
+  it('a stranger reports a listed gathering: filed against the host, with the gathering kept', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Host');
+    const gathering = await createGathering(host);
+
+    expect((await reportGathering(alice, gathering, { p_details: 'Asks for money' })).error).toBeNull();
+
+    // A later edit cannot change what was reported.
+    await host.client.from('gatherings').update({ title: 'Picnic' }).eq('id', gathering);
+
+    const rows = await reportsAbout(host.id);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      reporter_id: alice.id,
+      reported_id: host.id,
+      gathering_id: gathering,
+      reason: 'spam',
+      details: 'Asks for money',
+      snapshot: {
+        display_name: 'Host',
+        gathering: { id: gathering, title: 'Free afterparty, $20 to hold a spot', location: 'Back lot' },
+      },
+    });
+  });
+
+  it('the report outlives the gathering', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Host');
+    const gathering = await createGathering(host);
+    expect((await reportGathering(alice, gathering)).error).toBeNull();
+    expect((await host.client.from('gatherings').delete().eq('id', gathering)).error).toBeNull();
+
+    const [row] = await reportsAbout(host.id);
+    expect(row).toMatchObject({ gathering_id: null, snapshot: { gathering: { id: gathering } } });
+  });
+
+  it('an unknown or hidden gathering answers like a real one, and stores nothing', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Host');
+    const hider = await createTestUser('Hider');
+    const visible = await createGathering(host);
+    const hidden = await createGathering(hider);
+    expect((await hider.client.from('blocks').insert({ blocker_id: hider.id, blocked_id: alice.id })).error).toBeNull();
+
+    const real = await reportGathering(alice, visible);
+    expect(real.error).toBeNull();
+    expect(await reportGathering(alice, crypto.randomUUID())).toEqual(real);
+    expect(await reportGathering(alice, hidden)).toEqual(real);
+    expect(await reportsAbout(hider.id)).toEqual([]);
+  });
+
+  it('a bad reason or text is refused before the lookup, with no card in the error', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Secret Host');
+    const gathering = await createGathering(host);
+    for (const extra of [{ p_reason: 'rude' }, { p_details: 'a\u202eb' }, { p_details: 'x'.repeat(1001) }]) {
+      const real = await reportGathering(alice, gathering, extra);
+      const ghost = await reportGathering(alice, crypto.randomUUID(), extra);
+      expect(real.error?.code).toBe('22023');
+      expect(ghost).toEqual(real);
+      expect(JSON.stringify(real)).not.toContain('Secret Host');
+    }
+    expect(await reportsAbout(host.id)).toEqual([]);
+  });
+
+  it('refuses the host reporting their own gathering, and anon', async () => {
+    const host = await createTestUser('Host');
+    const gathering = await createGathering(host);
+    expect((await reportGathering(host, gathering)).error?.code).toBe('22023');
+    const anon = await anonClient().rpc('report_gathering', { p_gathering: gathering, p_reason: 'spam' });
+    expect(anon.error).not.toBeNull();
+    expect(await reportsAbout(host.id)).toEqual([]);
+  });
+
+  it('shares the 10-a-day ledger with report_user', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Host');
+    const gathering = await createGathering(host);
+    for (let i = 0; i < 9; i++) expect((await report(alice, crypto.randomUUID())).error).toBeNull();
+    expect((await reportGathering(alice, gathering)).error).toBeNull();
+    expect((await reportGathering(alice, gathering)).error?.code).toBe('P0004');
+    expect((await report(alice, host.id)).error?.code).toBe('P0004');
+  });
+
+  it('block in the same step: the host is blocked, unrevealed, and the gathering is gone', async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Host');
+    const gathering = await createGathering(host);
+    expect((await alice.client.rpc('join_gathering', { p_gathering_id: gathering })).error).toBeNull();
+
+    expect((await reportGathering(alice, gathering, { p_block: true })).error).toBeNull();
+
+    const { data: blocks } = await alice.client.from('blocks').select('blocked_id, reveals_card');
+    expect(blocks).toEqual([{ blocked_id: host.id, reveals_card: false }]);
+    expect((await alice.client.from('gatherings').select('id').eq('id', gathering)).data).toEqual([]);
+    const { data: members } = await admin
+      .from('gathering_members')
+      .select('profile_id')
+      .eq('gathering_id', gathering);
+    expect(members).toEqual([{ profile_id: host.id }]);
+  });
+});
+
 describe('reports and account deletion', () => {
   it("the reporter's reports are anonymised, not deleted, when they delete their account", async () => {
     const alice = await createTestUser('Alice');

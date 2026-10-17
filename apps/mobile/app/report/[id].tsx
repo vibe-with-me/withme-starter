@@ -16,11 +16,20 @@ import { space, useTokens } from '../../lib/tokens';
  * over the card or list it came from. A reason from the fixed list,
  * optional words, and the offer to block in the same step. `name` is a
  * display hint only; `block=0` hides the offer (already blocked).
+ * `gathering` reports that gathering instead, filed against its host (`id`);
+ * a report that also blocked the host returns to the Events tab, since the
+ * gathering is hidden from a blocker.
  */
 export default function ReportScreen() {
   const t = useTokens();
-  const params = useLocalSearchParams<{ id: string; name?: string; block?: string }>();
-  const name = params.name?.trim() || 'this person';
+  const params = useLocalSearchParams<{
+    id: string;
+    name?: string;
+    block?: string;
+    gathering?: string;
+  }>();
+  const gathering = params.gathering?.trim() || null;
+  const name = gathering ? 'the host' : params.name?.trim() || 'this person';
   const canBlock = params.block !== '0';
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
@@ -35,12 +44,20 @@ export default function ReportScreen() {
     setState('sending');
     try {
       const blocked = canBlock && block;
-      await api.app.reports.create({
-        reported_id: params.id,
+      const report = {
         reason,
         details: details.trim() === '' ? undefined : details.trim(),
         block: blocked,
-      });
+      };
+      if (gathering) {
+        await api.app.gatherings.report({ id: gathering, ...report });
+        // A gathering hidden since the page loaded files nothing, and so
+        // blocks nothing: block the host directly (idempotent) so "blocked"
+        // is true whatever the report found.
+        if (report.block) await api.app.blocks.block({ user_id: params.id });
+      } else {
+        await api.app.reports.create({ reported_id: params.id, ...report });
+      }
       setSent({ blocked });
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
@@ -58,7 +75,12 @@ export default function ReportScreen() {
           <Muted accessibilityLiveRegion="polite">
             Your report is in{sent.blocked ? ` and ${name} is blocked` : ''}. They aren't told.
           </Muted>
-          <Button label="Done" onPress={() => router.back()} />
+          <Button
+            label="Done"
+            onPress={() =>
+              gathering && sent.blocked ? router.dismissTo('/gatherings') : router.back()
+            }
+          />
         </Card>
       </View>
     );
@@ -75,10 +97,11 @@ export default function ReportScreen() {
       automaticallyAdjustKeyboardInsets
     >
       <Card>
-        <Title>Report {name}</Title>
+        <Title>{gathering ? 'Report this gathering' : `Report ${name}`}</Title>
         <Muted>
-          Only the people who run this app see reports. {name} isn't told who reported them, or that
-          anyone did.
+          {gathering
+            ? "Only the people who run this app see reports. The host isn't told who reported it, or that anyone did."
+            : `Only the people who run this app see reports. ${name} isn't told who reported them, or that anyone did.`}
         </Muted>
         <SectionHeader>What's wrong?</SectionHeader>
         <View accessibilityRole="radiogroup" style={styles.choices}>

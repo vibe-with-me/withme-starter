@@ -91,12 +91,19 @@ In the order a new fork usually runs them:
 - **Gatherings are listed to the domain; who's going is connections-only.**
   A list of gatherings is a bulletin board, not a directory: people see
   where their scene is congregating, and the tap is still how they meet.
-  Every signed-in user of the tenant sees every gathering in that tenant
-  (minus a block either way with the host); member rows are visible only for the viewer and their
-  accepted connections; co-membership never reveals a card. A fork that
-  needs private gatherings adds one column and one clause
-  (customize-gathering §3). [safety-model.md](safety-model.md) has the
-  enforcement and the tests.
+  Every signed-in user of the tenant sees every gathering its host lists
+  to everyone (minus a block either way with the host); member rows are visible only for the viewer and their
+  accepted connections; co-membership never reveals a card.
+- **A host chooses who sees a gathering and how many can go.** Two
+  settings and no more: everyone in the app (the default) or the host's
+  connections, and an optional capacity of 2 to 500 that counts the host.
+  A connections-only gathering exists only for the host, the host's
+  connections and whoever is already going, on every path, a tap
+  included. Both are core rather than fork work because the hard parts
+  are RLS and the race for the last spot, which the starter should own
+  once. No invite lists, no waitlist, no "a spot opened" push; a fork
+  that wants another setting follows customize-gathering §3.
+  [safety-model.md](safety-model.md) has the enforcement and the tests.
 - **Two tiers of profile data.** Card-tier fields are columns on
   `profiles`. Connections-tier fields live in a sibling table with its own
   narrower policy (`profile_links` in the starter, `profile_details` from

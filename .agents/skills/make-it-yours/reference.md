@@ -30,6 +30,9 @@ upstream maintainer (`alex-eisele`). Its filters drop:
   upstream on purpose.
 - `demo-migrate.yml`'s `if:` line — the same guard, keeping a fork from
   trying to migrate the starter's demo (step 8, Contact points).
+- `deploy.yml` needs no filter: its `if:` lines name `your-org/your-repo`
+  until you turn it on, and then your own repository (a same-org fork
+  filters those below).
 - `packages/nfc-sdk/` — the SDK (`@vibewithme/nfc`) names the upstream in
   its `package.json` `repository.url` and in doc comments. A fork that
   does not publish the SDK leaves them. If you publish it under your
@@ -49,10 +52,12 @@ README CI badge from step 3, and step 8's contact points, which now say
 `CONTRIBUTING.md`), and `"owner": "vibe-with-me"` once step 5 has given
 `app.json` the fork's own `projectId`. Append this to the sweep, with
 `<your-repo>` filled in; it drops the fork's own links in every file, and
-the owner line only after step 5:
+`deploy.yml`'s own `if:` lines once you have turned it on, and the owner
+line only after step 5:
 
 ```sh
   | grep -vE 'github\.com/vibe-with-me/<your-repo>([^A-Za-z0-9_-]|$)' \
+  | grep -v "^\.github/workflows/deploy\.yml:[0-9]*:.*github\.repository == 'vibe-with-me/<your-repo>'" \
   | if grep -q cf56d2f1-eaec-406b-be9c-972519a6be84 apps/mobile/app.json; \
     then cat; else grep -v '^apps/mobile/app.json:[0-9]*: *"owner": "vibe-with-me",$'; fi
 ```

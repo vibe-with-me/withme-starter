@@ -18,7 +18,7 @@ import {
   UpdateProfileInputSchema,
 } from '../schemas/profile.ts';
 import { RegisterPushTokenInputSchema, UnregisterPushTokenInputSchema } from '../schemas/push.ts';
-import { CreateReportInputSchema } from '../schemas/report.ts';
+import { CreateReportInputSchema, ReportGatheringInputSchema } from '../schemas/report.ts';
 import { ShareCodeSchema } from '../schemas/share-code.ts';
 import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
 import { AcceptTermsInputSchema } from '../schemas/terms.ts';
@@ -142,8 +142,10 @@ const createGathering = oc
 const getGathering = oc
   .route({ method: 'GET', path: '/gatherings/{id}', tags: ['Gatherings'] })
   .input(z.object({ id: z.uuid() }))
-  // Every signed-in user of the domain may read a gathering. Blocked by the
-  // host (either way) and nonexistent are the same NOT_FOUND. `members` is
+  // A signed-in user may read a gathering they can see: every one marked
+  // `everyone`, and a `connections` one when they host it, are the host's
+  // accepted connection, or are already going. Hidden (that, or a block
+  // either way with the host) and nonexistent are the same NOT_FOUND. `members` is
   // the viewer's view (themself and their connections); `member_count` is
   // everyone.
   .output(
@@ -157,6 +159,9 @@ const getGathering = oc
 const joinGathering = oc
   .route({ method: 'POST', path: '/gatherings/{id}/join', tags: ['Gatherings'] })
   .input(z.object({ id: z.uuid() }))
+  // NOT_FOUND for a gathering the caller cannot see, exactly as for a
+  // missing id. CONFLICT "Gathering is full" once going (the host included)
+  // reaches `capacity`; already going is a no-op ack even then.
   .output(z.object({ ok: z.literal(true) }));
 
 const leaveGathering = oc
@@ -167,7 +172,8 @@ const leaveGathering = oc
 const listGatherings = oc
   .route({ method: 'GET', path: '/gatherings', tags: ['Gatherings'] })
   // What is happening in the domain: every upcoming gathering the caller may
-  // see (RLS: the tenant, minus a block either way with the host), in
+  // see (RLS: the tenant, minus a block either way with the host, and a
+  // `connections` gathering only for the host's connections and its members), in
   // start-time order. A bulletin board, not a directory: nothing ranks or
   // filters, and no row reveals a stranger's card. Paged: one page holds at
   // most 50, so its who-is-going lookup stays one bounded request however
@@ -185,6 +191,15 @@ const updateGathering = oc
   .input(UpdateGatheringInputSchema)
   // Host-only; a non-host's patch is NOT_FOUND, same as a stranger's read.
   .output(z.object({ gathering: GatheringSchema }));
+
+const reportGathering = oc
+  .route({ method: 'POST', path: '/gatherings/{id}/report', tags: ['Gatherings', 'Reports'] })
+  .input(ReportGatheringInputSchema)
+  // Filed against the host, with the gathering as it was. The same bare ack
+  // for a gathering you cannot see (no existence oracle), the same 10 per
+  // rolling day as reports.create. `block: true` also blocks the host,
+  // which hides the gathering from you.
+  .output(z.object({ ok: z.literal(true) }));
 
 const removeGathering = oc
   .route({ method: 'DELETE', path: '/gatherings/{id}', tags: ['Gatherings'] })
@@ -257,6 +272,7 @@ export const appContract = {
     listMine: listMyGatherings,
     update: updateGathering,
     remove: removeGathering,
+    report: reportGathering,
   },
   tags: { listMine: listMyTags, update: updateMyTag },
   shareCode: { get: getMyShareCode, replace: replaceMyShareCode },

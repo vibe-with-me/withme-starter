@@ -1,4 +1,4 @@
-import type { GatheringListItem } from '@withme/contract';
+import { isGatheringFull, type GatheringListItem, type GatheringVisibility } from '@withme/contract';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -11,11 +11,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import { GatheringControls } from '../../components/GatheringControls';
 import { mapsLinkLabel, openInMaps } from '../../components/GatheringMeta';
 import { Button, Card, ErrorText, Field, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { parseLocalDateTime, tomorrowEvening, whenAndWhere } from '../../lib/format-time';
-import { goingLine, withLine } from '../../lib/going';
+import { FULL_LABEL, audienceMark, goingLine, parseSpots, withLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
 import { displaySize, fonts, space, useTokens } from '../../lib/tokens';
 
@@ -43,6 +44,8 @@ export default function GatheringsScreen() {
   const [title, setTitle] = useState('');
   const [when, setWhen] = useState(tomorrowEvening);
   const [location, setLocation] = useState('');
+  const [visibility, setVisibility] = useState<GatheringVisibility>('everyone');
+  const [spots, setSpots] = useState('');
   const [busy, setBusy] = useState(false);
   // The form's error (create/validation) and the list's are separate: a
   // failed load must not read as an empty list, nor show up inside the form.
@@ -110,9 +113,13 @@ export default function GatheringsScreen() {
         title: title.trim(),
         starts_at: startsAt,
         location: location.trim() === '' ? null : location.trim(),
+        visibility,
+        capacity: parseSpots(spots) ?? null,
       });
       setTitle('');
       setLocation('');
+      setVisibility('everyone');
+      setSpots('');
       setWhen(tomorrowEvening());
       await load();
     } catch {
@@ -134,7 +141,17 @@ export default function GatheringsScreen() {
         : gathering.is_member
           ? 'Going'
           : null;
-    const line = whenAndWhere(gathering, [mark], [goingLine(gathering.member_count)]);
+    // Full only matters to someone who could still join.
+    const full = !gathering.is_member && isGatheringFull(gathering, gathering.member_count);
+    const line = whenAndWhere(
+      gathering,
+      [mark],
+      [
+        goingLine(gathering.member_count, gathering.capacity),
+        full ? FULL_LABEL : null,
+        audienceMark(gathering.visibility),
+      ],
+    );
     const where = line.location;
     const names = withLine(gathering.members, viewerId);
     return (
@@ -236,11 +253,23 @@ export default function GatheringsScreen() {
             maxLength={160}
             placeholder="Where to find it"
           />
+          <GatheringControls
+            visibility={visibility}
+            onVisibility={setVisibility}
+            spots={spots}
+            onSpots={setSpots}
+          />
           {error ? <ErrorText>{error}</ErrorText> : null}
           <Button
             label={busy ? 'Creating…' : 'Create gathering'}
             onPress={create}
-            disabled={busy || !title.trim() || !when.date.trim() || !when.time.trim()}
+            disabled={
+              busy ||
+              !title.trim() ||
+              !when.date.trim() ||
+              !when.time.trim() ||
+              parseSpots(spots) === undefined
+            }
           />
         </Card>
 
