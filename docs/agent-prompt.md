@@ -52,7 +52,8 @@ colors and fonts below are blank):
 - Worker names `[name-api]`, `[name-web]`
 - Store for the Merch tab: `[url / "planned: what it will sell" / "no
   store"]`. Without a URL the tab and the landing page's "Get tags"
-  button stay hidden from users; `docs/merch.md` is the tested path to
+  button stay hidden from users (a development build shows the tab as a
+  setup card); `docs/merch.md` is the tested path to
   a store selling tags for your vertical.
 - Security contact `[repository with private vulnerability reporting, or
   an email]`; PR reviewer `[GitHub handle or team]`

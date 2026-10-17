@@ -68,8 +68,9 @@ so the owner can keep what people already recognise.
   - the signed-in shell, `apps/web/src/components/AppShell.tsx` — the
     header wordmark, a list of gathering cards, the bottom tab bar
     (Events, Connections, Merch, Profile; active tab in ink, never
-    accent). Merch renders only when a store URL is set, but the boards
-    always draw it;
+    accent). Users see Merch only when a store URL is set (a development
+    build shows it as a setup card without one), and the boards always
+    draw it;
   - the landing page, `apps/web/src/routes/index.tsx` — the wordmark,
     the one-line promise under it ("Tap a tag. Meet a person. Stay
     connected."), a neutral "Sign in" button (ink on surface, no
@@ -102,8 +103,9 @@ so the owner can keep what people already recognise.
 - Optional references: photos of the place, an existing logo or store
   page, a competitor to steer away from. A logo is copied, never
   redrawn by an artboard.
-- Whether a store exists, or is planned (the Merch tab and the landing
-  page's "Get tags" button render only with a store URL; the sheet
+- Whether a store exists, or is planned (users see the Merch tab and
+  the landing page's "Get tags" button only with a store URL; a
+  development build shows the tab as a setup card without one; the sheet
   carries their
   copy either way).
 - The vertical's nouns, if already known ("round", not "gathering";
