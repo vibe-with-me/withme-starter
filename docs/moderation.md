@@ -50,7 +50,11 @@ afterwards does not erase what was reported.
 
 If the reported person deletes their account, the report stays for 90 days
 (`reported_id` null, `reported_deleted_at` set, the snapshot intact), then
-is purged. A reporter who deletes their account leaves their reports
+is purged. The stack runs no background jobs, so the purge happens when
+something runs it: every new report, every account deletion, and the
+"Open reports" query below, which purges first. Run that query daily (as
+this page asks anyway) and nothing outlives its 90 days by more than a
+day. A reporter who deletes their account leaves their reports
 behind with `reporter_id` null.
 
 ## How you find out
@@ -78,13 +82,19 @@ their day:
 - **SQL:** save this in the SQL Editor as "Open reports" and run it:
 
 ```sql
--- Open reports, oldest first, with how many open reports each person has.
+-- Purge reports about accounts deleted more than 90 days ago, then list
+-- open reports, oldest first, with how many open reports each person has
+-- (none for a deleted account: its reports no longer share an id).
+select private.purge_expired_reports();
+
 select r.created_at,
        r.reason,
        r.details,
        r.snapshot ->> 'display_name' as reported_name,
        r.reported_id,
-       count(*) over (partition by r.reported_id) as open_reports_about_them,
+       case when r.reported_id is not null
+            then count(*) over (partition by r.reported_id)
+       end as open_reports_about_them,
        r.id
   from public.reports r
  where r.status = 'open'

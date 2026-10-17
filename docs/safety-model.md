@@ -140,9 +140,10 @@ cleared; the reason, the reporter's words and the snapshot of your card
 stay), then deleted. Otherwise deleting an account would erase every
 report against it before anyone read them. The basis is legitimate
 interest: acting on abuse, recognising someone who returns, and answering
-the authorities. The purge runs lazily, as request expiry does: every
-new report and every account deletion first deletes the rows past their
-window. Your report ledger is cleared by `delete_my_account`.
+the authorities. The purge runs lazily, as request expiry does (the stack
+has no background jobs): every new report, every account deletion, and
+the operator's daily "Open reports" query (`docs/moderation.md`) first
+delete the rows past their window. Your report ledger is cleared by `delete_my_account`.
 
 **Notification.** The `report_webhook_url` row of `private.settings` holds
 one optional webhook URL, unset by default. When it is set, each new report POSTs the report's id

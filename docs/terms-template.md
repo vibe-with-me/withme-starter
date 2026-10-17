@@ -149,7 +149,7 @@ acting on abuse):
 
 - Reports **about** you are kept for 90 days after you delete your account,
   without the link to your account but with what your card said when you
-  were reported, then deleted. This stops someone erasing reports against
+  were reported, then deleted at our next daily check. This stops someone erasing reports against
   them by deleting their account, and lets us recognise them if they
   return.
 - Reports you **filed** are kept without your name or account attached, so
