@@ -8,7 +8,9 @@ import { fonts, useShadow, useTokens } from '../../lib/tokens';
 
 type FeatherName = ComponentProps<typeof Feather>['name'];
 
-// Dormant without a store URL: hidden from the bar and unreachable.
+// Dormant without a store URL: hidden from the bar and unreachable. A
+// development build shows it anyway, as a setup card (see merch.tsx), so a
+// forker meets it while running the demo; a release build never does.
 const STORE_URL = process.env.EXPO_PUBLIC_STORE_URL;
 
 function icon(name: FeatherName) {
@@ -68,7 +70,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="connections" options={{ title: 'Connections', tabBarIcon: icon('users') }} />
       <Tabs.Screen
         name="merch"
-        options={{ title: 'Merch', href: STORE_URL ? undefined : null, tabBarIcon: icon('shopping-bag') }}
+        options={{ title: 'Merch', href: STORE_URL || __DEV__ ? undefined : null, tabBarIcon: icon('shopping-bag') }}
       />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('user') }} />
     </Tabs>

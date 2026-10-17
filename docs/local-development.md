@@ -182,9 +182,13 @@ mobile app depends on Bun's hoisting and a single copy of each `expo-*`
 package. Check the root `package.json` overrides and reinstall. A
 worktree needs its own `bun install`.
 
-**The Merch tab is missing.** It appears only when `VITE_STORE_URL`
-(web) or `EXPO_PUBLIC_STORE_URL` (mobile) is set. Both bundlers read env
-at start; restart them after changing it (Metro with `--clear`).
+**The Merch tab is missing, or still shows the setup card.** In
+development (`bun run dev`, Expo Go) the tab is always there: without
+`VITE_STORE_URL` (web) or `EXPO_PUBLIC_STORE_URL` (mobile) it shows a
+setup card, and with one it links to your store. A production build or
+`vite preview` (the Playwright smoke uses one) shows it only when the URL
+was set at build time. Both bundlers read env at start; restart them
+after changing it (Metro with `--clear`).
 
 **A migration changed and `db:types` shows a diff.** Commit the
 regenerated `packages/db/src/types/supabase.ts`. A constraint-only
