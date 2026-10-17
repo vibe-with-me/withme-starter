@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { TERMS_VERSION } from '@withme/contract';
 import type { Database } from '../types/supabase.ts';
 import type { Db } from '../index.ts';
 
@@ -84,10 +85,11 @@ export async function createTestUser(displayName: string): Promise<TestUser> {
   });
   if (signInError) throw signInError;
 
-  // Through the user's own client on purpose: exercises the insert policy.
+  // Through the user's own client on purpose: exercises the insert policy
+  // (which requires agreeing to the terms).
   const { error: profileError } = await client
     .from('profiles')
-    .insert({ id: data.user.id, display_name: displayName });
+    .insert({ id: data.user.id, display_name: displayName, terms_version: TERMS_VERSION });
   if (profileError) throw profileError;
 
   return { id: data.user.id, email, client };

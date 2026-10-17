@@ -1,4 +1,4 @@
-import type { Profile } from '@withme/contract';
+import { TERMS_VERSION, type Profile } from '@withme/contract';
 import { createFileRoute, useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { AccountSection } from '../components/AccountSection.tsx';
@@ -6,6 +6,7 @@ import { AvatarField } from '../components/AvatarField.tsx';
 import { shellStates } from '../components/CalmStates.tsx';
 import { LinksEditor } from '../components/Links.tsx';
 import { MyTags } from '../components/MyTags.tsx';
+import { TermsCheckbox } from '../components/TermsAgreement.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { safeReturnTo } from '../lib/auth-guard.ts';
@@ -55,8 +56,11 @@ function IdentityForm({ profile }: { profile: Profile | null }) {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  // Creating a profile is signing up: it carries the terms agreement.
+  const creating = !profile;
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -66,6 +70,7 @@ function IdentityForm({ profile }: { profile: Profile | null }) {
       await api.app.profile.update({
         display_name: displayName.trim(),
         bio: bio.trim() === '' ? null : bio.trim(),
+        ...(creating ? { terms_version: TERMS_VERSION } : {}),
       });
       // The layout caches the profile until invalidated; wait for the re-fetch
       // (sync) before leaving so the shell never keeps a stale "no profile".
@@ -107,11 +112,16 @@ function IdentityForm({ profile }: { profile: Profile | null }) {
           onChange={(e) => setBio(e.target.value)}
         />
       </div>
+      {creating ? <TermsCheckbox checked={agreed} onChange={setAgreed} /> : null}
       {/* Always mounted: a live region created with its message is not announced. */}
       <p className="hint" role="status">
         {status}
       </p>
-      <button className="btn" type="submit" disabled={busy || !displayName.trim()}>
+      <button
+        className="btn"
+        type="submit"
+        disabled={busy || !displayName.trim() || (creating && !agreed)}
+      >
         {busy ? 'Saving…' : 'Save'}
       </button>
     </form>

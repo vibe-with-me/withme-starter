@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { TermsCheckbox } from '../../components/TermsAgreement';
 import { Button, Card, ErrorText, Field, Muted, Title } from '../../components/ui';
-import type { Profile } from '@withme/contract';
+import { TERMS_VERSION, type Profile } from '@withme/contract';
 import { api } from '../../lib/api';
 import { space, useTokens } from '../../lib/tokens';
 
@@ -12,6 +13,7 @@ export default function ClaimScreen() {
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +34,8 @@ export default function ClaimScreen() {
     setBusy(true);
     setError(null);
     try {
-      await api.app.profile.update({ display_name: displayName.trim() });
+      // Creating a profile is signing up: it carries the terms agreement.
+      await api.app.profile.update({ display_name: displayName.trim(), terms_version: TERMS_VERSION });
       setHasProfile(true);
     } catch {
       setError('Could not save your name. Try again.');
@@ -89,11 +92,12 @@ export default function ClaimScreen() {
           <Title>First, your name</Title>
           <Muted>This is what people see when they tap your tag.</Muted>
           <Field label="Name" value={displayName} onChangeText={setDisplayName} maxLength={80} />
+          <TermsCheckbox checked={agreed} onChange={setAgreed} />
           {error ? <ErrorText>{error}</ErrorText> : null}
           <Button
             label="Continue"
             onPress={createProfile}
-            disabled={busy || !displayName.trim()}
+            disabled={busy || !displayName.trim() || !agreed}
           />
         </Card>
       </KeyboardAvoidingView>

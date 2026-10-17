@@ -1,7 +1,7 @@
 // The one smoke test: resolve -> claim -> connect, through real browsers.
 // Two strangers tap the same tag and end up connected.
 import { expect, test } from '@playwright/test';
-import { admin, freshUid, signUp } from './helpers.ts';
+import { admin, agreeToTerms, freshUid, signUp } from './helpers.ts';
 
 test('two strangers tap a tag and remain connected', async ({ browser }) => {
   const uid = freshUid();
@@ -17,6 +17,7 @@ test('two strangers tap a tag and remain connected', async ({ browser }) => {
 
   await ada.waitForURL(`**/claim/${uid}`);
   await ada.getByLabel('Name').fill('Smoke Ada');
+  await agreeToTerms(ada);
   await ada.getByRole('button', { name: 'Continue' }).click();
   await ada.getByRole('button', { name: 'Claim tag' }).click();
 
@@ -37,6 +38,7 @@ test('two strangers tap a tag and remain connected', async ({ browser }) => {
   await bob.getByRole('button', { name: 'Connect' }).click();
   await bob.waitForURL('**/profile**'); // no profile yet -> name first
   await bob.getByLabel('Name').fill('Smoke Bob');
+  await agreeToTerms(bob);
   await bob.getByRole('button', { name: 'Save' }).click();
 
   await bob.waitForURL(`**/t/${uid}`);

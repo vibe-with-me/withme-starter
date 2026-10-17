@@ -18,7 +18,9 @@ import {
   UpdateProfileInputSchema,
 } from '../schemas/profile.ts';
 import { RegisterPushTokenInputSchema, UnregisterPushTokenInputSchema } from '../schemas/push.ts';
+import { CreateReportInputSchema } from '../schemas/report.ts';
 import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
+import { AcceptTermsInputSchema } from '../schemas/terms.ts';
 
 const getProfile = oc
   .route({ method: 'GET', path: '/me/profile', tags: ['Profile'] })
@@ -27,6 +29,14 @@ const getProfile = oc
 const updateProfile = oc
   .route({ method: 'PATCH', path: '/me/profile', tags: ['Profile'] })
   .input(UpdateProfileInputSchema)
+  .output(z.object({ profile: ProfileSchema }));
+
+const acceptTerms = oc
+  .route({ method: 'POST', path: '/me/terms', tags: ['Profile'] })
+  .input(AcceptTermsInputSchema)
+  // Agree to the current terms (the re-ask screen after TERMS_VERSION
+  // changes). The database stamps terms_accepted_at. Without a profile,
+  // BAD_REQUEST: creating one carries terms_version itself.
   .output(z.object({ profile: ProfileSchema }));
 
 const uploadAvatar = oc
@@ -113,6 +123,15 @@ const listBlocks = oc
       ),
     }),
   );
+
+const createReport = oc
+  .route({ method: 'POST', path: '/reports', tags: ['Reports'] })
+  .input(CreateReportInputSchema)
+  // A bare ack whatever the id: an id that is not a person in your domain
+  // answers exactly like a stored report (no existence oracle). Reports are
+  // read by the operator only, never by you or the person reported. 10 per
+  // rolling day, then TOO_MANY_REQUESTS. `block: true` also blocks them.
+  .output(z.object({ ok: z.literal(true) }));
 
 const createGathering = oc
   .route({ method: 'POST', path: '/gatherings', tags: ['Gatherings'] })
@@ -201,6 +220,7 @@ export const appContract = {
   profile: {
     get: getProfile,
     update: updateProfile,
+    acceptTerms,
     uploadAvatar,
     removeAvatar,
     deleteAccount,
@@ -214,6 +234,7 @@ export const appContract = {
   },
   connections: { list: listConnections, remove: removeConnection },
   blocks: { block, unblock, list: listBlocks },
+  reports: { create: createReport },
   gatherings: {
     create: createGathering,
     get: getGathering,

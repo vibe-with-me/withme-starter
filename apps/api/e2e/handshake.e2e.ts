@@ -433,6 +433,41 @@ const release = await aliceApp.tags
   .then(() => 'updated', codeOf);
 assert(release === 'BAD_REQUEST', `an owner cannot release a tag (got ${release})`);
 
+// 19a. terms: a profile is created only with the agreement; a version bump is agreed to again
+const { TERMS_VERSION } = await import('@withme/contract');
+const newcomerEmail = `${crypto.randomUUID()}@rls.test`;
+await admin.auth.admin.createUser({ email: newcomerEmail, password: 'e2e-password-1!', email_confirm: true });
+const { anonClient } = await import('@withme/db/test-utils');
+const newcomer = anonClient();
+await newcomer.auth.signInWithPassword({ email: newcomerEmail, password: 'e2e-password-1!' });
+const newcomerApp = appClientFor((await newcomer.auth.getSession()).data.session?.access_token ?? '');
+const noTerms = await newcomerApp.profile.update({ display_name: 'E2E Newcomer' }).then(() => 'created', codeOf);
+assert(noTerms === 'BAD_REQUEST', `a profile without the terms agreement is refused (got ${noTerms})`);
+const newcomerCreated = await newcomerApp.profile.update({ display_name: 'E2E Newcomer', terms_version: TERMS_VERSION });
+assert(newcomerCreated.profile.terms_version === TERMS_VERSION, 'creating with the agreement records the version');
+assert(newcomerCreated.profile.terms_accepted_at !== null, 'and the database stamps the time');
+await admin.from('profiles').update({ terms_version: 'e2e-old' }).eq('id', newcomerCreated.profile.id);
+const reaccepted = await newcomerApp.profile.acceptTerms({ version: TERMS_VERSION });
+assert(reaccepted.profile.terms_version === TERMS_VERSION, 'acceptTerms records the current version');
+
+// 19b. reports: stored for the operator only, the same ack for an id that is not a person
+const reportedBefore = await admin.from('reports').select('id').eq('reported_id', alice.id);
+const reportAck = await bobApp.reports.create({ reported_id: alice.id, reason: 'spam', details: 'e2e' });
+assert(reportAck.ok, 'report acks');
+const reportedAfter = await admin.from('reports').select('id').eq('reported_id', alice.id);
+assert(
+  (reportedAfter.data?.length ?? 0) === (reportedBefore.data?.length ?? 0) + 1,
+  'the report is stored for the operator',
+);
+const ghostAck = await bobApp.reports.create({ reported_id: crypto.randomUUID(), reason: 'spam' });
+assert(JSON.stringify(ghostAck) === JSON.stringify(reportAck), 'an unknown id gets the same ack');
+const anonReport = await anonApp.reports
+  .create({ reported_id: alice.id, reason: 'spam' })
+  .then(() => 'stored', codeOf);
+assert(anonReport === 'UNAUTHORIZED', `anon cannot report (got ${anonReport})`);
+const selfReport = await bobApp.reports.create({ reported_id: bob.id, reason: 'spam' }).then(() => 'stored', codeOf);
+assert(selfReport === 'BAD_REQUEST', `reporting yourself is refused (got ${selfReport})`);
+
 // 20. push: this device's token, owner-only. A fresh user who receives
 // nothing afterwards, so no push is ever attempted for the fake token.
 const dave = await createTestUser('E2E Dave');

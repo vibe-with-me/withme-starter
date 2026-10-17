@@ -431,8 +431,9 @@ create trigger gathering_members_push_joined
 
 -- Erasure reaches the push ledgers: tokens and throttle rows about you go
 -- with the profile (cascade), throttle rows naming you as a requester and
--- any in-flight batch addressed to your devices go here. Every attribute
--- of the previous version restated; grants survive the replace.
+-- any in-flight batch addressed to your devices go here. Every line of the
+-- previous version (20261016190000_reports_and_terms) restated; grants
+-- survive the replace.
 create or replace function public.delete_my_account()
 returns void
 language plpgsql
@@ -463,6 +464,10 @@ begin
   delete from private.connect_request_attempts where requester_id = v_user;
   delete from private.claim_attempts where user_id = v_user;
   delete from private.gathering_create_attempts where host_id = v_user;
+  delete from private.report_attempts where user_id = v_user;
+  -- Reports this person filed are anonymised, and reports about them start
+  -- their 90 days, by the reports foreign keys and the profile delete
+  -- trigger, when the profile row goes.
   delete from auth.users where id = v_user;
 end
 $$;

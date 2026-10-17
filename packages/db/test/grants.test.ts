@@ -46,6 +46,7 @@ const SIGNED_IN_RPCS = [
   'public.gathering_member_counts',
   'public.join_gathering',
   'public.register_push_token',
+  'public.report_user',
   'public.send_connect_request',
   'public.set_my_links',
 ];

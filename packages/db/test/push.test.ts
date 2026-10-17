@@ -447,7 +447,13 @@ describe("Expo's push security", () => {
   });
 
   it('a settings URL must be a URL', async () => {
-    const write = sql`update private.settings set value = 'exp.host' where key = 'push_url'`;
-    await expect(write).rejects.toThrow(/settings_url_shape/);
+    // Awaited directly: a Bun SQL query only runs when awaited.
+    let failure = '';
+    try {
+      await sql`update private.settings set value = 'exp.host' where key = 'push_url'`;
+    } catch (error) {
+      failure = String(error);
+    }
+    expect(failure).toContain('settings_url_shape');
   });
 });

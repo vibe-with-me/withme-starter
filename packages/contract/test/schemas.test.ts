@@ -575,6 +575,8 @@ describe('plain text', () => {
       display_name: 'Ada',
       avatar_path: null,
       bio: null,
+      terms_version: null,
+      terms_accepted_at: null,
       created_at: '2026-10-01T00:00:00Z',
       updated_at: '2026-10-01T00:00:00Z',
     };
