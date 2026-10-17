@@ -246,6 +246,26 @@ describe('report_gathering', () => {
     expect(await reportsAbout(hider.id)).toEqual([]);
   });
 
+  it("a connections-only gathering of a stranger's answers like a real one, and stores nothing", async () => {
+    const alice = await createTestUser('Alice');
+    const host = await createTestUser('Host');
+    const visible = await createGathering(host);
+    const stranger = await createTestUser('Stranger');
+    const { data, error } = await stranger.client.rpc('create_gathering', {
+      p_title: 'Friends only',
+      p_starts_at: new Date(Date.now() + 86_400_000).toISOString(),
+      p_location: 'Back lot',
+      p_visibility: 'connections',
+    });
+    expect(error).toBeNull();
+    const closed = (data as { id: string }).id;
+
+    const real = await reportGathering(alice, visible);
+    expect(real.error).toBeNull();
+    expect(await reportGathering(alice, closed)).toEqual(real);
+    expect(await reportsAbout(stranger.id)).toEqual([]);
+  });
+
   it('a bad reason or text is refused before the lookup, with no card in the error', async () => {
     const alice = await createTestUser('Alice');
     const host = await createTestUser('Secret Host');
