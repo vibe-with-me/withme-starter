@@ -111,6 +111,64 @@ blocked and a joiner who has blocked the host, with the same "gathering
 not found" as for a missing id: a gathering you cannot see is one you
 cannot join, in either direction.
 
+## Reports are private
+
+**The promise.** You can report anyone whose card you see, and block them
+in the same step. Only the people who run the app read reports. The person
+you reported never learns of it, you cannot read your report back, and
+nothing about a report is ever public. Reporting is not a way to find out
+whether someone exists.
+
+**How.** `public.reports` has row-level security on, no policies, and every
+privilege revoked from anon and authenticated, so only the service role
+reads it. Reports enter through `report_user`, a security-definer function.
+It answers an id that is not a person in the tenant exactly as it answers a
+real one (nothing is stored), so it is not an existence oracle. It counts
+attempts in a private ledger, 10 per rolling day, before it looks the id
+up: the publishable key reaches PostgREST directly, so the limit has to be
+inside the function, as `claim_tag`'s is. Its block option inserts the same
+block row Block does, with `reveals_card` decided by the same
+`private.sees_card` rule. Each report keeps a snapshot of the card as it
+was, so editing a name afterwards does not erase what was reported.
+
+**Account deletion.** Reports you filed are **anonymised**, not deleted:
+the reporter column is cleared, and the reason, your words and the
+snapshot stay. Victims often leave first, and a report about someone
+abusive should not disappear when they do. Reports **about** you are
+deleted with your account, like the rest of your data. Your report ledger
+is cleared by `delete_my_account`.
+
+**The test.** `packages/db/test/reports.test.ts`, and the report steps in
+`apps/api/e2e/handshake.e2e.ts` and `apps/web/e2e/reports.spec.ts`.
+
+**What this means for a fork.** A fork that ships to the stores must act
+on reports, within 24 hours for Apple: [moderation.md](moderation.md) is
+the operator's side. Never add a way for a reporter or the reported person
+to read reports, or a count of reports anywhere a user can see it. A fork
+that must keep evidence longer (child safety, legal holds) changes the
+`reported_id` cascade on purpose and says so here.
+
+## Terms are agreed to, and recorded
+
+**The promise.** Nobody gets a profile without agreeing to the fork's terms
+of use and privacy policy, and when the terms change, everyone is asked
+again before the app opens.
+
+**How.** `profiles.terms_version` and `profiles.terms_accepted_at` record
+which version you agreed to and when. The `profiles_insert` policy refuses
+a profile without a version, and a trigger stamps `terms_accepted_at`
+itself whenever the version changes, so no client can backdate it. The
+current version is `TERMS_VERSION` in `packages/contract`; the web shell
+and the mobile root layout send a profile on any other version to the
+re-ask screen. That gate is in the apps, not the database: it records an
+agreement rather than protecting anyone, and a direct API caller already
+agreed once, at sign-up, which the database enforces. The two columns
+are on `profiles`, so anyone who can read your profile row can read
+them, as they can read `created_at`; they are not on the card.
+
+**The test.** `packages/db/test/terms.test.ts`, and the terms spec in
+`apps/web/e2e/reports.spec.ts`.
+
 ## Two tiers of profile data
 
 **The promise.** A field on your card is visible to anyone who taps your
@@ -167,8 +225,9 @@ for every negative case so none can pass vacuously.
 ## Deleting an account deletes everything
 
 **The promise.** Delete your account and your profile, connections,
-requests, blocks, hosted gatherings and memberships, photos, and scan
-history are gone. Your claimed tags return to unclaimed.
+requests, blocks, hosted gatherings and memberships, photos, scan
+history, and reports about you are gone. Your claimed tags return to
+unclaimed. Reports you filed stay, anonymised (see Reports are private).
 
 **How.** Profile → Account clears the photo pointer, sweeps the avatar
 files through the Storage API, then calls `delete_my_account()`, a

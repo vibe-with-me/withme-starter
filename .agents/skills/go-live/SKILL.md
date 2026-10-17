@@ -226,6 +226,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
 # Public demo only (section 1); leave unset for an app with real users:
 # VITE_DEMO_CREDENTIALS=<demo email> / <demo password>
 # VITE_STORE_URL=https://<your-store>   # optional: the Merch tab
+# Required for an app with real users (sign-up links to them; make-it-yours 7b):
+# VITE_TERMS_URL=https://<your-site>/terms
+# VITE_PRIVACY_URL=https://<your-site>/privacy
 ```
 
 ```sh
@@ -315,7 +318,8 @@ stop and tell the owner — never work around it with the service role.
    module 'yallist'`, the bunx cache is broken: use `npx -y eas-cli@24.13.0 …`
    (the version this runbook was last verified with; pin, never `@latest`).
 2. Write `apps/mobile/.env.production` with the `EXPO_PUBLIC_*` mirrors
-   of step 3's values.
+   of step 3's values (`EXPO_PUBLIC_TERMS_URL` and
+   `EXPO_PUBLIC_PRIVACY_URL` included).
 3. Publish — `--environment` is REQUIRED in non-interactive mode:
 
 ```sh
@@ -414,6 +418,32 @@ account:
   Settings → Advanced Security). Push protection refuses a push that
   contains a recognised key before it lands. Both are free on public
   repositories.
+
+Then the store requirements for an app with user content (App Store
+Review Guideline 1.2, Google Play's user-generated content policy;
+`docs/moderation.md` maps each one). None of these is optional for a
+store app:
+
+- [ ] **Terms and privacy published.** `docs/terms-template.md` rewritten
+  for your app (every `[bracket]` filled, the placeholder banner gone),
+  published at two https URLs, and those URLs set as `VITE_TERMS_URL` /
+  `VITE_PRIVACY_URL` and `EXPO_PUBLIC_TERMS_URL` /
+  `EXPO_PUBLIC_PRIVACY_URL` (sections 3 and 4). Checkpoint: the live
+  sign-up's "I agree" line links to both, and both load.
+- [ ] **`TERMS_VERSION` matches the published version.** It is the
+  version line of your terms (`packages/contract/src/schemas/terms.ts`).
+  Change it, and deploy all three apps together, whenever you change the
+  terms in a way people must agree to again.
+- [ ] **A named report owner.** Someone runs the "Open reports" query
+  (`docs/moderation.md`) at least once a day, every day, with a named
+  stand-in, and acts within 24 hours. Write both names here. If nobody
+  can, add the notification `docs/moderation.md` describes first.
+- [ ] **Published contact information.** The contact email in your terms,
+  and a support URL on the App Store and Play listings that reaches a
+  person.
+- [ ] **A filter, or a reason there is none.** The starter ships no
+  content filter (`docs/moderation.md`, Adding a filter). Decide with
+  the owner whether you add one before launch; App Review can ask.
 
 **Checkpoint:** every box is ticked or written down as an accepted gap,
 with the owner's name next to it.

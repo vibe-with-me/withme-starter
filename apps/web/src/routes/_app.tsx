@@ -1,3 +1,4 @@
+import { termsAreCurrent } from '@withme/contract';
 import { createFileRoute, Navigate, useLocation, useRouterState } from '@tanstack/react-router';
 import { AppShell, ShellError, ShellPending } from '../components/AppShell.tsx';
 import { NotFoundBody } from '../components/CalmStates.tsx';
@@ -60,6 +61,17 @@ function ShellRoute() {
     return (
       <>
         <Navigate to="/profile" search={{ returnTo: href }} replace />
+        <ShellPending />
+      </>
+    );
+  }
+  // The same gate for terms: a profile that agreed to another version (or
+  // none, from before terms existed) is asked again before anything else.
+  if (profile && !termsAreCurrent(profile) && pathname !== '/terms') {
+    if (navigating) return <ShellPending />;
+    return (
+      <>
+        <Navigate to="/terms" search={{ returnTo: href }} replace />
         <ShellPending />
       </>
     );
