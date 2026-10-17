@@ -1,4 +1,4 @@
-import type { GatheringSummary, ResolveOutput, ScanMethod } from '@withme/contract';
+import type { GatheringSummary, ResolveOutput } from '@withme/contract';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -7,13 +7,9 @@ import { Avatar, Button, Card, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { gatheringLine } from '../../lib/format-time';
 import { gatheringHref } from '../../lib/gathering-link';
+import { scanMethod } from '../../lib/scan-method';
 import { supabase } from '../../lib/supabase';
 import { space, useTokens } from '../../lib/tokens';
-
-/** A hint is only ever one of the known methods; a deep link with anything else sends none. */
-function scanMethod(via: string | undefined): ScanMethod | undefined {
-  return via === 'nfc' || via === 'qr' || via === 'direct' ? via : undefined;
-}
 
 /**
  * The resolver — a physical tap (deep link) or a scan lands here and a

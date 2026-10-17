@@ -1,4 +1,4 @@
-import { correction, generate } from 'lean-qr';
+import { correction, generate, mode } from 'lean-qr';
 import { toSvgPath } from 'lean-qr/extras/svg';
 import { useMemo } from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
@@ -8,6 +8,13 @@ import { radius, useTokens } from '../lib/tokens';
 const QUIET = 4;
 
 /**
+ * A resolver URL is plain ASCII. Naming the modes keeps lean-qr from
+ * probing its Shift-JIS and UTF-8 encoders, and Hermes has no Shift-JIS
+ * TextDecoder: the default list fails to render on mobile.
+ */
+const MODES = [mode.numeric, mode.alphaNumeric, mode.ascii];
+
+/**
  * A share code: the same encoder and the same medium error correction as
  * the web (components/ShareCode.tsx there), so both clients draw identical
  * codes. Dark on light in both schemes.
@@ -15,7 +22,7 @@ const QUIET = 4;
 export function ShareCodeImage({ url, label, size = 240 }: { url: string; label: string; size?: number }) {
   const t = useTokens();
   const { modules, path } = useMemo(() => {
-    const code = generate(url, { minCorrectionLevel: correction.M });
+    const code = generate(url, { minCorrectionLevel: correction.M, modes: MODES });
     return { modules: code.size, path: toSvgPath(code) };
   }, [url]);
   const box = modules + QUIET * 2;
