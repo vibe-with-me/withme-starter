@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { PushOffer } from '../../components/Push';
+import { GatheringMeta } from '../../components/GatheringMeta';
 import { Avatar, Button, Card, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { gatheringLine } from '../../lib/format-time';
@@ -109,7 +110,7 @@ export default function ResolveScreen() {
           <Avatar name={result.profile.display_name} path={result.profile.avatar_path} />
           <Title>{result.profile.display_name}</Title>
           {result.profile.bio ? <Muted>{result.profile.bio}</Muted> : null}
-          <Muted>{gatheringLine(result.gathering)}</Muted>
+          <GatheringMeta line={gatheringLine(result.gathering)} />
           <GatheringInvite gathering={result.gathering} ownerId={result.profile.id} />
           <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
         </Card>

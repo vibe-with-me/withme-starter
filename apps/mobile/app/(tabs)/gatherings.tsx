@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { mapsLinkLabel, openInMaps } from '../../components/GatheringMeta';
 import { Button, Card, ErrorText, Field, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { parseLocalDateTime, tomorrowEvening, whenAndWhere } from '../../lib/format-time';
@@ -133,14 +134,18 @@ export default function GatheringsScreen() {
         : gathering.is_member
           ? 'Going'
           : null;
-    const line = [mark, whenAndWhere(gathering), goingLine(gathering.member_count)]
-      .filter(Boolean)
-      .join(' · ');
+    const line = whenAndWhere(gathering, [mark], [goingLine(gathering.member_count)]);
+    const where = line.location;
     const names = withLine(gathering.members, viewerId);
     return (
       <Pressable
         key={gathering.id}
         accessibilityRole="button"
+        // The row is one element to a screen reader, so the location's link is an action on it.
+        accessibilityActions={where ? [{ name: 'maps', label: mapsLinkLabel(where) }] : undefined}
+        onAccessibilityAction={(event) => {
+          if (where && event.nativeEvent.actionName === 'maps') void openInMaps(where);
+        }}
         onPress={() => router.push({ pathname: '/gathering/[id]', params: { id: gathering.id } })}
         style={({ pressed }) => [
           styles.row,
@@ -151,7 +156,20 @@ export default function GatheringsScreen() {
         <View style={styles.rowBody}>
           <Text style={[styles.rowName, { color: t.ink }]}>{gathering.title}</Text>
           <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
-            {line}
+            {line.head}
+            {where ? (
+              <>
+                {' · '}
+                <Text
+                  style={[styles.rowLink, { color: t.ink }]}
+                  suppressHighlighting
+                  onPress={() => void openInMaps(where)}
+                >
+                  {where}
+                </Text>
+              </>
+            ) : null}
+            {line.tail ? ` · ${line.tail}` : null}
           </Text>
           {names ? (
             <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
@@ -295,4 +313,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
   },
+  // Ink inside the muted line, never the accent (tokens.css).
+  rowLink: { textDecorationLine: 'underline' },
 });

@@ -2,6 +2,7 @@ import type { GatheringListItem } from '@withme/contract';
 import { createFileRoute, Link, useLoaderData, useRouter } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
+import { GatheringMeta } from '../components/GatheringMeta.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { tomorrowEvening, whenAndWhere } from '../lib/format-time.ts';
@@ -211,15 +212,16 @@ function GatheringRow({
       : gathering.is_member
         ? 'Going'
         : null;
-  const line = [mark, whenAndWhere(gathering), goingLine(gathering.member_count)]
-    .filter(Boolean)
-    .join(' · ');
   const names = withLine(gathering.members, viewerId);
   return (
     <div className="row">
       <div className="row-body">
         <span className="name">{gathering.title}</span>
-        <span className="sub">{line}</span>
+        <span className="sub">
+          <GatheringMeta
+            line={whenAndWhere(gathering, [mark], [goingLine(gathering.member_count)])}
+          />
+        </span>
         {names ? <span className="sub">{names}</span> : null}
       </div>
       <div className="row-actions">

@@ -89,7 +89,9 @@ congregating. Who is going is another matter: you see yourself and the
 people you have connected with, and nobody else. Joining tells the people
 you already know; it shows a stranger nothing, not even the host's name.
 A gathering hidden by a block looks like one that does not exist, with no
-headcount either.
+headcount either. A gathering's location opens in Maps, which sends its text
+to Apple or Google, but only on the viewer's own tap: the text is what the
+host chose to publish, and no request leaves until then.
 
 **How.** `gatherings_select` admits every signed-in user of the tenant,
 minus a block in either direction with the host. `gathering_members_select`
