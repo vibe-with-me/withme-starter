@@ -78,6 +78,10 @@ key only, never stored. Edge limits are advisory: a direct
 `/rest/v1/rpc/...` call with the publishable key skips the Worker, so a
 limit that must hold for everyone is a ledger inside the RPC
 (`claim_tag`, `create_gathering`, `send_connect_request`).
+A side effect that must happen for every caller, such as a push
+notification, is a trigger in the database, not a step in a handler
+(`20261017120000_push_notifications.sql`): a handler never sees the
+calls that go straight to PostgREST.
 A handler that writes to Storage does it through `context.db` too (the
 caller's JWT; the Storage helpers are in
 `packages/db/src/queries/avatars.ts`) and checks uploaded bytes itself

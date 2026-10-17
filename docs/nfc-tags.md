@@ -64,7 +64,7 @@ camera opens the code's URL in the browser, which is the web resolver.
 
 A share code is a tag. It is a row in `public.tags` of kind `qr`, minted
 and claimed to you by the database the first time you open Your code
-(`my_share_code()`, in `supabase/migrations/20261017032930_share_codes.sql`),
+(`my_share_code()`, in `supabase/migrations/20261017120100_share_codes.sql`),
 and its URL is the same `/t/{UID}` a sticker carries. That choice is the
 whole safety story: a scan goes through the unchanged `resolve_tag`, so it
 shows exactly what a tap shows, a viewer you blocked gets the same

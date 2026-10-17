@@ -393,6 +393,16 @@ a.link:hover {
   flex-shrink: 0;
 }
 
+/* A platform's mark or glyph, on a chip and in the picker: ink like the
+   text beside it, never a brand colour (PlatformIcon in Links.tsx). */
+.platform-icon {
+  flex-shrink: 0;
+}
+
+.link .platform-icon {
+  margin-right: 2px;
+}
+
 /* A long value (a URL) is cut with an ellipsis, never broken mid-word. */
 .link__value {
   min-width: 0;

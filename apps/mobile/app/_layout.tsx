@@ -14,6 +14,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { usePushRouting } from '../lib/push';
 import { useTermsGate } from '../lib/terms-gate';
 import { useSession } from '../lib/use-session';
 import { useTokens } from '../lib/tokens';
@@ -37,6 +38,8 @@ export default function RootLayout() {
   // The splash holds until the first terms check answers, so a profile that
   // must agree again never sees the tabs first (a failed check opens the app).
   const ready = fontsLoaded && !loading && !checking;
+  // Signed in and mounted: refresh this device's token, open tapped pushes.
+  usePushRouting(ready && !!session);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();

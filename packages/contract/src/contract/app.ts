@@ -17,8 +17,9 @@ import {
   PublicProfileSchema,
   UpdateProfileInputSchema,
 } from '../schemas/profile.ts';
-import { ShareCodeSchema } from '../schemas/share-code.ts';
+import { RegisterPushTokenInputSchema, UnregisterPushTokenInputSchema } from '../schemas/push.ts';
 import { CreateReportInputSchema } from '../schemas/report.ts';
+import { ShareCodeSchema } from '../schemas/share-code.ts';
 import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
 import { AcceptTermsInputSchema } from '../schemas/terms.ts';
 
@@ -213,6 +214,20 @@ const replaceMyShareCode = oc
   .route({ method: 'POST', path: '/me/share-code/replace', tags: ['Tags'] })
   .output(ShareCodeSchema);
 
+// Push: this device's token, for the three transactional pushes (a request
+// to you, yours accepted, people joined your gathering). Owner-only.
+const registerPushToken = oc
+  .route({ method: 'PUT', path: '/me/push-tokens', tags: ['Push'] })
+  .input(RegisterPushTokenInputSchema)
+  // Registers or refreshes; a token another account held moves to you.
+  .output(z.object({ ok: z.literal(true) }));
+
+const unregisterPushToken = oc
+  .route({ method: 'DELETE', path: '/me/push-tokens', tags: ['Push'] })
+  .input(UnregisterPushTokenInputSchema)
+  // Turning pushes off, and signing out. Not yours is the same ok.
+  .output(z.object({ ok: z.literal(true) }));
+
 /** Session-scoped surface — every procedure requires a verified Supabase JWT. */
 export const appContract = {
   profile: {
@@ -245,4 +260,5 @@ export const appContract = {
   },
   tags: { listMine: listMyTags, update: updateMyTag },
   shareCode: { get: getMyShareCode, replace: replaceMyShareCode },
+  push: { register: registerPushToken, unregister: unregisterPushToken },
 };

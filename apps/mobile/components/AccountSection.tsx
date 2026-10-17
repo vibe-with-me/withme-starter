@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { AccessibilityInfo, Alert, Platform, View } from 'react-native';
 import { api } from '../lib/api';
+import { clearThisDevice, forgetThisDevice } from '../lib/push';
 import { supabase } from '../lib/supabase';
 import { Button, Card, ErrorText, SectionHeader } from './ui';
 
@@ -28,6 +29,17 @@ export function AccountSection() {
   async function signOut() {
     setState('signingOut');
     setFailed(false);
+    // While the session still exists: the server forgets this device's token.
+    // If it cannot be told, the sign-out fails here, with nothing changed.
+    let restorePush: () => Promise<void>;
+    try {
+      restorePush = await forgetThisDevice();
+    } catch {
+      setState('idle');
+      setFailed(true);
+      announceFailure();
+      return;
+    }
     let ok: boolean;
     try {
       // auth-js reports a network failure as { error } and keeps the session.
@@ -37,7 +49,9 @@ export function AccountSection() {
       ok = false;
     }
     if (!ok) {
-      // Still signed in: stay here rather than leave a live session behind the login screen.
+      // Still signed in: stay here rather than leave a live session behind the login screen,
+      // and put this device's pushes back the way they were.
+      await restorePush();
       setState('idle');
       setFailed(true);
       announceFailure();
@@ -59,7 +73,9 @@ export function AccountSection() {
       return;
     }
     // The account is gone server-side either way: leave even if dropping the
-    // local copy fails, rather than stick on "Deleting…".
+    // local copy fails, rather than stick on "Deleting…". Its push tokens
+    // went with it.
+    await clearThisDevice();
     try {
       await supabase.auth.signOut({ scope: 'local' });
     } catch {

@@ -315,6 +315,42 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          last_seen_at: string
+          platform: string
+          tenant_id: string
+          token: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          last_seen_at?: string
+          platform: string
+          tenant_id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_seen_at?: string
+          platform?: string
+          tenant_id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           created_at: string
@@ -489,6 +525,10 @@ export type Database = {
         Returns: undefined
       }
       my_share_code: { Args: Record<PropertyKey, never>; Returns: string }
+      register_push_token: {
+        Args: { p_platform: string; p_token: string }
+        Returns: undefined
+      }
       replace_my_share_code: {
         Args: Record<PropertyKey, never>
         Returns: string

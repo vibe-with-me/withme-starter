@@ -32,6 +32,11 @@ It is placeholder artwork, MIT licensed with the code: keep it, change it,
 or replace it. Section 4 still asks each fork to brand itself, so plan to
 swap it before you ship.
 
+The platform icons on profile links (Instagram, TikTok, WhatsApp and the
+rest, in `packages/contract/src/schemas/link-icons.ts`) are those
+platforms' trademarks, drawn only to say where a link goes. They are not
+Vibe With Me marks, and the MIT license does not cover them.
+
 ## 2. The "[Something] With Me" naming pattern: allowed, with a disclaimer
 
 You may name your project using the `[activity] With Me` /

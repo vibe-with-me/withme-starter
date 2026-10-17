@@ -247,8 +247,8 @@ begin
 end
 $$;
 
--- Restated from 20261016190000_reports_and_terms.sql (the newest version),
--- plus the share-code ledger.
+-- Every line of the previous version (20261017120000_push_notifications)
+-- restated, plus the share-code ledger; grants survive the replace.
 create or replace function public.delete_my_account()
 returns void
 language plpgsql
@@ -273,6 +273,9 @@ begin
     raise exception 'avatar files remain' using errcode = 'P0006';
   end if;
 
+  delete from private.push_batches
+   where tokens && array(select token from public.push_tokens where user_id = v_user);
+  delete from private.push_throttle where kind = 'request' and subject_id = v_user;
   delete from private.connect_request_attempts where requester_id = v_user;
   delete from private.claim_attempts where user_id = v_user;
   delete from private.gathering_create_attempts where host_id = v_user;

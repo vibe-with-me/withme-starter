@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
+import { PushOffer } from '../../components/Push';
 import { Avatar, Button, Card, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { gatheringLine } from '../../lib/format-time';
@@ -275,7 +276,13 @@ function ConnectAction({ profileId, uid }: { profileId: string; uid: string }) {
   }
 
   if (send === 'sent') {
-    return <Muted>Request sent. They'll see it when they check in.</Muted>;
+    return (
+      <>
+        <Muted>Request sent. They'll see it when they check in.</Muted>
+        {/* The first request is the moment a notification explains itself. */}
+        <PushOffer bare />
+      </>
+    );
   }
 
   return (

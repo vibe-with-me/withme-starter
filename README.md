@@ -254,6 +254,10 @@ points at the test that proves it.
   like one that does not exist.
 - **Scans are privacy-default.** A tap stores a user-agent string and a
   timestamp. No GPS, no IP, no fingerprinting: those columns do not exist.
+- **Pushes are transactional and say only what you could already see.**
+  A request, an acceptance, people joining your gathering: nothing
+  else, off until you turn them on, and never a hint that a block
+  exists.
 - **Photos cannot point off-site.** A profile stores a path inside your
   own Storage bucket, never a URL.
 - **Deleting an account deletes everything.** Connections, requests,

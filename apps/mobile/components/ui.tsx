@@ -94,6 +94,7 @@ export function Button({
   ref,
   accessibilityLabel,
   expanded,
+  icon,
 }: {
   label: string;
   onPress: () => void;
@@ -108,19 +109,23 @@ export function Button({
   accessibilityLabel?: string;
   /** For a button that shows and hides something below it. */
   expanded?: boolean;
+  /** Drawn before the label, in the label's colour. Decorative: the label names the button. */
+  icon?: ReactNode;
 }) {
   const t = useTokens();
   return (
     <Pressable
       ref={ref}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      // An icon font's glyph would join the name iOS reads from the children.
+      accessibilityLabel={accessibilityLabel ?? (icon != null ? label : undefined)}
       accessibilityState={expanded === undefined ? undefined : { expanded }}
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,
         inline && styles.buttonInline,
+        icon != null && styles.buttonWithIcon,
         // Rank by solidity: default is solid ink, connect is the accent, quiet is text.
         kind === 'connect' && { backgroundColor: t.accent },
         kind === 'default' && { backgroundColor: t.ink },
@@ -130,6 +135,7 @@ export function Button({
         disabled && { opacity: 0.45 },
       ]}
     >
+      {icon}
       <Text
         style={[
           styles.buttonLabel,
@@ -463,6 +469,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     minHeight: TAP_TARGET,
     paddingHorizontal: space.s3,
+  },
+  buttonWithIcon: {
+    flexDirection: 'row',
+    gap: space.s2,
   },
   buttonLabel: {
     fontFamily: fonts.bodySemiBold,

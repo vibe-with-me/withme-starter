@@ -491,7 +491,30 @@ assert(replacedCode.uid !== code.uid, 'shareCode.replace mints a new code');
 const retired = await anon.resolve(code.uid);
 assert(retired.status === 'disabled', `the old code is inactive (got ${retired.status})`);
 
-// 20. account deletion: pointer cleared, files swept (Storage API, own JWT), then the definer RPC
+// 20. push: this device's token, owner-only. A fresh user who receives
+// nothing afterwards, so no push is ever attempted for the fake token.
+const dave = await createTestUser('E2E Dave');
+const { data: daveSession } = await dave.client.auth.getSession();
+const daveApp = appClientFor(daveSession.session?.access_token ?? '');
+const daveToken = `ExponentPushToken[e2e${crypto.randomUUID().replaceAll('-', '').slice(0, 16)}]`;
+assert((await daveApp.push.register({ token: daveToken, platform: 'ios' })).ok, 'push.register acks');
+const daveTokens = async () =>
+  ((await dave.client.from('push_tokens').select('token')).data ?? []).map((r) => r.token);
+assert((await daveTokens()).includes(daveToken), 'the token is stored for its owner');
+const notAToken = await daveApp.push
+  .register({ token: 'https://example.com/hook', platform: 'ios' })
+  .then(() => 'registered', codeOf);
+assert(notAToken === 'BAD_REQUEST', `only an Expo token registers (got ${notAToken})`);
+assert((await bobApp.push.unregister({ token: daveToken })).ok, "someone else's token: same ack");
+assert((await daveTokens()).includes(daveToken), '...and it is untouched');
+await daveApp.push.unregister({ token: daveToken });
+assert((await daveTokens()).length === 0, 'push.unregister forgets it');
+const anonPush = await anonApp.push
+  .register({ token: daveToken, platform: 'ios' })
+  .then(() => 'registered', codeOf);
+assert(anonPush === 'UNAUTHORIZED', `anonymous cannot register (got ${anonPush})`);
+
+// 21. account deletion: pointer cleared, files swept (Storage API, own JWT), then the definer RPC
 const carol = await createTestUser('E2E Carol');
 const { data: carolSession } = await carol.client.auth.getSession();
 const carolToken = carolSession.session?.access_token ?? '';

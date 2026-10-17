@@ -5,6 +5,7 @@ import { AccountSection } from '../../components/AccountSection';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { Links } from '../../components/Links';
 import { MyTags } from '../../components/MyTags';
+import { PushSection } from '../../components/Push';
 import { TermsCheckbox } from '../../components/TermsAgreement';
 import { Button, Card, ErrorText, Field, Title } from '../../components/ui';
 import { TERMS_VERSION, type Profile } from '@withme/contract';
@@ -169,6 +170,7 @@ export default function ProfileScreen() {
         {/* Links hang off the profile row: it needs the row to exist first. */}
         {exists ? <Links /> : null}
         {exists ? <MyTags /> : null}
+        {exists ? <PushSection /> : null}
         <AccountSection />
       </ScrollView>
     </KeyboardAvoidingView>

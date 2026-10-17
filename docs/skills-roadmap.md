@@ -77,6 +77,17 @@ In the order a new fork usually runs them:
   it could do anything vertical-specific, so `gatherings`,
   `gathering_members`, the `{ type: 'gathering', gathering_id }`
   destination and the Events tab ship in the starter.
+- **Push notifications are core, and transactional only.** They were
+  deferred as a skill, then moved into the starter for the reason the
+  gathering did: a request that sits unseen until the recipient happens
+  to reopen the app is a broken handshake, every fork would build the
+  same three triggers, and the hard part (blocks, oracles, what a push
+  may name) is safety the starter should own once. Three kinds, ever:
+  request received, request accepted, people joined your gathering. No
+  engagement, digests, or reminders, in the starter or in a skill. The
+  database sends them, so no caller path skips one. Mobile only: web
+  push or email is a fork's choice. [safety-model.md](safety-model.md)
+  has the enforcement and the tests.
 - **Gatherings are listed to the domain; who's going is connections-only.**
   A list of gatherings is a bulletin board, not a directory: people see
   where their scene is congregating, and the tap is still how they meet.
@@ -124,9 +135,6 @@ In the order a new fork usually runs them:
 
 ## Deferred or skipped, on purpose
 
-- **Notifications** (push on request received or accepted). A real
-  handshake need but infra-heavy. If built, transactional only, never
-  engagement, and as a skill.
 - **Analytics.** Skipped permanently. PostHog and others ship their own
   instrumentation skills, and the starter's no-telemetry stance is part of
   its identity.

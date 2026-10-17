@@ -2,12 +2,15 @@ import {
   LINK_PLATFORM_IDS,
   LINK_PLATFORMS,
   linkHref,
+  linkIcon,
   linkLabel,
   normalizeLinkValue,
+  type LinkGlyph,
   type LinkKind,
   type LinkPlatformId,
   type ProfileLink,
 } from '@withme/contract';
+import { Feather } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -19,6 +22,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { api } from '../lib/api';
 import { fonts, radius, space, TAP_TARGET, useTokens } from '../lib/tokens';
 import { Button, Card, ErrorText, Field, Muted, SectionHeader } from './ui';
@@ -36,6 +40,49 @@ const INVALID: Record<LinkKind, string> = {
   email: 'Enter an email address.',
   url: 'Enter a web address.',
 };
+
+const GLYPHS: Record<LinkGlyph, keyof typeof Feather.glyphMap> = {
+  phone: 'phone',
+  email: 'mail',
+  website: 'globe',
+  link: 'link',
+};
+
+const ICON_SIZE = 16;
+
+/**
+ * A platform's icon, in the colour of the text beside it. Decorative and
+ * never focusable: the chip and the picker button already say the
+ * platform's name.
+ */
+function PlatformIcon({ platform, color }: { platform: LinkPlatformId; color: string }) {
+  const icon = linkIcon(platform);
+  if ('glyph' in icon) {
+    return (
+      <Feather
+        name={GLYPHS[icon.glyph]}
+        size={ICON_SIZE}
+        color={color}
+        accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+    );
+  }
+  // The marks fill their 24×24 box; a 2-unit margin sets them at Feather's weight.
+  return (
+    <Svg
+      width={ICON_SIZE}
+      height={ICON_SIZE}
+      viewBox="-2 -2 28 28"
+      accessible={false}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Path d={icon.path} fill={color} />
+    </Svg>
+  );
+}
 
 interface Row {
   platform: LinkPlatformId;
@@ -262,6 +309,8 @@ export function Links() {
                   key={platform}
                   inline
                   label={LINK_PLATFORMS[platform].label}
+                  // A default button's label is surface on ink.
+                  icon={<PlatformIcon platform={platform} color={t.surface} />}
                   disabled={busy}
                   onPress={() => add(platform)}
                 />
@@ -297,6 +346,7 @@ export function LinkChips({ links }: { links: ProfileLink[] }) {
         const text = linkLabel(link.platform, link.value);
         const body = (
           <>
+            <PlatformIcon platform={link.platform} color={t.ink} />
             <Text style={[styles.chipPlatform, { color: t.inkMuted }]}>{label}</Text>
             <Text style={[styles.chipValue, { color: t.ink }]} numberOfLines={1}>
               {text}
