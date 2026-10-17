@@ -102,8 +102,10 @@ export async function declinePushOffer(): Promise<void> {
  * and whoever signs in next is asked afresh. Best effort, and bounded so
  * a dead network never holds the sign-out hostage; a token left behind is
  * moved to the next account on this phone, or dies in the 30-day sweep.
+ * Returns how to undo it, for a sign-out that then fails.
  */
-export async function forgetThisDevice(): Promise<void> {
+export async function forgetThisDevice(): Promise<() => Promise<void>> {
+  const choice = await readChoice();
   try {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     if (token) {
@@ -116,6 +118,15 @@ export async function forgetThisDevice(): Promise<void> {
     // Signing out matters more than this request.
   }
   await AsyncStorage.multiRemove([TOKEN_KEY, CHOICE_KEY]).catch(() => undefined);
+  return async () => {
+    try {
+      // The OS grant is still there, so turning back on asks nothing.
+      if (choice === 'on') await turnPushOn();
+      else if (choice === 'off') await AsyncStorage.setItem(CHOICE_KEY, 'off');
+    } catch {
+      // The next launch re-registers if the choice was restored.
+    }
+  };
 }
 
 /** After account deletion: the server already dropped the token with the account. */

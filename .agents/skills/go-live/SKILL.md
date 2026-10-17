@@ -381,7 +381,8 @@ their explicit OK**. They are free.
 "Turn on notifications"; after Allow, `select platform, last_seen_at
 from public.push_tokens` (SQL editor) shows the device. Send yourself a
 request from a second account: the push arrives and tapping it opens
-Requests. `select value from private.settings where key = 'push_url'` reads
+Requests. A pair rings once per 24 hours, so repeat the check with a
+different second account (or decline, wait out the day, and re-send). `select value from private.settings where key = 'push_url'` reads
 Expo's URL; setting it to `null` is the kill switch for every push.
 
 ## 5. Before real users

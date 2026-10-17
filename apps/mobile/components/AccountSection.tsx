@@ -30,7 +30,7 @@ export function AccountSection() {
     setState('signingOut');
     setFailed(false);
     // While the session still exists: the server forgets this device's token.
-    await forgetThisDevice();
+    const restorePush = await forgetThisDevice();
     let ok: boolean;
     try {
       // auth-js reports a network failure as { error } and keeps the session.
@@ -40,7 +40,9 @@ export function AccountSection() {
       ok = false;
     }
     if (!ok) {
-      // Still signed in: stay here rather than leave a live session behind the login screen.
+      // Still signed in: stay here rather than leave a live session behind the login screen,
+      // and put this device's pushes back the way they were.
+      await restorePush();
       setState('idle');
       setFailed(true);
       announceFailure();

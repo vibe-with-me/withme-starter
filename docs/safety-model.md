@@ -236,18 +236,21 @@ for every negative case so none can pass vacuously.
 
 ## Notifications say only what you could already see
 
-**The promise.** A phone gets three pushes, ever: someone sent you a
-connect request, someone accepted yours, people joined your gathering.
+**The promise.** There are three kinds of push, ever: someone sent you
+a connect request, someone accepted yours, people joined your gathering.
 No reminders, no digests, nothing to bring you back. A push names only
 what you could already see in the app, never tells anyone a block
-exists, and never reaches someone who blocked the sender. Pushes are
+exists, and is never sent across a block that exists when the request,
+acceptance, or join is written. Pushes are
 off until you turn them on, and one switch in Profile turns them off.
 
 **How.** The database sends them, from triggers on the rows that
 already carry consent (`connect_requests`, `gathering_members`), through
 `pg_net` to Expo's push service. A send that a block silently drops
 writes no row, so it cannot push; the triggers check the block again
-anyway. Because the send is in the database, a call straight to
+anyway. The check happens when the row is written: `pg_net` delivers a
+moment after the transaction commits, so a block made in that moment
+does not recall a push already queued. Because the send is in the database, a call straight to
 PostgREST pushes exactly as a call through the API does, and the API
 never needs the service-role key to read someone else's tokens. `pg_net`
 is asynchronous, so the sender's response time does not depend on
