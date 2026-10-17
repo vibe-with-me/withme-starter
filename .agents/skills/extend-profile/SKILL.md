@@ -1309,9 +1309,14 @@ when the tabs mounted.
     `AvatarPicker` and `MyTags` still key on it.
   - `load` reads
     `({ profile, details }: { profile: Profile | null; details: ProfileDetails | null })`;
-    inside its `if (profile)`, `setCurrent(profile)` and
-    `setAffiliation(profile.affiliation ?? '')`; after it,
-    `setContact(details?.contact_handle ?? '')`.
+    inside its `if (profile)`, `setCurrent(profile)`, and inside that
+    branch's `if (!keepDraft)` beside the name and bio,
+    `setAffiliation(profile.affiliation ?? '')`; after the whole
+    `if`/`else`, `if (!keepDraft) setContact(details?.contact_handle ?? '')`.
+    The screen reloads on every focus, and `keepDraft` is what stops that
+    reload from wiping what someone is typing: a new field's setters go
+    behind it, and its `Field` takes `onChangeText={edit(setAffiliation)}`
+    (`edit(setContact)` for the contact) so typing in it marks the draft.
   - `save`: `const saved = await api.app.profile.update({ … })` with the
     same payload as web, then `setCurrent(saved.profile)` on the next
     line, before the `redirect` branch and its `dismissTo` return, so it

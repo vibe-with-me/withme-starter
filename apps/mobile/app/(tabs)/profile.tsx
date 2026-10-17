@@ -24,6 +24,15 @@ export default function ProfileScreen() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Unsaved typing survives a focus reload: the reload refreshes the form
+  // only while it holds no edits. `draft` counts edits, so a save clears the
+  // flag only if nothing was typed while it was in flight.
+  const draft = useRef({ dirty: false, revision: 0 });
+  const edit = (set: (value: string) => void) => (value: string) => {
+    draft.current = { dirty: true, revision: draft.current.revision + 1 };
+    set(value);
+  };
+
   // Each load gets a generation; only the latest may touch state, so a slow
   // answer from an earlier focus never lands over a newer one.
   const loadGeneration = useRef(0);
@@ -34,15 +43,20 @@ export default function ProfileScreen() {
       .get()
       .then(({ profile }: { profile: Profile | null }) => {
         if (generation !== loadGeneration.current) return;
+        const keepDraft = draft.current.dirty;
         if (profile) {
           setExists(true);
-          setDisplayName(profile.display_name);
-          setBio(profile.bio ?? '');
+          if (!keepDraft) {
+            setDisplayName(profile.display_name);
+            setBio(profile.bio ?? '');
+          }
           setAvatarPath(profile.avatar_path);
         } else {
           setExists(false);
-          setDisplayName('');
-          setBio('');
+          if (!keepDraft) {
+            setDisplayName('');
+            setBio('');
+          }
           setAvatarPath(null);
         }
         setLoaded(true);
@@ -70,10 +84,12 @@ export default function ProfileScreen() {
     setStatus(null);
     setError(null);
     try {
+      const revision = draft.current.revision;
       await api.app.profile.update({
         display_name: displayName.trim(),
         bio: bio.trim() === '' ? null : bio.trim(),
       });
+      if (draft.current.revision === revision) draft.current = { dirty: false, revision };
       const redirect = safeRedirect(params.redirect);
       if (redirect) {
         router.setParams({ redirect: undefined });
@@ -124,11 +140,11 @@ export default function ProfileScreen() {
               onChange={(profile) => setAvatarPath(profile.avatar_path)}
             />
           ) : null}
-          <Field label="Name" value={displayName} onChangeText={setDisplayName} maxLength={80} />
+          <Field label="Name" value={displayName} onChangeText={edit(setDisplayName)} maxLength={80} />
           <Field
             label="Bio"
             value={bio}
-            onChangeText={setBio}
+            onChangeText={edit(setBio)}
             maxLength={280}
             multiline
             placeholder="A line or two about you"
