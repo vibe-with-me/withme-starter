@@ -113,6 +113,35 @@ bun run db:types
 order on a clean local database. That replay is the real test of a merge:
 it fails if a starter migration and one of yours disagree.
 
+A starter change can add a key to an `.env.example` that your own `.env`
+does not have yet (`EXPO_PUBLIC_WEB_URL` arrived this way). Each of these
+prints the keys one side has and the other lacks; copy the new ones over:
+
+```sh
+diff <(grep -oE '^[A-Z_]+=' apps/mobile/.env.example | sort) <(grep -oE '^[A-Z_]+=' apps/mobile/.env | sort)
+diff <(grep -oE '^[A-Z_]+=' apps/web/.env.example | sort) <(grep -oE '^[A-Z_]+=' apps/web/.env | sort)
+diff <(grep -oE '^[A-Z_]+=' apps/api/.dev.vars.example | sort) <(grep -oE '^[A-Z_]+=' apps/api/.dev.vars | sort)
+```
+
+**4b. Put new starter code in your words.** New starter files arrive in
+the starter's nouns, paths and brand, with no conflict to warn you: a page
+title that says "— withme", a `navigate` to `/gatherings`, a spec that
+clicks "Events", a test that calls `create_gathering` without your
+field's argument. Typecheck and the tests catch some; nothing catches the
+copy. Sweep what the merge brought in (on the merge commit, `HEAD^1` is
+your `main` before it):
+
+```sh
+git diff --name-only HEAD^1 HEAD -- apps packages supabase/seed \
+  | xargs grep -nE "withme|/gatherings?\b|'Events'|[Gg]athering|create_gathering|gatherings\.create" \
+  | grep -v '@withme/'
+```
+
+Internal identifiers stay as they are (`gathering` in code, `@withme/*`),
+as everywhere else. What a person reads or a URL they visit takes your
+words: the same rules as `make-it-yours` step 3 and `customize-gathering`
+§1. A new caller of `create_gathering` takes your fields' arguments.
+
 **5. Run the gate, then the e2e suites.**
 
 ```sh
@@ -134,7 +163,8 @@ next sync starts from the old merge base and asks you to resolve every
 conflict you already resolved. If the repository allows only squash
 merges, turn on **Settings → General → Allow merge commits** (you can
 leave it for sync PRs only), or merge the branch locally with
-`git merge --no-ff starter-sync` and push `main`. Afterwards, check
+`git switch main && git merge --no-ff starter-sync` and push `main` (the
+switch matters: on `starter-sync` itself the merge has nothing to do). Afterwards, check
 (fetch `origin` only, so `upstream/main` is still the commit you merged):
 
 ```sh

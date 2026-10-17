@@ -21,8 +21,10 @@
   --color-border-input: rgba(28, 25, 22, 0.5);
   --color-ink: #1c1916;
   --color-ink-muted: #6f6a62;
-  /* behind a modal dialog (web only: mobile presents a screen instead) */
-  --color-scrim: rgba(28, 25, 22, 0.4);
+  /* behind a modal dialog (web only: mobile presents a screen instead).
+     Derived, not a brand token: the light ink at 40%, so a rebrand's ink
+     recolors it, and the dark one is plain black (below). */
+  --color-scrim: color-mix(in srgb, var(--color-ink) 40%, transparent);
 
   /* the accent. A screen's primary action (.btn--connect) and nothing else.
      (5.18:1 with --color-accent-ink in light; 6.46:1 in dark) */

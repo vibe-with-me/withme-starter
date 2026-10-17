@@ -94,7 +94,7 @@ What makes it different from a sticker:
   for a sticker it keeps the client's hint (the mobile app sends `nfc`
   after an NFC read, `direct` for a typed UID), and `unknown` otherwise.
 
-**The scanner opens only your own codes.** Mobile's `app/scan-qr.tsx` runs
+**The scanner opens only codes for your app's address.** Mobile's `app/scan-qr.tsx` runs
 every code it sees through `tagUidFromUrl` (`@withme/contract`): the scheme
 and host must equal `EXPO_PUBLIC_WEB_URL` exactly, the path must be `/t/`
 plus 14 hex characters, and anything else is refused on screen and never

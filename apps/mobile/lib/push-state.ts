@@ -1,3 +1,5 @@
+import { gatheringHref } from './gathering-link';
+
 /** What the OS says about notifications for this app. */
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
 
@@ -18,4 +20,16 @@ export function pushSetting(permission: PushPermission, choice: PushChoice): Pus
   // "On" with no OS grant (permission reset, app restored) is not on: the
   // switch shows off and turning it on asks again.
   return choice === 'on' && permission === 'granted' ? 'on' : 'off';
+}
+
+/**
+ * The screen a tapped notification opens. The database writes paths in
+ * internal names (`/gathering/<id>`, like the API's routes), so a gathering
+ * push goes through gatheringHref: a fork that renames the screen
+ * (customize-gathering's URL step) renames it there, once, for links and
+ * pushes alike.
+ */
+export function pushScreen(path: string): string {
+  const gathering = /^\/gathering\/([0-9a-f-]{36})$/.exec(path);
+  return gathering ? gatheringHref(gathering[1]) : path;
 }

@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { api } from './api';
-import { pushSetting, type PushChoice, type PushPermission, type PushSetting } from './push-state';
+import { pushScreen, pushSetting, type PushChoice, type PushPermission, type PushSetting } from './push-state';
 
 /**
  * Push notifications, transactional only: a request to you, yours
@@ -176,6 +176,6 @@ export function usePushRouting(signedIn: boolean): void {
     if (handled.current === id) return;
     handled.current = id;
     const path = pushPath(response.notification.request.content.data);
-    if (path) router.push(path as never);
+    if (path) router.push(pushScreen(path) as never);
   }, [signedIn, response]);
 }

@@ -225,9 +225,17 @@ function CardReport({ profileId, name, uid }: { profileId: string; name: string;
     <Button
       kind="quiet"
       label="Report"
-      onPress={() => {
+      onPress={async () => {
         if (viewer === 'anon') {
           router.push({ pathname: '/login', params: { redirect: `/t/${uid}` } });
+          return;
+        }
+        // A report needs the reporter's own profile (report_user refuses
+        // without one): make it first, as Connect does. A failed read goes
+        // on to the report screen, whose own error state covers it.
+        const { profile } = await api.app.profile.get().catch(() => ({ profile: true }));
+        if (!profile) {
+          router.push({ pathname: '/profile', params: { redirect: `/t/${uid}` } });
           return;
         }
         router.push({ pathname: '/report/[id]', params: { id: profileId, name } });

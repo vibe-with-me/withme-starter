@@ -34,8 +34,15 @@ describe('report_user', () => {
     const { error } = await report(alice, bob.id, { p_details: '  Kept messaging me.\nTwice.  ' });
     expect(error).toBeNull();
 
-    // A later edit cannot change what was reported.
-    await bob.client.from('profiles').update({ bio: 'Innocent now' }).eq('id', bob.id);
+    // A later edit cannot change what was reported. Assert the edit landed,
+    // or the snapshot check below passes without testing anything.
+    const { data: edited, error: editError } = await bob.client
+      .from('profiles')
+      .update({ bio: 'Innocent now' })
+      .eq('id', bob.id)
+      .select('bio');
+    expect(editError).toBeNull();
+    expect(edited).toEqual([{ bio: 'Innocent now' }]);
 
     const rows = await reportsAbout(bob.id);
     expect(rows).toHaveLength(1);

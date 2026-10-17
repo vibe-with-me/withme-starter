@@ -56,6 +56,9 @@ function ShellRoute() {
   const { profile } = Route.useLoaderData();
   const { pathname, href } = useLocation();
   const navigating = useRouterState({ select: (s) => s.isLoading });
+  // A fork that widens this to `!isProfileComplete(profile)` (extend-profile)
+  // also exempts '/terms': a profile that is incomplete AND on old terms would
+  // otherwise bounce between the two gates forever.
   if (!profile && pathname !== '/profile') {
     if (navigating) return <ShellPending />;
     return (
