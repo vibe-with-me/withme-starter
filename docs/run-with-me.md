@@ -429,11 +429,16 @@ The same eight steps, different inputs:
 
 | Vertical | `customize-gathering` | `extend-profile` card | `extend-profile` connections | `add-destination-type` |
 | --- | --- | --- | --- | --- |
-| Golf | round / rounds; `course_name` | handicap, home course | phone | — |
-| Tailgate | tailgate / tailgates; `lot` | team, signature dish | phone | link to the parking map |
-| Climbing gym | session / sessions; `wall` | grade, usual night | handle | — |
-| Dog walking | walk / walks; `park` | dog's name and breed | phone | — |
-| Book club | meeting / meetings; `book` | currently reading | email | link to the reading list |
+| Golf | round / rounds; `course_name` | handicap, home course | — (phone is a Link) | — |
+| Tailgate | tailgate / tailgates; `lot` | team, signature dish | — (phone is a Link) | link to the parking map |
+| Climbing gym | session / sessions; `wall` | grade, usual night | — (a handle is a Link) | — |
+| Dog walking | walk / walks; `park` | dog's name and breed | — (phone is a Link) | — |
+| Book club | meeting / meetings; `book` | currently reading | — (email is a Link) | link to the reading list |
+
+The connections column is empty in each because a phone number, an
+email and a handle already ship as Links (Profile → Links, connections
+only): `extend-profile`'s connections tier is for a field that is not a
+way to reach someone. Golf With Me is card-only for that reason.
 
 What stays off the table in every one of them: a list of members you have
 not met, a feed, a ranking, a recommendation. The skills will not build

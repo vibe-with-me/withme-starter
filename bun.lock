@@ -6,6 +6,7 @@
       "name": "withme-starter",
       "devDependencies": {
         "oxlint": "^1.87.0",
+        "prettier": "3.9.10",
         "turbo": "^2.11.7",
       },
     },
@@ -66,6 +67,7 @@
       "devDependencies": {
         "@orpc/contract": "^1.15.5",
         "@types/aes-js": "^3.1.4",
+        "@types/bun": "^1.4.2",
         "@types/react": "~19.2.2",
         "agent-device": "0.21.27",
         "typescript": "~6.0.3",

@@ -64,13 +64,19 @@ profile fields. The skills exist because those moves repeat.
 
 | Idea | The gathering becomes | Fields on the card | Fields only connections see | Where the tag lives |
 | --- | --- | --- | --- | --- |
-| Run With Me | a run (distance, pace group) | pace, home club | Strava handle, phone | bib, shoe tag, water bottle |
-| Golf With Me | a round (course, tee time) | handicap, home course | phone | bag tag, ball marker |
-| Tailgate With Me | a tailgate (lot, kickoff) | team, signature dish | phone | cooler, koozie |
-| Climb With Me | a session (wall, grade range) | grade, usual night | handle | chalk bag, membership card |
-| Walk With Me | a walk (park, time) | dog's name and breed | phone | collar tag |
-| Read With Me | a meeting (book, chapter) | currently reading | email | bookmark |
-| Trivia With Me | a team table | team name | handle | table tent at the bar |
+| Run With Me | a run (distance, pace group) | pace, home club | Strava handle (a new Link platform), phone (a Link) | bib, shoe tag, water bottle |
+| Golf With Me | a round (course, tee time) | handicap, home course | phone (a Link) | bag tag, ball marker |
+| Tailgate With Me | a tailgate (lot, kickoff) | team, signature dish | phone (a Link) | cooler, koozie |
+| Climb With Me | a session (wall, grade range) | grade, usual night | handle (a Link) | chalk bag, membership card |
+| Walk With Me | a walk (park, time) | dog's name and breed | phone (a Link) | collar tag |
+| Read With Me | a meeting (book, chapter) | currently reading | email (a Link) | bookmark |
+| Trivia With Me | a team table | team name | handle (a Link) | table tent at the bar |
+
+Every connections-only field above is a way to reach someone, and the
+starter already ships those as Links (Profile → Links: a phone number, an
+email, a handle on most services), seen only by connections. A new
+service is one more Link platform; `extend-profile`'s connections tier is
+for what is not a link (a shirt size, a postcode).
 
 The pattern is the same every time: **a gathering with your nouns, a card
 with your fields, a tag where your people already are.** The

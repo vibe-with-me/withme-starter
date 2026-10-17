@@ -259,13 +259,16 @@ and `updateProfile`'s becomes
 
 `packages/contract/test/schemas.test.ts`. Before you touch it, `cd
 packages/contract && bun test` is red on the existing card fixtures: in the
-starter, four fail (both `ResolveOutputSchema` claimed parses, "exposes only
-card-safe fields", and the `ConnectRequestSchema` parse) and the rest pass.
+starter, six fail (both `ResolveOutputSchema` claimed parses, "exposes only
+card-safe fields", the `ConnectRequestSchema` parse, the gathering list
+item's members, and "a connection always carries links") and the rest
+pass.
 That is the required-nullable key doing its job. Then:
 
-- add `affiliation: null` to every profile-card fixture (five in the
-  starter, under `ResolveOutputSchema` and `ConnectRequestSchema`; the key
-  is required-nullable, so every existing fixture fails to parse without it);
+- add `affiliation: null` to every profile-card fixture those six parse
+  (`grep -n "display_name:" packages/contract/test/schemas.test.ts` lists
+  the candidates; the key is required-nullable, so every existing fixture
+  fails to parse without it);
 - add `'affiliation'` to the expected keys in "exposes only card-safe fields"
   (the test sorts them with `.toSorted()`, so the expected list is sorted
   too, with your field in its alphabetical place — for `affiliation`,
@@ -1420,7 +1423,7 @@ on the tiers. In the build this was distilled from (both tiers): db
 fourteen and contract five over the baseline, eight new API e2e lines, and
 every Playwright spec green on the first run. Golf-with-me (card-only, two
 card fields, one typed, nothing required beyond the name): db four,
-contract seven, API e2e seven.
+contract seven, API e2e six (one per card surface §8 lists).
 
 ## What must not move
 

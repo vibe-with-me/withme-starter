@@ -352,13 +352,22 @@ the upstream `owner` and `projectId`; step 5 replaces them).
 The starter's EAS project belongs to the upstream org; a fork must claim
 its own:
 
-1. In `apps/mobile/app.json`, delete `expo.owner`,
-   `expo.extra.eas.projectId`, and `expo.updates.url` — and remove the
-   `extra.eas` / `updates` objects they leave empty.
-2. `cd apps/mobile && bunx eas init` (logged in as the fork owner) —
-   creates a fresh project and writes the new `projectId` + `owner`.
+1. In `apps/mobile/app.json`, set `expo.owner` to the fork's Expo
+   account (the org's name, or your username), and delete
+   `expo.extra.eas.projectId` and `expo.updates.url` — and remove the
+   `extra.eas` / `updates` objects they leave empty. Set the owner rather
+   than delete it: a login that belongs to more than one account (your
+   own and an org) gets the personal one from `eas init` when `owner` is
+   absent.
+2. `cd apps/mobile && bunx eas init` (logged in as a member of that
+   account) — creates `@<owner>/<slug>` and writes the new `projectId`.
+   Read `git diff app.json` after it: it can also write an
+   `android.permissions` list naming `android.permission.NFC` twice; keep
+   one.
 3. `bunx eas update:configure` — restores `updates.url` pointing at the
-   new project.
+   new project, and adds a `channel` to each build profile in
+   `eas.json`. Keep the channels: EAS Update routes a build's updates
+   by them.
 
 A fork reusing an EAS project it already has links it instead of
 creating one: see go-live §4, step 1.
@@ -583,7 +592,9 @@ If the starter's maintainer really does review the fork's pull requests,
 `.github/CODEOWNERS` keeps `@alex-eisele` and prints too: a deliberate
 match, like the seed identity.
 
-Finally the visual check, which needs BOTH dev servers: in one shell
+Finally the visual check. The RLS suite leaves its fixtures behind (test
+users' gatherings fill the Events feed), so after the gate run
+`bun run db:reset && bun run db:seed` first. It needs BOTH dev servers: in one shell
 `cd apps/api && bun run dev` (the web loaders call the API Worker on
 port 8786 — without it the resolver page errors), in another
 `cd apps/web && bun run dev`. The landing page shows your wordmark in
