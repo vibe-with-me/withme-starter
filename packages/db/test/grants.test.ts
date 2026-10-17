@@ -123,6 +123,56 @@ describe('function grants', () => {
   });
 });
 
+// Every security-definer function that reads public.gatherings bypasses its
+// RLS, so each one either asks private.sees_gathering (the one visibility
+// rule, 20261017203000) or is listed here with why it never shows a
+// gathering to someone the rule would refuse. A new definer that reads the
+// table fails until it is added, with its reason.
+const GATHERING_READERS: Record<string, 'asks sees_gathering' | string> = {
+  'private.sees_gathering': 'the rule itself',
+  'public.gathering_member_counts': 'asks sees_gathering',
+  'public.join_gathering': 'asks sees_gathering',
+  'public.resolve_tag': 'asks sees_gathering',
+  'public.create_gathering': "the caller's own new row, and a count of their own upcoming ones",
+  'private.on_block_created': 'deletes pair-hosted memberships; returns nothing',
+  'private.on_gathering_member_joined': 'pushes the title and a count to the host only',
+};
+
+describe('gathering readers', () => {
+  it('every definer that reads gatherings asks sees_gathering or is listed with its reason', async () => {
+    const rows: { fn: string; asks: boolean }[] = await sql`
+      select n.nspname || '.' || p.proname as fn, strpos(p.prosrc, 'sees_gathering(') > 0 as asks
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in ('public', 'private')
+        and p.prosecdef
+        -- no backslashes: Bun's sql tag sends the raw template text
+        and p.prosrc ~ 'public[.]gatherings([^_a-z]|$)'
+      order by 1`;
+    expect(rows.map((r) => r.fn)).toEqual(Object.keys(GATHERING_READERS).toSorted());
+    for (const row of rows) {
+      if (GATHERING_READERS[row.fn] === 'asks sees_gathering') expect(row.asks).toBe(true);
+    }
+  });
+
+  // One argument: the viewer is always auth.uid() and the host and the
+  // visibility come from the row. A (viewer, host) helper would answer
+  // "are these two connected, is there a block" for any pair a caller named.
+  it('sees_gathering takes only a gathering id, and anon cannot run it', async () => {
+    const rows: { args: string }[] = await sql`
+      select pg_get_function_identity_arguments(p.oid) as args
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'private' and p.proname = 'sees_gathering'`;
+    expect(rows).toEqual([{ args: 'p_gathering uuid' }]);
+    const [row] = await sql`
+      select
+        has_function_privilege('anon', 'private.sees_gathering(uuid)', 'EXECUTE') as anon,
+        has_function_privilege('authenticated', 'private.sees_gathering(uuid)', 'EXECUTE') as authed`;
+    expect(row).toEqual({ anon: false, authed: true });
+  });
+});
+
 describe('table privileges', () => {
   // Every table a client role could ever reach has RLS on, including the
   // private ledgers (settings, push batches, throttle, report and share-code

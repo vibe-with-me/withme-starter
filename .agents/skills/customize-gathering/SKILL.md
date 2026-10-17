@@ -418,7 +418,11 @@ c. `public.gathering_member_counts` is the headcount: a definer read whose
    `where` calls `private.sees_gathering`, so a hidden gathering has no
    count. Any new definer that reads a gathering (a report, an export, a
    push) asks `sees_gathering` the same way, never a block check of its
-   own.
+   own, and joins `grants.test.ts`'s `GATHERING_READERS` list, which fails
+   on any definer that reads `public.gatherings` without being listed.
+   `sees_gathering` takes only the gathering's id: the viewer is always
+   `auth.uid()`. Never add a version that takes a viewer or a host; it
+   would answer "are these two connected, is there a block" for any pair.
 d. `join_gathering` raises `'gathering not found'` (P0003) for a missing
    id, a viewer the host blocked, a viewer who blocked the host, AND a
    viewer `sees_gathering` refuses (a gathering you cannot see is one you
@@ -451,7 +455,7 @@ card; what it allows is one consent-gated `send_connect_request`.
 `members_of_my_club`), it is one value and one clause:
 1. A migration that drops and re-adds `gatherings_visibility_known` with
    the new value, and `create or replace`s `private.sees_gathering` from
-   its newest body with one more `or (p_visibility = '<value>' and …)`
+   its newest body with one more `or (g.visibility = '<value>' and …)`
    branch inside the not-blocked half. Every path above picks it up,
    because they all ask that one function. Never give the new branch a
    way around the block checks or the host test.

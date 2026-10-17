@@ -130,7 +130,17 @@ nobody; connections find it in Events.
 gathering asks it: `gatherings_select` (so the feed, the detail, your own
 list and the member rows), the headcount, `join_gathering`, and
 `resolve_tag`'s gathering line. It reads membership through a definer, so
-the gatherings policy still never reads `gathering_members` under RLS.
+the gatherings policy still never reads `gathering_members` under RLS. It
+takes only the gathering's id and always asks about the caller
+(`auth.uid()`), so it cannot be used to ask whether two other people are
+connected or blocked. `grants.test.ts` lists every security-definer
+function that reads gatherings, each with how it complies, and fails on a
+new one until it is listed.
+
+**A change for blocks, too.** Before this, a tap on a member's tag showed
+the gathering line to a tapper who had blocked the host (only a tapper the
+host blocked was refused), though the feed already hid it from them. The
+tap now follows the feed: a block either way hides the line.
 **The test.** `packages/db/test/gathering-visibility.test.ts`: a
 stranger, a connection, a member, a member's connection, both directions
 of a block, anon, a tap and a share-code scan, each beside a positive

@@ -33,9 +33,14 @@
 --   * (e) resolve_tag shows the gathering line only where sees_gathering
 --     holds; otherwise the tap degrades to the profile card, the same answer
 --     as a dangling destination, so a stranger (or anon) holding the host's
---     tag or share code learns nothing about a hidden gathering. The block
---     check there becomes symmetric with the feed: a tapper who blocked the
---     host no longer sees the line.
+--     tag or share code learns nothing about a hidden gathering. A behaviour
+--     change beyond visibility: the block check there becomes symmetric with
+--     the feed, so a tapper who blocked the host no longer sees the line
+--     (until now only a tapper the host blocked was refused).
+--
+-- Every security-definer function that reads public.gatherings is listed in
+-- packages/db/test/grants.test.ts with how it complies; a new one fails that
+-- test until it is listed.
 --
 -- Mechanisms (a)-(e) are re-stated by packages/db/test/gathering-visibility
 -- .test.ts and gathering-capacity.test.ts. Every redefined function starts
@@ -56,45 +61,56 @@ grant update (title, starts_at, location, visibility, capacity) on public.gather
 
 -- ============================================================= (b) rule ==
 
--- "Does p_viewer see this gathering?" The host always; otherwise no block
--- either way with the host, and either it is for everyone, or the viewer is
--- the host's accepted connection or already a member. A null viewer (anon,
--- in resolve_tag) sees only an 'everyone' gathering.
-create function private.sees_gathering(
-  p_viewer uuid,
-  p_gathering uuid,
-  p_host uuid,
-  p_visibility text
-)
+-- "Does the caller see this gathering?" The host always; otherwise no
+-- block either way with the host, and either it is for everyone, or the
+-- caller is the host's accepted connection or already a member. Anon (in
+-- resolve_tag) sees only an 'everyone' gathering; a missing id is false.
+--
+-- One argument on purpose: the host and the visibility come from the row,
+-- and the viewer is always auth.uid(). A helper that took a viewer and a
+-- host would answer "are A and B connected, is there a block, is A a
+-- member" for any pair a caller chose, an oracle over the connection graph
+-- the moment anything let a client call it. This one only ever answers
+-- about the caller's own view, which RLS already gives them. Granted to
+-- authenticated because gatherings_select calls it; pinned by grants.test.ts.
+create function private.sees_gathering(p_gathering uuid)
 returns boolean
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select coalesce(p_viewer = p_host, false)
-    or (
-      not private.is_blocked(p_viewer, p_host)
-      and not private.is_blocked(p_host, p_viewer)
-      and (
-        p_visibility = 'everyone'
-        or (
-          p_viewer is not null
-          and (
-            exists (
-              select 1 from public.connections c
-              where c.user_a = least(p_viewer, p_host)
-                and c.user_b = greatest(p_viewer, p_host)
-            )
-            or private.is_gathering_member(p_gathering, p_viewer)
-          )
-        )
-      )
-    )
+  select exists (
+    select 1
+      from public.gatherings g
+     where g.id = p_gathering
+       and g.tenant_id = private.current_tenant_id()
+       and (
+         g.host_id = (select auth.uid())
+         or (
+           not private.is_blocked((select auth.uid()), g.host_id)
+           and not private.is_blocked(g.host_id, (select auth.uid()))
+           and (
+             g.visibility = 'everyone'
+             or (
+               (select auth.uid()) is not null
+               and (
+                 exists (
+                   select 1 from public.connections c
+                   where c.user_a = least((select auth.uid()), g.host_id)
+                     and c.user_b = greatest((select auth.uid()), g.host_id)
+                 )
+                 or private.is_gathering_member(g.id, (select auth.uid()))
+               )
+             )
+           )
+         )
+       )
+  )
 $$;
 
-revoke execute on function private.sees_gathering(uuid, uuid, uuid, text) from public, anon;
-grant execute on function private.sees_gathering(uuid, uuid, uuid, text) to authenticated;
+revoke execute on function private.sees_gathering(uuid) from public, anon;
+grant execute on function private.sees_gathering(uuid) to authenticated;
 
 -- ============================================================ (a) feed ==
 
@@ -103,7 +119,7 @@ create policy gatherings_select on public.gatherings
   for select to authenticated
   using (
     tenant_id = private.current_tenant_id()
-    and private.sees_gathering((select auth.uid()), id, host_id, visibility)
+    and private.sees_gathering(id)
   );
 
 -- gathering_members_select is unchanged: its gatherings subquery runs under
@@ -123,7 +139,7 @@ as $$
     join public.gatherings g on g.id = gm.gathering_id
    where gm.gathering_id = any(p_ids)
      and g.tenant_id = private.current_tenant_id()
-     and private.sees_gathering((select auth.uid()), g.id, g.host_id, g.visibility)
+     and private.sees_gathering(g.id)
    group by gm.gathering_id
 $$;
 
@@ -242,7 +258,7 @@ begin
 
   if private.is_blocked(v_user, v_gathering.host_id)
      or private.is_blocked(v_gathering.host_id, v_user)
-     or not private.sees_gathering(v_user, v_gathering.id, v_gathering.host_id, v_gathering.visibility) then
+     or not private.sees_gathering(v_gathering.id) then
     raise exception 'gathering not found' using errcode = 'P0003';
   end if;
 
@@ -309,9 +325,7 @@ begin
        and tenant_id = private.current_tenant_id();
     if found
        and private.is_gathering_member(v_gathering.id, v_tag.claimed_by)
-       and private.sees_gathering(
-         (select auth.uid()), v_gathering.id, v_gathering.host_id, v_gathering.visibility
-       ) then
+       and private.sees_gathering(v_gathering.id) then
       v_gathering_json := jsonb_build_object(
         'id', v_gathering.id,
         'title', v_gathering.title,
