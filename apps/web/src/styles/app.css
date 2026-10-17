@@ -947,6 +947,12 @@ a.link:hover {
   accent-color: var(--color-ink);
 }
 
+/* The one line under a choice that says what it means. */
+.choice-help {
+  display: block;
+  color: var(--color-ink-muted);
+}
+
 .choices {
   border: 0;
   margin: 0;

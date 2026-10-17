@@ -142,6 +142,8 @@ const { error: linGatheringError } = await lin.client.rpc('create_gathering', {
   p_title: 'Vinyl swap in the park',
   p_starts_at: linStartsAt.toISOString(),
   p_location: 'The bandstand, Loom Park',
+  // a capacity, so the feed shows "1 of 12 going"
+  p_capacity: 12,
 });
 if (linGatheringError) throw linGatheringError;
 

@@ -334,11 +334,64 @@ assert(
   'a tag pointed at a deleted gathering degrades to the profile card',
 );
 
+// 17a. the host's two controls: a connections-only gathering with two spots.
+// Bob is a stranger again (the block in 16 removed the connection). A
+// connection joins the last spot; the next one is CONFLICT, and a stranger
+// reads the full gathering as not found, never as full.
+const erin = await createTestUser('E2E Erin');
+const erinApp = appClientFor((await erin.client.auth.getSession()).data.session?.access_token ?? '');
+const fay = await createTestUser('E2E Fay');
+const fayApp = appClientFor((await fay.client.auth.getSession()).data.session?.access_token ?? '');
+for (const friendApp of [erinApp, fayApp]) {
+  await friendApp.requests.send({ recipient_id: alice.id });
+}
+for (const request of (await aliceApp.requests.listPending()).requests) {
+  await aliceApp.requests.accept({ id: request.id });
+}
+const round = await aliceApp.gatherings.create({
+  title: 'E2E Round',
+  starts_at: new Date(Date.now() + 86_400_000).toISOString(),
+  visibility: 'connections',
+  capacity: 2,
+});
+assert(
+  round.gathering.visibility === 'connections' && round.gathering.capacity === 2,
+  'create carries visibility and capacity',
+);
+const codeOf = (e: { code?: string }) => e.code ?? 'error';
+const strangerRead = await bobApp.gatherings.get({ id: round.gathering.id }).then(() => 'visible', codeOf);
+assert(strangerRead === 'NOT_FOUND', `a stranger reads a connections gathering as not found (got ${strangerRead})`);
+assert(
+  !(await wholeFeed(bobApp)).some((g) => g.id === round.gathering.id),
+  'a connections gathering is not in a stranger\'s feed',
+);
+const friendListed = (await wholeFeed(erinApp)).find((g) => g.id === round.gathering.id);
+assert(
+  friendListed?.capacity === 2 && friendListed.member_count === 1,
+  "the host's connection sees it in the feed, with its capacity",
+);
+await erinApp.gatherings.join({ id: round.gathering.id });
+const fayJoin = await fayApp.gatherings.join({ id: round.gathering.id }).then(() => 'joined', codeOf);
+assert(fayJoin === 'CONFLICT', `a full gathering refuses the next join (got ${fayJoin})`);
+const bobJoin = await bobApp.gatherings.join({ id: round.gathering.id }).then(() => 'joined', codeOf);
+assert(bobJoin === 'NOT_FOUND', `a stranger's join is not found, never full (got ${bobJoin})`);
+const rejoin = await erinApp.gatherings.join({ id: round.gathering.id }).then(() => 'ok', codeOf);
+assert(rejoin === 'ok', 'a member re-joining a full gathering is a no-op');
+const raised = await aliceApp.gatherings.update({ id: round.gathering.id, capacity: null, visibility: 'everyone' });
+assert(
+  raised.gathering.capacity === null && raised.gathering.visibility === 'everyone',
+  'the host clears the capacity and lists it to everyone',
+);
+await fayApp.gatherings.join({ id: round.gathering.id });
+assert(
+  (await bobApp.gatherings.get({ id: round.gathering.id })).member_count === 3,
+  'listed again, a stranger reads it with the headcount',
+);
+
 // === profile: the photo, my tags' status, account deletion ===
 const { AVATAR_MAX_BYTES, avatarPublicUrl } = await import('@withme/contract');
 const { AVATAR_BODY_LIMIT } = await import('../src/middleware/avatar-body-limit.ts');
 const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321';
-const codeOf = (e: { code?: string }) => e.code ?? 'error';
 // Leading bytes only: the API sniffs magic numbers; Storage never decodes.
 const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
 const webpBytes = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x1a, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x4c]);
