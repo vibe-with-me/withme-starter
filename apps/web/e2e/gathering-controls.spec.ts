@@ -58,7 +58,10 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   await yours.getByRole('link', { name: 'Open', exact: true }).click();
   await host.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
   const detailPath = new URL(host.url()).pathname;
-  await expect(host.getByText('1 of 3 going · Connections only')).toBeVisible();
+  // The list can still be on screen for a moment after the URL changes:
+  // wait for the detail, and match its line exactly (a row's line contains it).
+  await expect(host.getByRole('heading', { name: title })).toBeVisible();
+  await expect(host.getByText('1 of 3 going · Connections only', { exact: true })).toBeVisible();
   await host.getByRole('button', { name: 'Point my tags at this gathering' }).click();
   await expect(host.getByRole('button', { name: 'Point my tags back to my profile' })).toBeVisible();
 
@@ -97,18 +100,18 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   await row.getByRole('link', { name: 'Open', exact: true }).click();
   await first.waitForURL(`**${detailPath}`);
   await expect(first.getByRole('heading', { name: title })).toBeVisible();
-  await expect(first.getByText('1 of 3 going · Connections only')).toBeVisible();
+  await expect(first.getByText('1 of 3 going · Connections only', { exact: true })).toBeVisible();
   await first.getByRole('button', { name: 'Join', exact: true }).click();
-  await expect(first.getByText('2 of 3 going · Connections only')).toBeVisible();
+  await expect(first.getByText('2 of 3 going · Connections only', { exact: true })).toBeVisible();
 
   await second.goto(detailPath);
   await second.getByRole('button', { name: 'Join', exact: true }).click();
-  await expect(second.getByText('3 of 3 going · Connections only')).toBeVisible();
+  await expect(second.getByText('3 of 3 going · Connections only', { exact: true })).toBeVisible();
   await expect(second.getByRole('button', { name: 'Leave gathering' })).toBeVisible();
 
   // Full: the third connection sees it, and Full instead of Join.
   await third.goto(detailPath);
-  await expect(third.getByText('3 of 3 going · Connections only')).toBeVisible();
+  await expect(third.getByText('3 of 3 going · Connections only', { exact: true })).toBeVisible();
   await expect(third.getByRole('button', { name: 'Full' })).toBeDisabled();
   await expect(third.getByRole('button', { name: 'Join', exact: true })).toHaveCount(0);
 
@@ -117,5 +120,5 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   await second.waitForURL('**/gatherings');
   await third.reload();
   await third.getByRole('button', { name: 'Join', exact: true }).click();
-  await expect(third.getByText('3 of 3 going · Connections only')).toBeVisible();
+  await expect(third.getByText('3 of 3 going · Connections only', { exact: true })).toBeVisible();
 });
