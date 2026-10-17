@@ -5,7 +5,7 @@
 import Base from '../layouts/Base.astro';
 import { CONTACT_EMAIL, DISPLAY_NAME } from '../brand.ts';
 
-const UPDATED = '2026-10-15';
+const UPDATED = '2026-10-17';
 ---
 
 <Base title="Privacy" description={`What ${DISPLAY_NAME} stores, who can see it, and how to delete it.`}>
@@ -20,6 +20,11 @@ const UPDATED = '2026-10-15';
       <li><strong>Your links</strong>: the places you can be reached, if you add them.</li>
       <li><strong>Your connections</strong>: the requests you send and accept, and the people you block.</li>
       <li><strong>Gatherings</strong>: the ones you host and the ones you join.</li>
+      <li>
+        <strong>Notification addresses</strong>: if you turn notifications on in the app, a push token
+        for each phone. It is deleted when you sign out on that phone, turn notifications off, or delete
+        your account, and a phone that hasn't opened the app in 30 days stops receiving them.
+      </li>
       <li>
         <strong>Taps on your tags</strong>: the time and the browser's user-agent string. Never a
         location, an IP address, or a device identifier.
@@ -40,7 +45,9 @@ const UPDATED = '2026-10-15';
     <h2>Who processes it</h2>
     <p>
       Supabase hosts the database, sign-in, and photos. Cloudflare serves the app and this site. If you
-      sign in by phone, Twilio sends the code. Each handles data only to provide that service.
+      sign in by phone, Twilio sends the code. If you turn notifications on, Expo relays them and Apple
+      or Google delivers them to your phone; they see the notification's text, which is a name, a
+      gathering's title, or a count. Each handles data only to provide that service.
     </p>
 
     <h2>Deleting it</h2>

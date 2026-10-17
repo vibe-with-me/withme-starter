@@ -44,6 +44,7 @@ minutes ([Try it](#try-it-locally)).
 | **The handshake** | Tap → "Connect" → the other person accepts → you are connected. Requests expire after a week. Either side can remove a connection, quietly. |
 | **Gatherings** | A host creates one ("Rooftop listening session") and everyone in the domain sees it in the Events tab: title, time, place, a headcount. Who's going shows only the people you have connected with. A tap on a member's tag is still the invitation. No browse surface for people, ever. |
 | **Blocks** | Absolute and invisible. A blocked person sees exactly what a stranger sees, and gets no signal that anything happened. |
+| **Notifications** | Three pushes on the phone, and nothing else, ever: someone sent you a request, someone accepted yours, people joined your gathering. Off until you turn them on; one switch in Profile turns them off. The database sends them, so no way of calling the app skips the block check. |
 | **Profile & account** | Photo upload, "My tags" (re-point or turn off), account deletion that cascades through everything and releases your tags. |
 | **Links** | Where you can be reached: Instagram, WhatsApp, a website, a phone number, one per platform from a picker. Seen only by the people you have connected with, never on the card. |
 | **Web app** | The resolver page (`/t/{UID}`), sign in, claim a tag, and a four-tab shell: Events, Connections, Merch (optional), Profile, with a raised QR button that shows your code. |

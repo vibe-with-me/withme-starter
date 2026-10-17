@@ -83,6 +83,39 @@ to your machine's LAN IP. NFC reading needs a development build
 UID or following a deep link. [`apps/mobile/README.md`](../apps/mobile/README.md)
 has the rest.
 
+### Push notifications
+
+The database sends them (the `push_notifications` migration) to the URL
+in `private.settings` under `push_url`, which ships pointing at Expo's
+push service. Nothing goes out until a phone registers a token, so a
+local stack and CI send nothing. The RLS suite points `push_url` at a
+stand-in on your machine for its run and puts it back afterwards.
+
+To see one locally: in Expo Go on the iOS simulator, Connections offers
+"Turn on notifications"; after Allow the simulator registers a real Expo
+token, and a request sent to that account makes your local database post
+to Expo. The simulator does not display it. To check what a tap does,
+send the simulator a notification yourself. In Expo Go the payload must
+name the project, `@<owner>/<slug>` from `app.json`, or Expo Go drops the
+tap:
+
+```json
+{
+  "Simulator Target Bundle": "host.exp.Exponent",
+  "aps": { "alert": { "title": "New connect request", "body": "Ada wants to connect." } },
+  "body": { "path": "/connections?segment=requests" },
+  "experienceId": "@<owner>/<slug>",
+  "scopeKey": "@<owner>/<slug>"
+}
+```
+
+```sh
+xcrun simctl push booted host.exp.Exponent push.json
+```
+
+Background the app first, then tap the banner. Android needs a
+development build: Expo Go on Android receives no pushes.
+
 ## Tests
 
 | Command | What it runs | Needs |
