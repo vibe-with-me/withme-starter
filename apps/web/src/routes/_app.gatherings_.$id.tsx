@@ -127,7 +127,7 @@ function GatheringDetail({
   const router = useRouter();
   const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete' | 'confirm-block'>('view');
   // Set after a report; a report that also blocked hides the gathering, so
-  // the page then offers only the way back.
+  // the page then shows only the thanks and the way back.
   const [reported, setReported] = useState<null | { blocked: boolean }>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -209,6 +209,25 @@ function GatheringDetail({
     }
   }
 
+  // A report that also blocked hides the gathering from the viewer, as Block
+  // host does: what is left is the thanks and the way back.
+  if (reported?.blocked) {
+    return (
+      <div className="card card--settle">
+        <p className="hint" role="status">
+          {reportThanks('the host', true)}
+        </p>
+        <button
+          type="button"
+          className="btn btn--quiet"
+          onClick={() => navigate({ to: '/gatherings', replace: true })}
+        >
+          Back to gatherings
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="stack">
       <div className="card">
@@ -281,13 +300,13 @@ function GatheringDetail({
             </div>
           </>
         ) : null}
-        {mode === 'view' && isMember && !isHost && !reported?.blocked ? (
+        {mode === 'view' && isMember && !isHost ? (
           <button type="button" className="btn btn--quiet" disabled={busy} onClick={leave}>
             {busy ? 'Leaving…' : 'Leave gathering'}
           </button>
         ) : null}
         {/* Joining is the consent moment: the accent's job, as on the resolver. */}
-        {mode === 'view' && !isMember && !reported?.blocked ? (
+        {mode === 'view' && !isMember ? (
           <button type="button" className="btn btn--connect" disabled={busy} onClick={join}>
             {busy ? 'Joining…' : 'Join'}
           </button>
@@ -295,23 +314,12 @@ function GatheringDetail({
         {/* Report and Block (Guideline 1.2): everyone sees a gathering, so
             anyone but the host can report it or block the person behind it. */}
         {reported ? (
-          <>
-            <p className="hint" role="status">
-              {reportThanks('the host', reported.blocked)}
-            </p>
-            {reported.blocked ? (
-              <button
-                type="button"
-                className="btn btn--quiet"
-                onClick={() => navigate({ to: '/gatherings', replace: true })}
-              >
-                Back to gatherings
-              </button>
-            ) : null}
-          </>
+          <p className="hint" role="status">
+            {reportThanks('the host', false)}
+          </p>
         ) : null}
-        {/* After a report, Report goes; Block host stays unless that report blocked. */}
-        {mode === 'view' && !isHost && !reported?.blocked ? (
+        {/* After a report, Report goes; Block host stays (one that blocked returned above). */}
+        {mode === 'view' && !isHost ? (
           <div className="row-actions">
             {reported ? null : (
               <ReportButton
