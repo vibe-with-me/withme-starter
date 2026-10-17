@@ -7,7 +7,9 @@ description: Use when a withme-starter fork wants its gathering in the vertical'
 
 The gathering ships in the starter: a host creates one, everyone signed in
 to the domain sees it in the Events tab ("Happening": title, time, place, a
-headcount), and a tap on a member's tag is still the invitation. Who's
+headcount), and a tap on a member's tag is still the invitation. The host
+chooses who can see it (everyone in the app, or their connections) and
+may cap it with Spots (2 to 500, counting the host). Who's
 going is connections-only: a member list carries the viewer's own row and
 their accepted connections' rows, never a stranger's card. It was the one
 feature every derivation built by hand (golf-with-me "rounds" first; every
@@ -36,14 +38,14 @@ time, and after two failed attempts stop and tell the owner.
 | Layer | Files |
 | --- | --- |
 | Contract | `packages/contract/src/schemas/gathering.ts`; `schemas/destination.ts` (`GatheringDestinationSchema`); `contract/app.ts` (`gatherings.*`, `tags.*`); `contract/public.ts` (`gathering` summary on resolve) |
-| Migration | `supabase/migrations/20261008120000_add_gatherings.sql`, then `20261014220000_gatherings_domain_wide.sql` (the listing, the connections-only member policy, the headcount, the symmetric join check) |
-| RLS tests | `packages/db/test/gatherings.test.ts`; `account.test.ts`, `blocks.test.ts`, `links.test.ts` and `plain-text.test.ts` also create gatherings |
+| Migration | `supabase/migrations/20261008120000_add_gatherings.sql`, then `20261014220000_gatherings_domain_wide.sql` (the listing, the connections-only member policy, the headcount, the symmetric join check), then `20261017203000_gathering_visibility_and_capacity.sql` (`visibility`, `capacity`, `private.sees_gathering`, the locked join) |
+| RLS tests | `packages/db/test/gatherings.test.ts`, `gathering-visibility.test.ts`, `gathering-capacity.test.ts`; `account.test.ts`, `blocks.test.ts`, `links.test.ts` and `plain-text.test.ts` also create gatherings |
 | Queries / API | `packages/db/src/queries/gatherings.ts`, `queries/tags.ts`; `apps/api/src/routers/app.ts` |
 | SDK mirror | `packages/nfc-sdk/src/client.ts` (`Destination`, `GatheringSummary`) |
-| Web | `apps/web/src/routes/_app.gatherings.tsx`, `_app.gatherings_.$id.tsx`, the branch in `t.$uid.tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts` ("N going", "With …"), `components/AppShell.tsx` (`navItems[0]`) |
-| Mobile | `apps/mobile/app/(tabs)/gatherings.tsx`, `app/gathering/[id].tsx`, the branch in `app/t/[uid].tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts`, `lib/gathering-link.ts`, `(tabs)/_layout.tsx` |
-| E2E | `apps/api/e2e/handshake.e2e.ts` §12–17; `apps/web/e2e/gatherings.spec.ts`; `profile.spec.ts` and `helpers.ts` also visit or create one |
-| Seed | `supabase/seed/index.ts` (Ada hosts one, her live tag points at it; Lin hosts one Ada has not joined, so the feed shows) |
+| Web | `apps/web/src/routes/_app.gatherings.tsx`, `_app.gatherings_.$id.tsx`, the branch in `t.$uid.tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts` ("N going", "3 of 4 going", "With …", Full, "Connections only", the visibility choices and the Spots help), `components/GatheringControls.tsx` (the two controls on both forms), `components/AppShell.tsx` (`navItems[0]`) |
+| Mobile | `apps/mobile/app/(tabs)/gatherings.tsx`, `app/gathering/[id].tsx`, the branch in `app/t/[uid].tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts`, `components/GatheringControls.tsx`, `lib/gathering-link.ts`, `(tabs)/_layout.tsx` |
+| E2E | `apps/api/e2e/handshake.e2e.ts` §12–17a; `apps/web/e2e/gatherings.spec.ts`, `gathering-controls.spec.ts`; `profile.spec.ts` and `helpers.ts` also visit or create one |
+| Seed | `supabase/seed/index.ts` (Ada hosts one, her live tag points at it; Lin hosts one Ada has not joined, capped at 12, so the feed shows "1 of 12 going") |
 
 Every caller of the create RPC, whichever layer it sits in (a new
 argument must reach all of them):
@@ -144,6 +146,14 @@ without containing "gathering"; rewrite it for your vertical too:
   the `Happening` / `Yours` section titles and their empty states on the
   list, the `Hosting` / `Going` marks, and the `N going` / `With …` lines
   (`lib/going.ts` on both platforms);
+- the host's controls, also in both apps' `lib/going.ts`:
+  `VISIBILITY_CHOICES` ("Everyone in the app" / "My connections" and the
+  line under each), `SPOTS_HELP`, `FULL_LABEL`, `audienceMark`
+  ("Connections only"), and `GatheringControls.tsx`'s "Who can see it",
+  "Spots (optional)" and its edit-only notes. "Spots" may want your
+  vertical's word ("Players"); the value still counts the host;
+- the join messages on the detail screens: "This gathering is full." and
+  "Someone took the last spot.";
 - the seed's gathering, in `supabase/seed/index.ts`: its `p_title`
   (`'Rooftop listening session'`), its `p_location`
   (`'The roof, 14 Loom St'`), and the console text it prints
@@ -225,11 +235,12 @@ In slice order:
    optional); the edit form sends it anyway, because the field is on
    the form. Then rebuild `public.create_gathering`. The signature
    changes, and `create or replace function` cannot change one: run
-   `drop function public.create_gathering(text, timestamptz, text);`
+   `drop function public.create_gathering(text, timestamptz, text, text, integer);`
    then
-   `create function public.create_gathering(p_title text, p_starts_at timestamptz, p_course_name text, p_location text default null)`
+   `create function public.create_gathering(p_title text, p_starts_at timestamptz, p_course_name text, p_location text default null, p_visibility text default 'everyone', p_capacity integer default null)`
    with `p_course_name` BEFORE `p_location` (Postgres refuses a required
-   parameter after a defaulted one). Copy the whole body of its **newest**
+   parameter after a defaulted one), and the host's two controls,
+   `p_visibility` and `p_capacity`, kept at the end. Copy the whole body of its **newest**
    definition,
    `grep -lE 'create (or replace )?function public\.create_gathering' supabase/migrations/*.sql | sort | tail -1`,
    not the gatherings migration's: in core the newest body holds the
@@ -254,8 +265,8 @@ In slice order:
    add it to the `jsonb_build_object` the function
    returns (the API validates that object against `GatheringSchema`), and
    re-issue the grants for the new signature:
-   `revoke execute on function public.create_gathering(text, timestamptz, text, text) from public, anon;`
-   `grant execute on function public.create_gathering(text, timestamptz, text, text) to authenticated;`.
+   `revoke execute on function public.create_gathering(text, timestamptz, text, text, text, integer) from public, anon;`
+   `grant execute on function public.create_gathering(text, timestamptz, text, text, text, integer) to authenticated;`.
    Core's default privileges (`20261015140000_default_function_privileges.sql`)
    already keep a new function closed to `anon` and `public`, so the revoke
    is belt and braces; keep it, so the grant says who may call the function
@@ -271,7 +282,9 @@ In slice order:
    `v_gathering_json`, and restate every attribute:
    `language plpgsql stable security definer set search_path = ''`; the
    same signature keeps its existing grants). Re-issue the whole host column grant:
-   `grant update (title, starts_at, location, course_name) on public.gatherings to authenticated;`.
+   `grant update (title, starts_at, location, visibility, capacity, course_name) on public.gatherings to authenticated;`
+   (leave `visibility` or `capacity` out and the host can no longer
+   change that setting after creating).
    Before seeding, give the seed the new argument:
    `supabase/seed/index.ts` calls `create_gathering` by named arguments,
    so add `p_course_name: '…'` there now (without it the seed fails with
@@ -363,16 +376,37 @@ step 6, and `handshake.e2e.ts` until step 7.
 then the API e2e ending `handshake e2e: all checks passed` and
 `cd apps/web && bun run test:e2e` with every spec passed.
 
+### Worked example: a round of four
+
+Capacity is core, so a vertical with a natural size sets a default, not
+a field. Golf's round is four, the host included: in both create forms
+(`_app.gatherings.tsx`, `(tabs)/gatherings.tsx`, or the files you
+renamed in §1) start Spots at `'4'` instead of `''`, in the `useState`
+and in the reset after a create, and rename the label ("Players") in §1's
+copy sweep. The host can still clear it or change it, and the database
+still refuses anything outside 2 to 500. Do not hard-code the cap in SQL:
+a fivesome is a host's call, and `join_gathering` already enforces
+whatever the host chose. `gathering-controls.spec.ts` fills Spots with
+`'3'`; with a default it still does (`fill` replaces the value).
+
+**Checkpoint:** `cd apps/web && bunx playwright test gathering-controls`
+passes, and a fresh create in the app reads "1 of 4 going".
+
 ## 3. What must not move
 
 The mechanisms of `20261014220000_gatherings_domain_wide.sql`, each
 re-stated by `gatherings.test.ts`:
 
-a. `gatherings_select` admits every signed-in user of the tenant, minus a
-   block **either way** with the host. A viewer the host blocked, and a
-   viewer who blocked the host, read the gathering as nonexistent. Never
-   add a clause that reads `gathering_members` here: `gathering_members`'s
-   own policy reads `gatherings`, and Postgres would recurse forever.
+a. `gatherings_select` admits a viewer exactly when
+   `private.sees_gathering` does (`20261017203000_gathering_visibility_and_capacity.sql`):
+   the host; otherwise no block **either way** with the host, and the
+   gathering is `everyone`, or the viewer is the host's accepted
+   connection or already a member. A viewer the host blocked, a viewer
+   who blocked the host, and a stranger to a `connections` gathering read
+   it as nonexistent. Never add a clause that reads `gathering_members`
+   under RLS here: `gathering_members`'s own policy reads `gatherings`,
+   and Postgres would recurse forever. `sees_gathering` reads membership
+   through the definer `private.is_gathering_member`, which is why it can.
 b. `gathering_members_select` admits the viewer's own row and their
    accepted connections' rows, on a gathering the viewer can see — the
    host included. Co-membership never reveals a card: `profiles_select` has no gathering
@@ -381,18 +415,26 @@ b. `gathering_members_select` admits the viewer's own row and their
    `shares_gathering`.
    Hosting must not become a way to collect strangers' cards.
 c. `public.gathering_member_counts` is the headcount: a definer read whose
-   `where` re-states (a), so a hidden gathering has no count. Any new
-   definer read over `gathering_members` restates (a) the same way.
+   `where` calls `private.sees_gathering`, so a hidden gathering has no
+   count. Any new definer that reads a gathering (a report, an export, a
+   push) asks `sees_gathering` the same way, never a block check of its
+   own.
 d. `join_gathering` raises `'gathering not found'` (P0003) for a missing
-   id, a viewer the host blocked, AND a viewer who blocked the host (a
-   gathering you cannot see is one you cannot join); the messages stay
-   byte-identical. No insert policies: creation and joining are RPCs.
+   id, a viewer the host blocked, a viewer who blocked the host, AND a
+   viewer `sees_gathering` refuses (a gathering you cannot see is one you
+   cannot join); the messages stay byte-identical. Only after all of
+   those does it answer `'gathering is full'` (P0007), so "full" is never
+   an oracle. It takes `for update` on the gathering's row before it
+   counts: that lock is what keeps two joins from both taking the last
+   spot (`gathering-capacity.test.ts` races them, and fails without it).
+   No insert policies: creation and joining are RPCs.
    `private.on_block_created` evicts the pair-hosted membership in both
    directions.
 
 Also: `resolve_tag` degrades a dangling destination, or one whose tag owner
-is no longer a member, to the profile card, and so does a tap by a viewer
-the host has blocked, whoever owns the tag (`private.is_gathering_member`
+is no longer a member, to the profile card, and so does a tap by any
+viewer `sees_gathering` refuses (blocked either way, or a stranger or anon
+on a `connections` gathering), whoever owns the tag (`private.is_gathering_member`
 serves the resolver; keep it); the `tags_destination_shape` CHECK keeps
 its `coalesce(…, false)`; `list` and `listMine` stay bare RLS-scoped
 selects in start-time order — no search, ranking, "nearby", or any list
@@ -402,17 +444,34 @@ gathering is how a host leaves). A new field that changes who may see what
 needs its own RLS test before it ships.
 
 A listed gathering exposes its `host_id` to the tenant. That is not a
-card; what it allows is one consent-gated `send_connect_request`. If your
-vertical wants private gatherings, add a `visibility` column
-(`'listed' | 'invite_only'`, default `'listed'`), one `or visibility =
-'listed'` clause beside the host test in (a) and (c), and an RLS test that
-a stranger does not read an invite-only one.
+card; what it allows is one consent-gated `send_connect_request`.
+
+**Adding another visibility option.** Core ships two, `everyone` and
+`connections`, on purpose. If your vertical needs a third (say
+`members_of_my_club`), it is one value and one clause:
+1. A migration that drops and re-adds `gatherings_visibility_known` with
+   the new value, and `create or replace`s `private.sees_gathering` from
+   its newest body with one more `or (p_visibility = '<value>' and …)`
+   branch inside the not-blocked half. Every path above picks it up,
+   because they all ask that one function. Never give the new branch a
+   way around the block checks or the host test.
+2. The contract: add the value to `GATHERING_VISIBILITIES`, and its label
+   and line to `VISIBILITY_CHOICES` in both apps' `lib/going.ts`
+   (`audienceMark` too, if it needs a mark).
+3. Tests before it ships, in `gathering-visibility.test.ts`: who reads it
+   and who does not, on every path the `seen()` helper checks, with a tap
+   resolve, beside a positive control. A stranger and anon must read it
+   as nonexistent unless the value means everyone.
+Invite lists and hand-picked members are a different shape (a table of
+invitees, its own RLS and its own tests), not another value.
 
 ## Scope notes
 
-- Membership is flat: no roles beyond host, no invites, no capacity caps.
-  Add those in your fork with the same discipline (every new read path asks:
-  what does the blocked party see?).
+- Membership is flat: no roles beyond host and no invites. Capacity is a
+  cap, not a queue: no waitlist and no push when a spot opens (push keeps
+  its three kinds). Add those in your fork with the same discipline
+  (every new read path asks: what does the blocked party see, and what
+  does a stranger to a connections-only gathering see?).
 - "Happening" is the domain in start-time order. Nearby sorting would need
   a location model the starter does not have (location is free text); a
   fork that adds one keeps the list a bare select — nothing ranks.

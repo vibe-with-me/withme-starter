@@ -83,9 +83,9 @@ are a single row per pair.
 
 ## Gatherings are listed; who's going is connections-only
 
-**The promise.** Everyone signed in to your domain sees every gathering —
-title, time, place, a headcount — so people know where their scene is
-congregating. Who is going is another matter: you see yourself and the
+**The promise.** Everyone signed in to your domain sees every gathering
+the host lists to everyone — title, time, place, a headcount — so people
+know where their scene is congregating. Who is going is another matter: you see yourself and the
 people you have connected with, and nobody else. Joining tells the people
 you already know; it shows a stranger nothing, not even the host's name.
 A gathering hidden by a block looks like one that does not exist, with no
@@ -107,6 +107,47 @@ connect request. A host cannot leave their own gathering; deleting it is
 how they leave.
 
 **The test.** `packages/db/test/gatherings.test.ts` (twenty-one cases).
+
+**A host can keep it to their connections.** Posting where you will be to
+the whole app is the wrong default for a dinner at home or a round among
+friends, so a host picks who can see each gathering: everyone in the app
+(the default), or their connections. A connections-only gathering is
+listed, counted, readable by its link and joinable only by the host, the
+host's accepted connections, and whoever is already going; to anyone else
+it looks exactly like one that does not exist. Switching an open
+gathering to connections keeps everyone already going, the way a block
+does not evict a third party; switching back is always allowed. There are
+no invite lists and no third setting.
+
+A stranger who taps the host's tag, or scans their share code, sees the
+host's card and nothing about the gathering: the same answer as a tag
+that points at a profile, so a tap is not a way to learn that a hidden
+gathering exists. On the web the tag page resolves before it knows who
+is signed in, so a tap there shows a connections-only gathering to
+nobody; connections find it in Events.
+
+`private.sees_gathering` is the one rule, and every path that shows a
+gathering asks it: `gatherings_select` (so the feed, the detail, your own
+list and the member rows), the headcount, `join_gathering`, and
+`resolve_tag`'s gathering line. It reads membership through a definer, so
+the gatherings policy still never reads `gathering_members` under RLS.
+**The test.** `packages/db/test/gathering-visibility.test.ts`: a
+stranger, a connection, a member, a member's connection, both directions
+of a block, anon, a tap and a share-code scan, each beside a positive
+control.
+
+**Capacity.** A host may cap a gathering at 2 to 500 spots, counting
+themself, so a round of golf is the host and three. Once that many are
+going, `join_gathering` answers "gathering is full" (`P0007`; the API
+says CONFLICT "Gathering is full"), and the apps show Full instead of
+Join. Two joins for the last spot never both succeed: the join locks the
+gathering's row before it counts. Lowering the cap below the headcount
+keeps everyone and only stops new joins; leaving frees a spot. There is
+no waitlist and no push when a spot opens. "Full" leaks nothing: it is
+checked after every visibility check, so only someone who already sees
+the gathering and its headcount can learn it. **The test.**
+`packages/db/test/gathering-capacity.test.ts`, including a concurrent
+race that fails without the row lock.
 
 **Both directions.** `join_gathering` refuses a joiner the host has
 blocked and a joiner who has blocked the host, with the same "gathering

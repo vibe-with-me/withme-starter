@@ -182,7 +182,10 @@ assertions), and the Playwright smoke in `apps/web/e2e/` runs against the
 production build (`vite build && vite preview`): `handshake.spec.ts` (two
 strangers tap one tag and end up connected), `shell.spec.ts` (the
 signed-in shell), `gatherings.spec.ts` (tap the host's tag, join, see the
-headcount and not the host, connect, see the host), `connections.spec.ts`
+headcount and not the host, connect, see the host),
+`gathering-controls.spec.ts` (a connections-only gathering with three
+spots: hidden from a stranger, full after the host's connections join),
+`connections.spec.ts`
 (the list ladder),
 `profile.spec.ts` (photo, my tags, account deletion), and `reports.spec.ts`
 (report and block from a card; the terms agreement and its re-ask), all
@@ -207,7 +210,9 @@ test, not promised by UI code.
   indirect oracles (FK errors, distinguishable error codes, rate-limit
   responses that reveal whether a row exists). Gatherings are the one
   deliberate list: every signed-in user of the tenant reads every
-  gathering (`gatherings_select`), because a scene needs to know where it
+  gathering its host lists to everyone (`gatherings_select`, through
+  `private.sees_gathering`; a connections-only one only the host's
+  connections and its members), because a scene needs to know where it
   is congregating — but `gathering_members_select` admits only the
   viewer's own row and their accepted connections' rows, the headcount is
   a definer function that re-states the gathering's visibility, and

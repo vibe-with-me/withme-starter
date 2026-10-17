@@ -249,10 +249,12 @@ points at the test that proves it.
 - **Connections are mutual.** They exist only when a request is accepted,
   and either side can end one without notifying the other.
 - **Gatherings are listed; who's going is not.** Everyone signed in to
-  the domain sees every gathering and its headcount. The member list
-  shows you only yourself and your accepted connections; joining never
-  reveals your card to a stranger. A gathering hidden by a block looks
-  like one that does not exist.
+  the domain sees every gathering its host lists to everyone, and its
+  headcount; a host can instead keep one to their connections, and cap
+  it with a number of spots. The member list shows you only yourself and
+  your accepted connections; joining never reveals your card to a
+  stranger. A gathering hidden from you, by a block or by its host,
+  looks like one that does not exist.
 - **Scans are privacy-default.** A tap stores a user-agent string and a
   timestamp. No GPS, no IP, no fingerprinting: those columns do not exist.
 - **Pushes are transactional and say only what you could already see.**
