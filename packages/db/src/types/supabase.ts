@@ -286,6 +286,8 @@ export type Database = {
           display_name: string
           id: string
           tenant_id: string
+          terms_accepted_at: string | null
+          terms_version: string | null
           updated_at: string
         }
         ComputedFields: never
@@ -296,6 +298,8 @@ export type Database = {
           display_name: string
           id: string
           tenant_id?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           updated_at?: string
         }
         Update: {
@@ -305,9 +309,72 @@ export type Database = {
           display_name?: string
           id?: string
           tenant_id?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reported_deleted_at: string | null
+          reported_id: string | null
+          reporter_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          snapshot: NonNullable<Json>
+          status: string
+          tenant_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reported_deleted_at?: string | null
+          reported_id?: string | null
+          reporter_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          snapshot: NonNullable<Json>
+          status?: string
+          tenant_id?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reported_deleted_at?: string | null
+          reported_id?: string | null
+          reporter_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          snapshot?: NonNullable<Json>
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tag_scans: {
         Row: {
@@ -425,6 +492,15 @@ export type Database = {
       replace_my_share_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      report_user: {
+        Args: {
+          p_block?: boolean
+          p_details?: string
+          p_reason: string
+          p_reported: string
+        }
+        Returns: undefined
       }
       resolve_tag: { Args: { p_uid: string }; Returns: Json }
       send_connect_request: {

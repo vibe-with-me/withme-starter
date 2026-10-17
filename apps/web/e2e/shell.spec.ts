@@ -1,6 +1,6 @@
 // The shell: the signed-in chrome every tab lives in.
 import { expect, test } from '@playwright/test';
-import { returnToOf, signUp } from './helpers.ts';
+import { agreeToTerms, returnToOf, signUp } from './helpers.ts';
 
 test('a signed-out visitor is sent to sign in, then lands in the shell', async ({ page }) => {
   await page.goto('/connections');
@@ -21,6 +21,8 @@ test('a signed-out visitor is sent to sign in, then lands in the shell', async (
   await expect(nav.getByRole('link', { name: 'Merch' })).toHaveCount(0);
 
   await page.getByLabel('Name').fill('Smoke Shell');
+
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Save' }).click();
 
   await page.waitForURL('**/connections');
@@ -55,6 +57,7 @@ test("a second account never sees the first account's data", async ({ page }) =>
   await signUp(page, `smoke-first-${stamp}@rls.test`);
   await page.waitForURL(/\/profile\?/);
   await page.getByLabel('Name').fill('Smoke First');
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Save' }).click();
   await page.waitForURL('**/connections');
 
@@ -80,6 +83,7 @@ test('a failed profile load keeps the shell around the error', async ({ page }) 
   await signUp(page, `smoke-shell-error-${Date.now()}@rls.test`);
   await page.waitForURL(/\/profile\?/);
   await page.getByLabel('Name').fill('Smoke Error');
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Save' }).click();
   await page.waitForURL('**/connections');
 
@@ -104,6 +108,7 @@ test('an account change in another tab hides the previous account at once', asyn
     await signUp(first, `smoke-tab-a-${stamp}@rls.test`);
     await first.waitForURL(/\/profile\?/);
     await first.getByLabel('Name').fill('Smoke Tab A');
+    await agreeToTerms(first);
     await first.getByRole('button', { name: 'Save' }).click();
     await first.waitForURL('**/connections');
     await first
@@ -165,6 +170,7 @@ test('an account change while a navigation into the shell is loading never lands
     await signUp(first, `smoke-midload-a-${stamp}@rls.test`);
     await first.waitForURL(/\/profile\?/);
     await first.getByLabel('Name').fill('Smoke Midload A');
+    await agreeToTerms(first);
     await first.getByRole('button', { name: 'Save' }).click();
     await first.waitForURL('**/connections');
 
@@ -217,6 +223,7 @@ test('signing in without a destination lands on Events, the first tab', async ({
   await page.waitForURL(/\/profile\?/);
   expect(returnToOf(page)).toBe('/gatherings');
   await page.getByLabel('Name').fill('Smoke Default');
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Save' }).click();
 
   await page.waitForURL('**/gatherings');

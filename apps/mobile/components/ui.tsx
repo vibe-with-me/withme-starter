@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import {
   AccessibilityInfo,
@@ -139,6 +140,41 @@ export function Button({
       >
         {label}
       </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * A checkbox or a radio with its label: the whole line is the hit area.
+ * `label` may be a node (the terms line carries links); then pass
+ * `accessibilityLabel` with its words.
+ */
+export function Choice({
+  label,
+  checked,
+  onPress,
+  kind = 'checkbox',
+  accessibilityLabel,
+}: {
+  label: ReactNode;
+  checked: boolean;
+  onPress: () => void;
+  kind?: 'checkbox' | 'radio';
+  accessibilityLabel?: string;
+}) {
+  const t = useTokens();
+  const name =
+    kind === 'radio' ? (checked ? 'check-circle' : 'circle') : checked ? 'check-square' : 'square';
+  return (
+    <Pressable
+      accessibilityRole={kind}
+      accessibilityState={{ checked }}
+      accessibilityLabel={accessibilityLabel ?? (typeof label === 'string' ? label : undefined)}
+      onPress={onPress}
+      style={({ pressed }) => [styles.choice, pressed && { opacity: 0.85 }]}
+    >
+      <Feather name={name} size={22} color={checked ? t.ink : t.inkMuted} />
+      <Text style={[styles.choiceLabel, { color: t.ink }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -444,6 +480,20 @@ const styles = StyleSheet.create({
   field: {
     width: '100%',
     gap: 6,
+  },
+  choice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.s3,
+    minHeight: TAP_TARGET,
+    paddingVertical: space.s2,
+    width: '100%',
+  },
+  choiceLabel: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
   },
   fieldLabel: {
     fontFamily: fonts.bodySemiBold,

@@ -145,8 +145,10 @@ production build (`vite build && vite preview`): `handshake.spec.ts` (two
 strangers tap one tag and end up connected), `shell.spec.ts` (the
 signed-in shell), `gatherings.spec.ts` (tap the host's tag, join, see the
 headcount and not the host, connect, see the host), `connections.spec.ts`
-(the list ladder), and
-`profile.spec.ts` (photo, my tags, account deletion), all sharing `e2e/helpers.ts`. Extend whichever
+(the list ladder),
+`profile.spec.ts` (photo, my tags, account deletion), and `reports.spec.ts`
+(report and block from a card; the terms agreement and its re-ask), all
+sharing `e2e/helpers.ts` (`agreeToTerms` ticks the sign-up box). Extend whichever
 one your slice touches; a slice nobody can walk end-to-end is not done.
 
 ## The safety discipline

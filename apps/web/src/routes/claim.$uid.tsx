@@ -1,6 +1,8 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { TERMS_VERSION, termsAreCurrent } from '@withme/contract';
+import { createFileRoute, Link, Navigate, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { asSignedInAccount } from '../lib/account-scope.ts';
+import { TermsCheckbox } from '../components/TermsAgreement.tsx';
 import { api } from '../lib/api.ts';
 import { requireSession } from '../lib/auth-guard.ts';
 
@@ -21,6 +23,7 @@ function ClaimPage() {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
   const [hasProfile, setHasProfile] = useState(profile !== null);
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +32,8 @@ function ClaimPage() {
     setBusy(true);
     setError(null);
     try {
-      await api.app.profile.update({ display_name: displayName.trim() });
+      // Creating a profile is signing up: it carries the terms agreement.
+      await api.app.profile.update({ display_name: displayName.trim(), terms_version: TERMS_VERSION });
       setHasProfile(true);
     } catch {
       setError('Could not save your name. Try again.');
@@ -60,6 +64,12 @@ function ClaimPage() {
     }
   }
 
+  // Outside the shell, so its terms gate does not run here: an account that
+  // agreed to an older version agrees again first, then comes back.
+  if (profile && !termsAreCurrent(profile)) {
+    return <Navigate to="/terms" search={{ returnTo: `/claim/${uid}` }} replace />;
+  }
+
   if (!hasProfile) {
     return (
       <main className="page">
@@ -76,12 +86,13 @@ function ClaimPage() {
               onChange={(e) => setDisplayName(e.target.value)}
             />
           </div>
+          <TermsCheckbox checked={agreed} onChange={setAgreed} />
           {error ? (
             <p className="form-error" role="alert">
               {error}
             </p>
           ) : null}
-          <button className="btn" type="submit" disabled={busy || !displayName.trim()}>
+          <button className="btn" type="submit" disabled={busy || !displayName.trim() || !agreed}>
             Continue
           </button>
         </form>

@@ -21,6 +21,8 @@
   --color-border-input: rgba(28, 25, 22, 0.5);
   --color-ink: #1c1916;
   --color-ink-muted: #6f6a62;
+  /* behind a modal dialog (web only: mobile presents a screen instead) */
+  --color-scrim: rgba(28, 25, 22, 0.4);
 
   /* the accent. A screen's primary action (.btn--connect) and nothing else.
      (5.18:1 with --color-accent-ink in light; 6.46:1 in dark) */
@@ -85,6 +87,7 @@
     --color-border-input: rgba(240, 236, 229, 0.5);
     --color-ink: #f0ece5;
     --color-ink-muted: #a39c91;
+    --color-scrim: rgba(0, 0, 0, 0.6);
     --color-accent: #ff6a3d;
     --color-accent-ink: #211008;
     --shadow-card:

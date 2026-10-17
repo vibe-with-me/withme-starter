@@ -110,6 +110,7 @@ export default function ResolveScreen() {
           {result.profile.bio ? <Muted>{result.profile.bio}</Muted> : null}
           <Muted>{gatheringLine(result.gathering)}</Muted>
           <GatheringInvite gathering={result.gathering} ownerId={result.profile.id} />
+          <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
         </Card>
       </View>
     );
@@ -122,6 +123,7 @@ export default function ResolveScreen() {
         <Title>{result.profile.display_name}</Title>
         {result.profile.bio ? <Muted>{result.profile.bio}</Muted> : null}
         <ConnectAction profileId={result.profile.id} uid={result.uid} />
+        <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
       </Card>
     </View>
   );
@@ -189,6 +191,45 @@ function GatheringInvite({ gathering, ownerId }: { gathering: GatheringSummary; 
           pathname: '/gathering/[id]',
           params: { id: gathering.id, title: gathering.title, starts_at: gathering.starts_at },
         });
+      }}
+    />
+  );
+}
+
+/**
+ * Report this person (Guideline 1.2): anyone but the owner. Signed out, it
+ * goes through login and back to this card. Nothing until the session read
+ * settles, so the owner never sees it flash.
+ */
+function CardReport({ profileId, name, uid }: { profileId: string; name: string; uid: string }) {
+  const [viewer, setViewer] = useState<'loading' | 'anon' | 'self' | 'other'>('loading');
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const userId = data.session?.user.id;
+        setViewer(!userId ? 'anon' : userId === profileId ? 'self' : 'other');
+      })
+      .catch(() => {
+        if (!cancelled) setViewer('anon');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
+  if (viewer === 'loading' || viewer === 'self') return null;
+  return (
+    <Button
+      kind="quiet"
+      label="Report"
+      onPress={() => {
+        if (viewer === 'anon') {
+          router.push({ pathname: '/login', params: { redirect: `/t/${uid}` } });
+          return;
+        }
+        router.push({ pathname: '/report/[id]', params: { id: profileId, name } });
       }}
     />
   );

@@ -50,6 +50,9 @@ verified. Run it first, then fill this list from the sheet.
   tags" link — step 7.
 - Optional: your fork's repository URL, for the root README's CI badge —
   step 3.
+- Where your terms of use and privacy policy will live (two https URLs),
+  and the contact email they name: step 7b. Not needed to start, but a
+  store app cannot launch without them (`go-live` section 5).
 - Where people report a vulnerability in your app, and who reviews your
   pull requests: a GitHub repository with private vulnerability reporting
   turned on (GitHub offers it only on public repositories), or a security
@@ -443,6 +446,42 @@ Skip this step if you have no store yet; the tab stays absent.
 line, with the same URL. With both dev servers up, `/merch` shows the card,
 "Open store" opens the store in a new tab, and the landing page shows
 "Get tags".
+
+## 7b. Terms of use and privacy policy
+
+Sign-up asks people to agree to your terms of use and privacy policy, and
+the app asks again whenever `TERMS_VERSION` changes. The starter ships
+placeholder text for both in `docs/terms-template.md`, marked as such:
+it is not your terms, and a store app cannot launch on it.
+
+- Rewrite `docs/terms-template.md` for this app with the owner: the
+  brand name, the operator's legal name and contact email, the minimum
+  age, and any section that does not match what the app does. Keep the
+  no-tolerance section (3) and the report-response section (5) in
+  substance; App Store and Google Play review both look for them. It is
+  starting text, not legal advice: the owner decides whether a lawyer
+  reads it.
+- Publish both documents at stable https URLs (the marketing site from
+  `add-marketing-site`, or any hosted page), then set them, the same
+  values on web and mobile:
+  `VITE_TERMS_URL` / `VITE_PRIVACY_URL` in `apps/web/.env` and
+  `EXPO_PUBLIC_TERMS_URL` / `EXPO_PUBLIC_PRIVACY_URL` in
+  `apps/mobile/.env`; production values go in the `.env.production`
+  files (`go-live` sections 3 and 4). Unset, the agreement still shows,
+  without links.
+- Set `TERMS_VERSION` in `packages/contract/src/schemas/terms.ts` to the
+  version line of your published terms (a date works). Every existing
+  profile on another version is asked again on its next open, so a
+  fresh fork's change is free and a live app's change is a decision.
+- Copy: the agreement line lives in `apps/web/src/components/TermsAgreement.tsx`
+  and `apps/mobile/components/TermsAgreement.tsx` (`TERMS_SENTENCE`).
+  Rewrite it in your voice; keep it saying that abuse is not tolerated.
+- Leave the example URLs in `apps/web/playwright.config.ts` alone: the
+  smoke asserts the links render.
+
+**Checkpoint:** with both dev servers up, a new sign-up shows "I agree to
+the Terms of Use and Privacy Policy…" with both links opening your pages,
+and Save stays disabled until it is ticked.
 
 ## 8. Icons + final gate
 

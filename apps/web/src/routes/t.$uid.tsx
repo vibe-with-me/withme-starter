@@ -3,6 +3,7 @@ import { createFileRoute, Link, notFound, redirect, useHydrated, useNavigate } f
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { useEffect, useState } from 'react';
 import { ProfileCard } from '../components/ProfileCard.tsx';
+import { ReportButton } from '../components/ReportDialog.tsx';
 import { api } from '../lib/api.ts';
 import { gatheringLine } from '../lib/format-time.ts';
 import { getSessionUserId } from '../lib/supabase.ts';
@@ -69,6 +70,7 @@ function ResolvePage() {
         <ProfileCard profile={result.profile} settle>
           <GatheringLine gathering={result.gathering} />
           <GatheringInvite gathering={result.gathering} ownerId={result.profile.id} />
+          <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
         </ProfileCard>
         <WordmarkFooter />
       </main>
@@ -79,6 +81,7 @@ function ResolvePage() {
     <main className="page">
       <ProfileCard profile={result.profile} settle>
         <ConnectAction profileId={result.profile.id} uid={result.uid} />
+        <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
       </ProfileCard>
       <WordmarkFooter />
     </main>
@@ -154,6 +157,36 @@ function GatheringInvite({ gathering, ownerId }: { gathering: GatheringSummary; 
       {isMember ? 'Open gathering' : 'Join this gathering'}
     </Link>
   );
+}
+
+/**
+ * Report this person (Guideline 1.2): anyone but the owner. Signed out, it
+ * goes through login and back to this card. Nothing until the session read
+ * settles, so the owner never sees it flash.
+ */
+function CardReport({ profileId, name, uid }: { profileId: string; name: string; uid: string }) {
+  const [viewer, setViewer] = useState<'loading' | 'anon' | 'self' | 'other'>('loading');
+  useEffect(() => {
+    let cancelled = false;
+    getSessionUserId()
+      .catch(() => null)
+      .then((userId) => {
+        if (cancelled) return;
+        setViewer(!userId ? 'anon' : userId === profileId ? 'self' : 'other');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
+  if (viewer === 'loading' || viewer === 'self') return null;
+  if (viewer === 'anon') {
+    return (
+      <Link className="btn btn--quiet" to="/login" search={{ returnTo: `/t/${uid}` }}>
+        Report
+      </Link>
+    );
+  }
+  return <ReportButton profileId={profileId} name={name} />;
 }
 
 function ConnectAction({ profileId, uid }: { profileId: string; uid: string }) {

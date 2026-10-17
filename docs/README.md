@@ -14,6 +14,9 @@ longer version of something it mentions.
   what it costs, and the constraints it brings.
 - [The safety model](safety-model.md): the promises the starter keeps for
   your users, how each one is enforced, and the test that proves it.
+- [Reports and moderation](moderation.md): what the App Store and Google
+  Play require of an app with user content, what the starter covers, and
+  the operator's side: where reports land and the 24-hour promise.
 
 ## For someone building a fork
 
@@ -31,6 +34,8 @@ longer version of something it mentions.
 - [Merch](merch.md): the store pointer in the app, accessories per
   vertical, sourcing and encoding tags with GoToTags, and a Shopify store
   from zero to the first shipped batch.
+- [Terms template](terms-template.md): placeholder terms of use and
+  privacy policy to replace and publish before launch.
 - [The slice](the-slice.md): the fixed order every change moves through
   (contract → migration + RLS → tests → API → web → mobile → e2e), with the
   real file that plays each role today. The skills assume you have read it.

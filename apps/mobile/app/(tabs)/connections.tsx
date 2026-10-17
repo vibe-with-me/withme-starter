@@ -1,5 +1,5 @@
 import type { ConnectRequest, Connection } from '@withme/contract';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { LinkChips } from '../../components/Links';
 import { AccessibilityInfo, RefreshControl, ScrollView, StyleSheet } from 'react-native';
@@ -35,6 +35,21 @@ async function settleInto<T>(
     next = { status: 'error' };
   }
   if (isLatest()) set(next);
+}
+
+// The report screen pushes over the tabs; focus reloads the lists after it.
+function report(id: string, name: string, canBlock = true) {
+  return (
+    <Button
+      inline
+      label="Report"
+      kind="quiet"
+      accessibilityLabel={`Report ${name}`}
+      onPress={() =>
+        router.push({ pathname: '/report/[id]', params: { id, name, block: canBlock ? '1' : '0' } })
+      }
+    />
+  );
 }
 
 /**
@@ -176,6 +191,7 @@ export default function ConnectionsScreen() {
                   onPress={() => act(request.id, () => api.app.requests.accept({ id: request.id }))}
                 />
                 {quiet('Decline', request.id, () => api.app.requests.decline({ id: request.id }))}
+                {report(request.requester.id, request.requester.display_name)}
               </PersonRow>
             ))
           }
@@ -194,6 +210,7 @@ export default function ConnectionsScreen() {
             list.map((block) => (
               <PersonRow key={block.user.id} name={block.user.display_name} path={block.user.avatar_path}>
                 {quiet('Unblock', block.user.id, () => api.app.blocks.unblock({ user_id: block.user.id }))}
+                {report(block.user.id, block.user.display_name, false)}
               </PersonRow>
             ))
           }
@@ -221,6 +238,7 @@ export default function ConnectionsScreen() {
                 {quiet('Block', connection.id, () =>
                   api.app.blocks.block({ user_id: connection.profile.id }),
                 )}
+                {report(connection.profile.id, connection.profile.display_name)}
               </PersonRow>
             ))
           }

@@ -32,6 +32,11 @@ export async function signUp(page: Page, email: string): Promise<void> {
   await page.getByRole('button', { name: 'Sign up' }).click();
 }
 
+/** Ticks the sign-up agreement (terms of use and privacy policy) a new profile requires. */
+export async function agreeToTerms(page: Page): Promise<void> {
+  await page.getByRole('checkbox', { name: /I agree to/ }).check();
+}
+
 /** The `returnTo` search param of the current URL, decoded. */
 export function returnToOf(page: Page): string | null {
   return new URL(page.url()).searchParams.get('returnTo');
@@ -43,6 +48,7 @@ export async function signUpWithProfile(page: Page, email: string, name: string)
   await signUp(page, email);
   await page.waitForURL(/\/profile\?/);
   await page.getByLabel('Name').fill(name);
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Save' }).click();
   await page.waitForURL('**/gatherings');
 }
@@ -57,6 +63,7 @@ export async function claimFreshTag(page: Page, email: string, name: string): Pr
   await signUp(page, email);
   await page.waitForURL(`**/claim/${uid}`);
   await page.getByLabel('Name').fill(name);
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Claim tag' }).click();
   await page.waitForURL(`**/t/${uid}`);

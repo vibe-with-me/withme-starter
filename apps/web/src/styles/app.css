@@ -899,4 +899,56 @@ a.link:hover {
     align-self: flex-start;
     margin: calc(-1 * var(--space-5)) var(--space-2) 0;
   }
+/* --- choices and the report dialog ----------------------------------------- */
+
+/* A checkbox or radio with its label: the whole line is the hit area. */
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choice input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-ink);
+}
+
+.choices {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.choices legend {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: var(--space-1);
+}
+
+.dialog {
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  width: min(var(--card-max-width), calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow-y: auto;
+}
+
+.dialog::backdrop {
+  background: var(--color-scrim);
 }
