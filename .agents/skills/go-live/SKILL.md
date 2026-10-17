@@ -483,9 +483,11 @@ with the owner's name next to it.
 
 ## Redeploys
 
-DB: new migrations via `supabase db push`; reseed only with the owner's
-OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
-`eas update`. API: `bunx wrangler deploy` (secrets persist).
+By hand, in the same order as a first deploy: DB, new migrations via
+`supabase db push` (reseed only with the owner's OK, and never on an app
+with real users; section 1). API: `bunx wrangler deploy` (secrets
+persist). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
+`eas update`.
 
 The starter's own demo DB is migrated by
 `.github/workflows/demo-migrate.yml`: after migrations merge to `main`,
@@ -493,12 +495,71 @@ it runs `supabase db push` against the `demo` GitHub Environment with no
 approval step (the demo holds only seed data, and CI already applied each
 migration to a fresh local stack). Re-run it from the Actions tab, on
 `main`, to retry; it skips any other branch. It only runs in
-`vibe-with-me/withme-starter`. A fork deletes it, or points its `if:` at
-its own repository and gives its own `demo` environment the `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and
-`SUPABASE_PROJECT_REF` secrets. Against a database with real users,
-never let it push unreviewed: add a required reviewer to the environment
-(public repositories; a private one needs GitHub Enterprise), or remove
-the `push` trigger and start each run by hand.
+`vibe-with-me/withme-starter`, and it never deploys Workers. A fork
+deletes it, and uses `deploy.yml` below for its own project.
+
+### Automated redeploys (opt-in)
+
+`.github/workflows/deploy.yml` runs the four steps above in order, each
+job waiting for the one before: `migrate` (dry run in the step summary,
+then `supabase db push --yes`), `api` (`wrangler deploy` with the retry
+rule, then `/health`), `web` (build, then `wrangler deploy`), `mobile`
+(`eas update`). It never seeds, never runs `supabase config push`, and
+never touches Worker secrets. It ships off: every job's `if:` names
+`your-org/your-repo`, which matches no repository.
+
+**What gates a run.** A person starting it: Actions → Deploy → Run
+workflow, branch `main` (other branches skip). Read the `migrate` job's
+dry run on the first runs. **Environment required reviewers are enforced
+only on public repositories and GitHub Enterprise**: on a private
+Team-plan repository the setting saves and does nothing, so the manual
+dispatch is the only approval there. The `push` trigger is commented out
+in the file; uncomment it only for a public or seed-only demo, never for
+an app with real users (migrations can delete data). Untick `mobile` on
+the run form when a change needs a store build (a new native module, an
+SDK bump) instead of an EAS Update.
+
+To turn it on (each step is the owner's: tokens and settings live in
+their accounts):
+
+1. Finish sections 1–4 by hand once: the workflow redeploys, it does not
+   create projects, Workers, Worker secrets or the EAS project.
+2. Move the mobile values into EAS: `bunx eas-cli env:create
+   --environment production` for each `EXPO_PUBLIC_*` line of
+   `apps/mobile/.env.production` (section 5, EAS environment variables).
+   CI has no `.env.production`.
+3. Create a GitHub environment named `production` (Settings →
+   Environments). Under Deployment branches and tags choose Selected
+   branches and add `main`; this works on private Team-plan repositories.
+4. Add its **secrets**:
+   - `SUPABASE_ACCESS_TOKEN`: a Supabase personal access token
+     (Account → Access Tokens).
+   - `SUPABASE_DB_PASSWORD`: the database password from section 1.
+   - `SUPABASE_PROJECT_REF`: the project ref.
+   - `CLOUDFLARE_API_TOKEN`: a Cloudflare API token from the "Edit
+     Cloudflare Workers" template, limited to the one account.
+   - `EXPO_TOKEN`: an Expo robot or personal access token (expo.dev →
+     Access tokens) with access to the EAS project.
+5. Add its **variables** (public values, the same as
+   `apps/web/.env.production`):
+   - `CLOUDFLARE_ACCOUNT_ID`: pins the account (section 2).
+   - `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`:
+     required; the `web` job stops without them.
+   - `VITE_TERMS_URL`, `VITE_PRIVACY_URL`: required for an app with real
+     users (section 5).
+   - `VITE_STORE_URL`, and `VITE_DEMO_CREDENTIALS` for a public demo
+     only: optional.
+   - `EAS_UPDATE_BRANCH`: the EAS branch your builds' channel reads
+     (section 4 publishes to `demo`).
+6. In `deploy.yml`, replace `your-org/your-repo` with your repository in
+   all four `if:` lines, delete `demo-migrate.yml`, and merge.
+7. Run it from the Actions tab.
+
+**Checkpoint:** all four jobs are green, the `api` job's health check
+prints `{"ok":true}`, and the section 3 checks pass against the live web
+worker. A red `api` or `web` job after a green `migrate` leaves the
+database ahead of the code: fix the cause and re-run the failed jobs (the
+migrations are already applied, so `migrate` has nothing left to push).
 
 The marketing site, the privacy and support URLs the store listings ask
 for, and the hostname split between site and app are

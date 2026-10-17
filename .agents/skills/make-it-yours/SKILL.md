@@ -575,12 +575,16 @@ delete it:
   under its own name changes the `if:` to its own repository.
 - `.github/workflows/demo-migrate.yml` pushes new migrations to the
   starter's hosted demo and runs only in `vibe-with-me/withme-starter`
-  (its `if:`). Delete it, or migrate your own hosted project with it:
-  change the `if:` to your repository and create a `demo` environment
-  with the three secrets it names. It pushes on every merge with no
-  approval, which suits a seed-only demo. If the project has real
-  users, add a required reviewer to the environment or remove the
-  `push` trigger first (`go-live`, Redeploys).
+  (its `if:`). Delete it: a fork migrates its own project with
+  `deploy.yml`.
+- `.github/workflows/deploy.yml` redeploys your hosted stack (migrations,
+  API worker, web worker, EAS Update, in that order) and ships off: its
+  `if:` lines name `your-org/your-repo`. Leave it off until `go-live` has
+  run once by hand, then turn it on with `go-live` → Automated redeploys,
+  which lists the `production` environment and its secrets. Runs start
+  by hand from the Actions tab; environment required reviewers do
+  nothing on a private repository outside GitHub Enterprise, so that
+  dispatch is the approval.
 
 **Checkpoint (final gate):** the full verification gate from
 `docs/the-slice.md`:
@@ -617,7 +621,7 @@ there, and the matches a fork may keep on purpose (the seed identity, an
 upstream attribution link, `@alex-eisele` in CODEOWNERS when the starter's
 maintainer really reviews the fork): `.agents/skills/make-it-yours/reference.md`
 → The final sweep. **A fork in the same GitHub org as the starter**
-(`vibe-with-me/<your-repo>`) appends the two extra filter lines from
+(`vibe-with-me/<your-repo>`) appends the extra filter lines from
 that section.
 
 Not acceptable: `"owner": "vibe-with-me"` in `apps/mobile/app.json`

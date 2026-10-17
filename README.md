@@ -296,6 +296,9 @@ runbook; the short version is:
    it through a service binding, and Turborepo enforces the order.
 6. Encode a tag, tap it, claim it.
 
+Later redeploys can run from GitHub Actions: `.github/workflows/deploy.yml`
+ships off, and `go-live` → Automated redeploys turns it on.
+
 A public website for the fork, with the privacy and support URLs the app
 stores ask for, is a third Worker: the
 [`add-marketing-site`](.agents/skills/add-marketing-site/SKILL.md) skill,
