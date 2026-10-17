@@ -230,9 +230,16 @@ In slice order:
    The contract's `min(1)` does not bind the RPC: anyone signed in can
    call it over PostgREST with the publishable key, as the limit tests do.
    So after the profile check, refuse a blank value in the body:
-   `if btrim(coalesce(p_course_name, '')) = '' then raise exception 'course name required' using errcode = '22023'; end if;`
-   (not a CHECK: the rows that predate the column hold `''`, and a CHECK
-   would refuse any later edit to them).
+   ```sql
+   if coalesce(p_course_name, '') !~ '[^ \u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]' then
+     raise exception 'course name required' using errcode = '22023';
+   end if;
+   ```
+   The class is the whitespace the contract's `.trim()` removes that the
+   plain-text CHECK does not already refuse; `btrim` alone strips only
+   ASCII spaces, so a value of one no-break space would pass it. (Not a
+   CHECK: the rows that predate the column hold `''`, and a CHECK would
+   refuse any later edit to them.)
    Insert the column (`trim(p_course_name)`, as the body trims the title),
    add it to the `jsonb_build_object` the function
    returns (the API validates that object against `GatheringSchema`), and
@@ -280,8 +287,8 @@ In slice order:
    re-issued revoke keeps: pass it the new argument and nothing else
    changes. A field with a CHECK gets a rejected-at-the-boundary case
    (create and host edit, with a positive control). For the worked
-   example, in `gatherings.test.ts`: a blank `p_course_name` (`''` and
-   `'   '`) answers `22023`, 121 characters answers `23514`, and 120 is
+   example, in `gatherings.test.ts`: a blank `p_course_name` (`''`,
+   `'   '` and `'\u00A0'`) answers `22023`, 121 characters answers `23514`, and 120 is
    created; and in `plain-text.test.ts`, the spoof loop covers the new
    column too, on create (`{ p_title: 'Tee time', p_starts_at: tomorrow(), p_course_name: value }`
    answers `23514`) and on edit (`{ course_name: value }`). Adding an
