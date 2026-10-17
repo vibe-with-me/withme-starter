@@ -61,6 +61,8 @@ const a = await db.rpc('claim_tag', { p_uid: link, p_destination: { type: 'link'
 const b = await db.rpc('claim_tag', { p_uid: profile });
 if (a.error) throw a.error;
 if (b.error) throw b.error;
+// claim_tag answers null, not an error, for a tag it did not claim.
+if (!a.data || !b.data) throw new Error('a claim did not land: re-provision and run again');
 console.log('link claim: ok | profile claim: ok');
 EOF
 REPO="$REPO" DEMO_EMAIL="$DEMO_EMAIL" DEMO_PASSWORD="$DEMO_PASSWORD" bun run "$OUT/claim.ts"
