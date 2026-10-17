@@ -157,8 +157,8 @@ And one place copies the light `--color-surface`:
 `--color-scrim` (behind the web report dialog) needs nothing: it is
 derived, not a ninth brand token. Light is the ink at 40%
 (`color-mix(… var(--color-ink) 40%, transparent)`), so the new ink
-recolors it; dark is plain black. Change the dark value only if black
-fights the new dark bg.
+recolors it; dark is black at 60% (`rgba(0, 0, 0, 0.6)`), never opaque.
+Change the dark value only if black fights the new dark bg.
 
 **The one-accent rule.** The palette is near-monochrome with exactly one
 vivid accent, and the accent appears only on the primary action of a
