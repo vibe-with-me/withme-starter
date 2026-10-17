@@ -22,7 +22,7 @@ import {
 import { gatheringHref } from '../../lib/gathering-link';
 import { goingLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
-import { fonts, space, useTokens } from '../../lib/tokens';
+import { displaySize, fonts, space, useTokens } from '../../lib/tokens';
 
 type ScreenState =
   | { kind: 'loading' }
@@ -450,5 +450,5 @@ function TagPointer({ gatheringId, hidden }: { gatheringId: string; hidden: bool
 const styles = StyleSheet.create({
   page: { flex: 1, justifyContent: 'center', padding: space.s5 },
   content: { padding: space.s5, gap: space.s3 },
-  sectionTitle: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.2, marginTop: space.s4 },
+  sectionTitle: { fontFamily: fonts.display, fontSize: displaySize.section, letterSpacing: -0.2, marginTop: space.s4 },
 });

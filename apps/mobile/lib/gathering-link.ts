@@ -16,12 +16,14 @@ export interface GatheringHints {
 export function gatheringHref(id: string, hints: GatheringHints = {}): string {
   const query: string[] = [];
   if (hints.title) {
-    const title = hints.title
+    const cleaned = hints.title
       // oxlint-disable-next-line no-control-regex -- stripping control chars is the point
       .replace(/[\\\u0000-\u001f#&+%?]/g, ' ')
       .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 60);
+      .trim();
+    // Cut by code point: a UTF-16 slice can split an emoji's surrogate pair,
+    // and encodeURIComponent throws on the half left behind.
+    const title = Array.from(cleaned).slice(0, 60).join('');
     if (title) query.push(`title=${encodeURIComponent(title)}`);
   }
   if (hints.starts_at) {

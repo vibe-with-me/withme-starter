@@ -12,7 +12,7 @@ import {
   type TextProps,
 } from 'react-native';
 import { avatarSrc } from '../lib/avatar';
-import { fonts, radius, space, TAP_TARGET, useShadow, useTokens } from '../lib/tokens';
+import { displaySize, fonts, radius, space, TAP_TARGET, useShadow, useTokens } from '../lib/tokens';
 
 /** The card surface. `settle` plays the one animation in the motion budget. */
 export function Card({ children, settle = false }: { children: ReactNode; settle?: boolean }) {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 30,
+    fontSize: displaySize.title,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontFamily: fonts.display,
-    fontSize: 20,
+    fontSize: displaySize.section,
     letterSpacing: -0.2,
     marginTop: space.s4,
   },

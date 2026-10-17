@@ -211,4 +211,9 @@ bun run test        # contract + db (RLS) + nfc-sdk suites, all green
 
 and the e2e harness you extended passes: `cd apps/api && bun run dev`
 (separate shell), then `bun run e2e`; for web flows, `cd apps/web &&
-bun run test:e2e`.
+bun run test:e2e`. The db suite and both e2e harnesses need the
+local service-role key exported in the shell (the seed finds it itself)
+([the one line](local-development.md#the-service-role-key)). The RLS
+suite also leaves its test users and their gatherings in the local
+database: before a visual check in the app, `bun run db:reset && bun run
+db:seed` again.

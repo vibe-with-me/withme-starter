@@ -91,7 +91,7 @@ has the rest.
 | `bun run lint` | `oxlint --deny-warnings` | — |
 | `bun run typecheck` | Every workspace, including the e2e folders | — |
 | `bun run --cwd apps/api e2e` | The SDK through the API Worker into Supabase | The stack, and `cd apps/api && bun run dev` in another shell |
-| `bun run --cwd apps/web test:e2e` | Playwright smoke against the production build: resolve → claim → connect, the shell, gatherings, connections, profile | The stack. Playwright starts the API Worker and the built web Worker itself. |
+| `bun run --cwd apps/web test:e2e` | Playwright smoke against the production build: resolve → claim → connect, the shell, gatherings, connections, profile | The stack and the service-role key (below). Playwright starts the API Worker and the built web Worker itself. |
 
 ### The service-role key
 
@@ -117,6 +117,9 @@ publish checks, and the Playwright smoke.
 
 The RLS tests act through real per-user clients against the live stack,
 so they are slower than unit tests and cannot run without Docker. They
+also leave their test users and those users' gatherings behind, so the
+demo's Events feed is noisy after a run: `bun run db:reset && bun run
+db:seed` before you look at the app. They
 are also the spec: when a skill says a safety mechanism moved, it is one
 of these that went red.
 
@@ -137,6 +140,16 @@ cd apps/web && bun run preview  # the production build locally (needs the API Wo
 images from previous CLI versions accumulate in the Docker VM. Prune
 them (`docker image prune -a` removes every unused image; check what else
 you have first) and start again.
+
+**`db:start` prints "Starting database from backup" on a fresh clone.**
+The local stack is named after `project_id` in `supabase/config.toml`,
+and every clone of the starter ships the same one, so this clone came up
+on another checkout's database (`supabase migration list --local` shows
+it behind). `bun run db:reset` rebuilds it from this clone's migrations;
+then `db:seed`. A fork gives itself its own `project_id` in
+`make-it-yours` (before step 1), which also lets two checkouts run side
+by side: with the same `project_id` their container names collide even
+on different ports.
 
 **`db:start` fails with "port is already allocated".** Something else
 holds one of the stack's ports (553xx). The usual culprit is another

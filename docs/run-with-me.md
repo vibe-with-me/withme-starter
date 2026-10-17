@@ -60,19 +60,53 @@ For Run With Me:
 
 ## Step 0: fork and run the demo
 
-Fork the repo, clone it, and follow the README's
+Get your own copy of the repo (below), clone it, and follow the README's
 [Try it locally](../README.md#try-it-locally). Tap Ada's tag at
 `http://localhost:3000/t/04BBBBBBBBBBBB`, sign in as Ada, see her
-gathering. You now have `withme` running, and the verification gate is
-green before you change anything.
+gathering. You now have `withme` running.
 
-While you are here, add the starter as a second remote, so its later
-fixes reach your fork with a plain `git merge`:
+Then run the verification gate once, before you change anything. The
+RLS suite sets up its fixtures with the local stack's service-role key,
+so export it in this shell first
+([why](local-development.md#the-service-role-key)):
+
+```sh
+eval "export $(supabase status -o env --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY | grep ^SUPABASE_SERVICE_ROLE_KEY=)"
+bun run lint && bun run typecheck && bun run test
+```
+
+All green. Every later step's gate runs in a shell with that key
+exported.
+
+**Your own copy.** A public app can use GitHub's Fork button, then add
+the starter as a second remote, so its later fixes reach your fork with
+a plain `git merge`:
 
 ```sh
 git remote add upstream https://github.com/vibe-with-me/withme-starter.git
+gh repo set-default <org>/<app>
 ```
 
+A private app cannot be a fork: a fork of a public repository stays
+public, and GitHub will not fork a repository into the organization
+that owns it. Clone the starter and push it to a new private repository
+instead; the clone keeps the starter's history, so merging updates works
+the same way:
+
+```sh
+git clone https://github.com/vibe-with-me/withme-starter.git <app>
+cd <app>
+gh repo create <org>/<app> --private
+git remote rename origin upstream
+git remote add origin https://github.com/<org>/<app>.git
+git push -u origin main
+gh repo set-default <org>/<app>
+```
+
+Either way, `gh repo set-default` matters: with more than one remote and
+no default set, `gh pr create` either stops to ask which repository you
+mean or picks the starter (an `upstream` remote ranks first) and opens
+the PR there. Setting the default names your repo once.
 [Staying current](staying-current.md) is the routine for taking an update.
 
 ## Step 1: `design-direction` (optional)
@@ -395,11 +429,16 @@ The same eight steps, different inputs:
 
 | Vertical | `customize-gathering` | `extend-profile` card | `extend-profile` connections | `add-destination-type` |
 | --- | --- | --- | --- | --- |
-| Golf | round / rounds; `course_name` | handicap, home course | phone | — |
-| Tailgate | tailgate / tailgates; `lot` | team, signature dish | phone | link to the parking map |
-| Climbing gym | session / sessions; `wall` | grade, usual night | handle | — |
-| Dog walking | walk / walks; `park` | dog's name and breed | phone | — |
-| Book club | meeting / meetings; `book` | currently reading | email | link to the reading list |
+| Golf | round / rounds; `course_name` | handicap, home course | — (phone is a Link) | — |
+| Tailgate | tailgate / tailgates; `lot` | team, signature dish | — (phone is a Link) | link to the parking map |
+| Climbing gym | session / sessions; `wall` | grade, usual night | — (a handle is a Link) | — |
+| Dog walking | walk / walks; `park` | dog's name and breed | — (phone is a Link) | — |
+| Book club | meeting / meetings; `book` | currently reading | — (email is a Link) | link to the reading list |
+
+The connections column is empty in each because a phone number, an
+email and a handle already ship as Links (Profile → Links, connections
+only): `extend-profile`'s connections tier is for a field that is not a
+way to reach someone. Golf With Me is card-only for that reason.
 
 What stays off the table in every one of them: a list of members you have
 not met, a feed, a ranking, a recommendation. The skills will not build

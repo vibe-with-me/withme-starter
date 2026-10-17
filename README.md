@@ -64,13 +64,19 @@ profile fields. The skills exist because those moves repeat.
 
 | Idea | The gathering becomes | Fields on the card | Fields only connections see | Where the tag lives |
 | --- | --- | --- | --- | --- |
-| Run With Me | a run (distance, pace group) | pace, home club | Strava handle, phone | bib, shoe tag, water bottle |
-| Golf With Me | a round (course, tee time) | handicap, home course | phone | bag tag, ball marker |
-| Tailgate With Me | a tailgate (lot, kickoff) | team, signature dish | phone | cooler, koozie |
-| Climb With Me | a session (wall, grade range) | grade, usual night | handle | chalk bag, membership card |
-| Walk With Me | a walk (park, time) | dog's name and breed | phone | collar tag |
-| Read With Me | a meeting (book, chapter) | currently reading | email | bookmark |
-| Trivia With Me | a team table | team name | handle | table tent at the bar |
+| Run With Me | a run (distance, pace group) | pace, home club | Strava handle (a new Link platform), phone (a Link) | bib, shoe tag, water bottle |
+| Golf With Me | a round (course, tee time) | handicap, home course | phone (a Link) | bag tag, ball marker |
+| Tailgate With Me | a tailgate (lot, kickoff) | team, signature dish | phone (a Link) | cooler, koozie |
+| Climb With Me | a session (wall, grade range) | grade, usual night | handle (a Link) | chalk bag, membership card |
+| Walk With Me | a walk (park, time) | dog's name and breed | phone (a Link) | collar tag |
+| Read With Me | a meeting (book, chapter) | currently reading | email (a Link) | bookmark |
+| Trivia With Me | a team table | team name | handle (a Link) | table tent at the bar |
+
+Every connections-only field above is a way to reach someone, and the
+starter already ships those as Links (Profile → Links: a phone number, an
+email, a handle on most services), seen only by connections. A new
+service is one more Link platform; `extend-profile`'s connections tier is
+for what is not a link (a shirt size, a postcode).
 
 The pattern is the same every time: **a gathering with your nouns, a card
 with your fields, a tag where your people already are.** The
@@ -104,6 +110,13 @@ Then play the demo:
 - Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her
   gathering, her pending request from Lin, and her tags.
 
+On a machine that has run the starter or another fork of it before,
+`db:start` may print "Starting database from backup": the local stack is
+named after `project_id` in `supabase/config.toml`, so a fresh clone
+picks up the old checkout's database, migrations and all. Run
+`bun run db:reset` before `db:seed` to rebuild it from this clone's
+migrations.
+
 If `db:start` says a port is already allocated, something else holds
 553xx, usually another project's Supabase stack: stop it first
 ([Local development](docs/local-development.md#when-something-goes-wrong)
@@ -126,10 +139,15 @@ checks at each step, is [docs/run-with-me.md](docs/run-with-me.md). To
 hand the whole run to an agent at once, start it with
 [docs/agent-prompt.md](docs/agent-prompt.md).
 
-**0. Fork and run the demo.** Everything above. You now have `withme`,
-working, on your machine. Add the starter as an `upstream` remote now;
-its later fixes reach your fork as an ordinary `git merge`
-([Staying current](docs/staying-current.md)).
+**0. Fork and run the demo.** Everything above, then the verification
+gate once (the tests need the local service-role key exported first:
+[the one line](docs/local-development.md#the-service-role-key)). You now
+have `withme`, working, on your machine. Add the starter as an
+`upstream` remote now; its later fixes reach your fork as an ordinary
+`git merge` ([Staying current](docs/staying-current.md)). For a private
+app, clone and push to a new private repository instead of forking
+([step 0](docs/run-with-me.md#step-0-fork-and-run-the-demo) has the
+commands).
 
 **1. `design-direction` (optional): a look for the domain.**
 "A neighborhood run club. Mood: dawn, asphalt, Saturday." The skill runs

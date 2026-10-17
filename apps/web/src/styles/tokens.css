@@ -4,7 +4,8 @@
  * a token swap, not a redesign. Components must reference var(--*) only.
  *
  * Palette: near-monochrome warm neutrals with EXACTLY ONE vivid accent,
- * reserved for the handshake pair (Connect and Accept).
+ * reserved for the primary action of a screen (Connect, Accept, Claim tag,
+ * Join): the .btn--connect button, and nothing else.
  */
 
 :root {
@@ -21,7 +22,7 @@
   --color-ink: #1c1916;
   --color-ink-muted: #6f6a62;
 
-  /* the accent. The handshake pair — Connect and Accept — and nothing else.
+  /* the accent. A screen's primary action (.btn--connect) and nothing else.
      (5.18:1 with --color-accent-ink in light; 6.46:1 in dark) */
   --color-accent: #c2410c;
   --color-accent-ink: #ffffff;
@@ -34,6 +35,9 @@
   --text-md: 1.0625rem;
   --text-lg: 1.25rem;
   --text-title: 2rem;
+  /* --text-title and --text-lg set only display text (names, titles, section
+     headers, the header wordmark). Mobile mirrors them as `displaySize` in
+     tokens.ts: a display face that sets small raises both together. */
 
   /* geometry — rounded, card-like, echoing the physical tag */
   --radius-card: 24px;

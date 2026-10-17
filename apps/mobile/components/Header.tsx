@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fonts, SHELL, space, TAP_TARGET, useTokens } from '../lib/tokens';
+import { displaySize, fonts, SHELL, space, TAP_TARGET, useTokens } from '../lib/tokens';
 
 /**
  * The shared tab header: wordmark left, scan right. There is no home tab, so
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   // A setting, not a drawing: display face, 700, -0.03em, lowercase (mirrors .wordmark).
   wordmark: {
     fontFamily: fonts.displayBold,
-    fontSize: 20,
+    fontSize: displaySize.wordmark,
     letterSpacing: -0.6,
   },
   action: {
