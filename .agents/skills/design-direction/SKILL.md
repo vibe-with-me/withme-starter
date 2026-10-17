@@ -55,8 +55,8 @@ so the owner can keep what people already recognise.
 
 - The design system, in two files kept value-identical:
   `apps/web/src/styles/tokens.css` (eight color tokens in `:root` and a
-  `prefers-color-scheme: dark` block, plus `--color-scrim`, derived from
-  the ink and never on the sheet, type scale, radii 24/14/pill,
+  `prefers-color-scheme: dark` block, plus `--color-scrim`, never on the sheet:
+  the light ink at 40% in light, plain black at 60% in dark, type scale, radii 24/14/pill,
   spacing, the 44px tap target, one motion token) and
   `apps/mobile/lib/tokens.ts` (the same eight colors as `light` and
   `dark`, plus `fonts`, `radius`, `space`, and `displaySize`, the mirror
@@ -273,8 +273,9 @@ skill:
 - One accent, on primary actions only; never on navigation, links,
   chrome, borders, or headings. A direction that needs two is a
   different product.
-- Eight color tokens, no more. Derived values (`--color-scrim`, the ink
-  at 40%) are not brand tokens and follow the eight on their own. A new
+- Eight color tokens, no more. Derived values are not brand tokens and
+  follow the eight on their own: `--color-scrim` is the light ink at 40%
+  in light, and `rgba(0, 0, 0, 0.6)` in dark. A new
   token key is a design-system change, not a rebrand, and it is out of
   this skill's scope.
 - Neutrals near-monochrome; no gradients, no tinted surfaces.
