@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, ErrorText, Field, Muted, PersonRow, Title } from '../../components/ui';
 import { api } from '../../lib/api';
+import { cardLine } from '../../lib/card-line';
 import {
   formatStartsAt,
   parseLocalDateTime,
@@ -316,6 +317,7 @@ function GatheringDetail({
             key={member.profile.id}
             name={member.profile.display_name}
             path={member.profile.avatar_path}
+            line={cardLine(member.profile)}
             // Web's convention: "Host" takes the sub line; the row's right side is for actions.
             sub={member.profile.id === gathering.host_id ? 'Host' : member.profile.bio}
           />

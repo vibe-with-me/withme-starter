@@ -79,14 +79,16 @@ card builders and skips every `details` line:
   `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, or
   `listConnections` change, and the API router is unchanged:
   `updateProfile` already passes its input whole to `upsertOwnProfile`.
-- §6, §7: no Contact field; `PersonRow` (web and mobile) and both
-  Connections screens unchanged. The seed updates the card fields only,
+- §6, §7: no Contact field and no `detail` line; `PersonRow` (web and
+  mobile) and both Connections screens unchanged. The two `cardLine`
+  files still change, so every list of people shows the card tier. The seed updates the card fields only,
   and the simulator's "connected accounts see each other's contact" check
   does not apply.
 - §8: the API e2e asserts the card tier on every card surface (update and
   get, resolve, the pending request, accept, a connection) in place of the
   `details` asserts; the `handshake.spec.ts` block checks the card line on
-  Bob's view of Ada's tag in place of Contact under `/connections`.
+  Bob's view of Ada's tag, and on her row under `/connections`, in place
+  of Contact.
 
 **No required vertical field.** When every new field is optional,
 `REQUIRED_PROFILE_FIELDS = ['display_name']`, and:
@@ -179,8 +181,8 @@ mirroring above does not apply; this does.
 | Queries | `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile`, and `listBlocks`' stand-in card in `packages/db/src/queries/handshake.ts` (asserted in `packages/db/test/blocks.test.ts`) | `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, `listConnections` (same file; it already embeds links, keep that) |
 | API | `apps/api/src/routers/app.ts`: `getProfile`, `updateProfile` | same; `acceptRequest` and `connectionsList` pass it through |
 | SDK | `PublicProfileCard` in `packages/nfc-sdk/src/client.ts` | never |
-| Web (`apps/web/src/`) | `components/ProfileCard.tsx`, `routes/_app.profile.tsx`, `routes/claim.$uid.tsx` | `routes/_app.profile.tsx`, `routes/_app.connections.tsx` (its local `PersonRow`) |
-| Mobile (`apps/mobile/`) | `app/t/[uid].tsx`, `app/(tabs)/profile.tsx`, `app/claim/[uid].tsx` | `app/(tabs)/profile.tsx`, `app/(tabs)/connections.tsx`, `PersonRow` in `components/ui.tsx` |
+| Web (`apps/web/src/`) | `components/ProfileCard.tsx`, `lib/card-line.ts` (every list of people), `routes/_app.profile.tsx`, `routes/claim.$uid.tsx` | `routes/_app.profile.tsx`, `routes/_app.connections.tsx` (its local `PersonRow`) |
+| Mobile (`apps/mobile/`) | `app/t/[uid].tsx`, `lib/card-line.ts` (every list of people), `app/(tabs)/profile.tsx`, `app/claim/[uid].tsx` | `app/(tabs)/profile.tsx`, `app/(tabs)/connections.tsx`, `PersonRow` in `components/ui.tsx` |
 | Gate | `isProfileComplete` (contract) → web `routes/_app.tsx` (`ShellRoute`), mobile `app/(tabs)/_layout.tsx` | — |
 | Seed / e2e | `supabase/seed/index.ts`; `apps/api/e2e/handshake.e2e.ts`; every profile-creating step in `apps/web/e2e/` (`helpers.ts`, `handshake.spec.ts`, `gatherings.spec.ts`, `shell.spec.ts`) | same seed block and API e2e; `apps/web/e2e/handshake.spec.ts` |
 
@@ -950,9 +952,10 @@ others are red.)
   `packages/db/test/blocks.test.ts` (the `toEqual` that names
   `BLOCKED_USER_NAME`): both fail typecheck until they carry every card
   field.
-  Showing it is optional: the Requests and Blocked rows (§6, §7) and a
-  gathering's member list may or may not display the card-tier field, and
-  no check depends on it.
+  Every list of people shows it, because the card tier rides every card:
+  the Requests, Connections and Blocked rows and a gathering's member list
+  all print `cardLine(profile)` under the name already, and §6 and §7 fill
+  that one function in on each platform.
 - `upsertOwnProfile`: its patch type is
   `{ display_name?: string; bio?: string | null }`; add
   `affiliation?: string | null`. In the first-create `.insert({ id, display_name, bio })`,
@@ -1196,9 +1199,18 @@ const [contact, setContact] = useState(details?.contact_handle ?? '');
   retitle the form "First, your card". Its catch still says "Could not
   save your name. Try again." over two fields: make it "Could not save
   your profile. Try again." No test reads that string.
-- `apps/web/src/routes/_app.connections.tsx`. Every list renders the
-  file's local `PersonRow` (`profile`, `sub`, `links`, children), which
-  shows one `sub` line. Give it a second, optional line:
+- `apps/web/src/lib/card-line.ts`: `cardLine` returns the card tier as one
+  line, `return profile.affiliation;` (drop the `void profile;` that keeps
+  the starter's stub lint-clean). The card tier rides every card, so every
+  list of people shows it: the Requests, Connections and Blocked rows
+  (`PersonRow` in `_app.connections.tsx` calls it) and a gathering's
+  member list (`_app.gatherings_.$id.tsx`) already print it under the
+  name. A fork with several card fields joins them here, once
+  (`[handicap, home_course].filter(Boolean).join(' · ')`).
+- `apps/web/src/routes/_app.connections.tsx`, connections tier only.
+  Every list renders the file's local `PersonRow` (`profile`, `sub`,
+  `links`, children), which shows the card line and one `sub` line. Give
+  it one more, optional line for the details:
 
 ```tsx
 function PersonRow({
@@ -1225,9 +1237,8 @@ function PersonRow({
 
   Then only the Connections segment (the default, no `?tab`) passes it:
   `detail={connection.details?.contact_handle}` on its `PersonRow`. The
-  Requests and Blocked segments may pass the card tier as `detail`
-  (`request.requester.affiliation`, `block.user.affiliation`); they never
-  show details (they do not have them).
+  Requests and Blocked segments never show details (they do not have
+  them); their card tier comes from `cardLine`, as above.
 
 No new CSS: `.hint`, `.sub`, and `.field` exist. Tokens only.
 
@@ -1352,14 +1363,19 @@ when the tabs mounted.
   filled; the `Title` "First, your name" becomes "First, your card", and
   `createProfile`'s "Could not save your name. Try again." becomes "Could
   not save your profile. Try again.", both as on web.
-- `PersonRow` in `apps/mobile/components/ui.tsx` (`name`, `path`, `sub`,
-  `extra`, children) gains `detail?: string | null`, rendered after the `sub` `Text`
-  as a second `Text` with the same `numberOfLines={2}` and
+- `apps/mobile/lib/card-line.ts`: the same `cardLine` as web,
+  `return profile.affiliation;`. Every list of people already passes it as
+  `PersonRow`'s `line` (Requests, Connections and Blocked in
+  `(tabs)/connections.tsx`, and the member list in `gathering/[id].tsx`),
+  so the card tier shows on each with no other change.
+- Connections tier only: `PersonRow` in `apps/mobile/components/ui.tsx`
+  (`name`, `path`, `line`, `sub`, `extra`, children) gains
+  `detail?: string | null`, rendered after the `sub` `Text`
+  as another `Text` with the same `numberOfLines={2}` and
   `[styles.personSub, { color: t.inkMuted }]`, when non-null. In
   `apps/mobile/app/(tabs)/connections.tsx`, the Connections segment's
   `PersonRow` passes `detail={connection.details?.contact_handle}`; the
-  Requests and Blocked segments may pass the card tier's `affiliation`,
-  never details.
+  Requests and Blocked segments never pass details.
 
 **Checkpoint (static):** `bun run lint && bun run typecheck`.
 
@@ -1483,6 +1499,8 @@ assertion (Bob sees Smoke Ada under `/connections`):
   await expect(ada.getByText('Saved.')).toBeVisible();
   await bob.goto('/connections'); // the Connections segment is the default
   await expect(bob.getByText('@smoke.ada')).toBeVisible();
+  // the card tier rides the row too (cardLine), not only the tapped card
+  await expect(bob.getByText('Smoke Club')).toBeVisible();
 ```
 
 ## 9. The gate

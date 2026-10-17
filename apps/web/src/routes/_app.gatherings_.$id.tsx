@@ -5,6 +5,7 @@ import { shellStates } from '../components/CalmStates.tsx';
 import { Avatar } from '../components/ProfileCard.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
+import { cardLine } from '../lib/card-line.ts';
 import { formatStartsAt, toDateTimeLocal, whenAndWhere } from '../lib/format-time.ts';
 import { goingLine } from '../lib/going.ts';
 
@@ -281,19 +282,23 @@ function GatheringDetail({
           ? "You'll see the people you're connected with here."
           : "The people you're connected with. Everyone else, you meet there."}
       </p>
-      {members.map((member) => (
-        <div className="row" key={member.profile.id}>
-          <Avatar profile={member.profile} size="row" />
-          <div className="row-body">
-            <span className="name">{member.profile.display_name}</span>
-            {member.profile.id === gathering.host_id ? (
-              <span className="sub">Host</span>
-            ) : member.profile.bio ? (
-              <span className="sub">{member.profile.bio}</span>
-            ) : null}
+      {members.map((member) => {
+        const line = cardLine(member.profile);
+        return (
+          <div className="row" key={member.profile.id}>
+            <Avatar profile={member.profile} size="row" />
+            <div className="row-body">
+              <span className="name">{member.profile.display_name}</span>
+              {line ? <span className="sub">{line}</span> : null}
+              {member.profile.id === gathering.host_id ? (
+                <span className="sub">Host</span>
+              ) : member.profile.bio ? (
+                <span className="sub">{member.profile.bio}</span>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

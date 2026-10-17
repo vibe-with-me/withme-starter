@@ -289,12 +289,15 @@ function LadderErrorText({ children }: { children: ReactNode }) {
 export function PersonRow({
   name,
   path,
+  line,
   sub,
   extra,
   children,
 }: {
   name: string;
   path: string | null;
+  /** The card tier under the name: `cardLine(profile)` from lib/card-line.ts, on every list. */
+  line?: string | null;
   sub?: string | null;
   /** Under the name and sub, full width: a connection's link chips. */
   extra?: ReactNode;
@@ -309,6 +312,11 @@ export function PersonRow({
           <Text numberOfLines={2} style={[styles.personName, { color: t.ink }]}>
             {name}
           </Text>
+          {line ? (
+            <Text numberOfLines={2} style={[styles.personSub, { color: t.inkMuted }]}>
+              {line}
+            </Text>
+          ) : null}
           {sub ? (
             <Text numberOfLines={2} style={[styles.personSub, { color: t.inkMuted }]}>
               {sub}

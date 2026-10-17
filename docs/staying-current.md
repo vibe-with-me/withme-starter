@@ -76,7 +76,8 @@ merge.
 ## Taking an update
 
 Do this on a branch, like any other change, and merge it through a PR so
-CI runs.
+CI runs. Merge that PR with a **merge commit, never a squash** (step 6
+says why).
 
 **1. See what is coming.**
 
@@ -125,16 +126,35 @@ The API's e2e harness needs the API running in another shell;
 The RLS suite matters most. If a starter PR tightened a policy, its test
 arrives with it, and your fork now has to pass it too.
 
-**6. Open the PR, then deploy as usual.** After it merges,
-`supabase db push` sends the new migrations to production (see
-[Migrations](#migrations) for the one flag it may ask for).
+**6. Open the PR, merge it with a merge commit, then deploy as usual.**
+Not "Squash and merge", even if every other PR in your repo is squashed
+(the starter's are). The merge commit's second parent is what makes the
+starter's commits ancestors of your `main`; a squash drops it, so the
+next sync starts from the old merge base and asks you to resolve every
+conflict you already resolved. If the repository allows only squash
+merges, turn on **Settings → General → Allow merge commits** (you can
+leave it for sync PRs only), or merge the branch locally with
+`git merge --no-ff starter-sync` and push `main`. Afterwards, check
+(fetch `origin` only, so `upstream/main` is still the commit you merged):
+
+```sh
+git fetch origin
+git merge-base --is-ancestor upstream/main origin/main && echo "synced"
+```
+
+It prints `synced` when the merge kept the starter's history; silence
+means the PR was squashed, and the next sync will replay this one's
+conflicts. After it merges, `supabase db push` sends the new migrations
+to production (see [Migrations](#migrations) for the one flag it may ask
+for).
 
 ## Where conflicts come from
 
 | You changed | The conflict looks like | Keep |
 | --- | --- | --- |
 | Tokens, fonts, wordmark, copy (`make-it-yours`) | A starter PR adjusted a color, a string, or a font file you replaced. | Yours. Then read the starter's change and carry it over if it was a fix (a contrast bump, a typo) rather than taste. |
-| Route files and user-facing nouns (`customize-gathering`) | Git usually follows a renamed route file. When it cannot, the starter's edit to `_app.gatherings.tsx` lands as a conflict beside your `_app.runs.tsx`. | Your names, with the starter's logic moved into them. |
+| Route files and user-facing nouns (`customize-gathering`) | Git usually follows a renamed route file. When it cannot, the starter's edit to `_app.gatherings.tsx` lands as a conflict beside your `_app.runs.tsx`. A new starter test can also assert the old path or noun (`/gathering/…` in `apps/mobile/lib/gathering-link.test.ts`) and merge with no conflict at all: then `bun run test` is what tells you. | Your names, with the starter's logic moved into them, and in its tests. |
+| Tokens you added yourself, that the starter later adds too | No conflict: the starter's export lands elsewhere in the file, and the file now declares it twice (a fork that added its own `displaySize` to `apps/mobile/lib/tokens.ts` before the starter shipped one). `bun run typecheck` names the duplicate. | The starter's, with your values. Delete your own export and move the values into the starter's. |
 | App identity, EAS ids, worker names (`app.json`, `wrangler.jsonc`) | The starter bumped a version or added a key next to your ids. | Your ids, plus the starter's new keys. |
 | `bun.lock` | Almost always conflicts when both sides added dependencies. | Neither: take either side, run `bun install`, commit the result. |
 | `.agents/skills/` | Only if you edited a skill. | The starter's. Skills are runbooks; the new version is written against the new code. |

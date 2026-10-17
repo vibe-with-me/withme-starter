@@ -1,12 +1,13 @@
-import type { ProfileLink } from '@withme/contract';
+import type { ProfileLink, PublicProfile } from '@withme/contract';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
 import { LinkList } from '../components/Links.tsx';
 import { ListLadder } from '../components/ListStates.tsx';
-import { Avatar, type CardProfile } from '../components/ProfileCard.tsx';
+import { Avatar } from '../components/ProfileCard.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
+import { cardLine } from '../lib/card-line.ts';
 import { settled } from '../lib/loaded.ts';
 
 type Tab = 'requests' | 'blocked';
@@ -247,17 +248,20 @@ function PersonRow({
   links,
   children,
 }: {
-  profile: CardProfile;
+  profile: PublicProfile;
   sub?: string | null;
   /** Connections only: the one list that carries them. */
   links?: ProfileLink[];
   children: ReactNode;
 }) {
+  // The card tier, on every row: whatever a tap shows, a list shows too.
+  const line = cardLine(profile);
   return (
     <div className="row">
       <Avatar profile={profile} size="row" />
       <div className="row-body">
         <span className="name">{profile.display_name}</span>
+        {line ? <span className="sub">{line}</span> : null}
         {sub ? <span className="sub">{sub}</span> : null}
       </div>
       <div className="row-actions">{children}</div>

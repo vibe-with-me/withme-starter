@@ -103,7 +103,9 @@ use of the tab label.
   screen itself, whose rows `router.push({ pathname: '/gathering/[id]' })`), the
   `startsWith('/gathering/')` check behind the login screen's invitation
   line, and the `/gathering/` prefix that `gatheringHref` in
-  `lib/gathering-link.ts` builds for redirects.
+  `lib/gathering-link.ts` builds for redirects, and the same prefix in its
+  test, `lib/gathering-link.test.ts`, which asserts `/gathering/…` hrefs
+  (`bun run test` fails on it until it says `/round/…`).
 - Docs: `docs/the-slice.md` cites the detail files as the idioms to copy
   (web `_app.gatherings_.$id.tsx`, "the real one"; mobile
   `gathering/[id].tsx`, among the stack screens). Point both at the
