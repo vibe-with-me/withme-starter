@@ -4,6 +4,7 @@
 // Idempotent: re-running resets the demo users and tags. `bun run db:unseed`
 // removes them.
 import './local-env.ts';
+import { TERMS_VERSION } from '@withme/contract';
 import { admin, anonClient } from '@withme/db/test-utils';
 import { DEMO_TAGS as TAGS, DEMO_USERS, findDemoUsers } from './demo.ts';
 
@@ -57,7 +58,7 @@ async function createDemoUser(email: string, displayName: string, bio: string) {
   if (signInError) throw signInError;
   const { error: profileError } = await client
     .from('profiles')
-    .insert({ id: data.user.id, display_name: displayName, bio });
+    .insert({ id: data.user.id, display_name: displayName, bio, terms_version: TERMS_VERSION });
   if (profileError) throw profileError;
   return { id: data.user.id, email, client };
 }

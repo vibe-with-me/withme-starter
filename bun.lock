@@ -116,6 +116,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@supabase/supabase-js": "^2.117.3",
+        "@withme/contract": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "^1.4.2",
@@ -153,6 +154,7 @@
       "name": "@withme/seed",
       "version": "0.0.0",
       "dependencies": {
+        "@withme/contract": "workspace:*",
         "@withme/db": "workspace:*",
       },
       "devDependencies": {
