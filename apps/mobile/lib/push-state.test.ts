@@ -1,6 +1,7 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
 
+import { gatheringHref } from './gathering-link';
 import { pushScreen, pushSetting } from './push-state';
 
 describe('pushSetting', () => {
@@ -27,7 +28,7 @@ describe('pushScreen', () => {
 
   test('a gathering push opens the screen gatheringHref builds', () => {
     // A fork that renames the screen changes gatheringHref, and this follows.
-    expect(pushScreen(`/gathering/${id}`)).toBe(`/gathering/${id}`);
+    expect(pushScreen(`/gathering/${id}`)).toBe(gatheringHref(id));
   });
 
   test('every other path opens as it is', () => {

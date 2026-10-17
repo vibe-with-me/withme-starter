@@ -118,9 +118,9 @@ does not have yet (`EXPO_PUBLIC_WEB_URL` arrived this way). Each of these
 prints the keys one side has and the other lacks; copy the new ones over:
 
 ```sh
-diff <(grep -oE '^[A-Z_]+=' apps/mobile/.env.example | sort) <(grep -oE '^[A-Z_]+=' apps/mobile/.env | sort)
-diff <(grep -oE '^[A-Z_]+=' apps/web/.env.example | sort) <(grep -oE '^[A-Z_]+=' apps/web/.env | sort)
-diff <(grep -oE '^[A-Z_]+=' apps/api/.dev.vars.example | sort) <(grep -oE '^[A-Z_]+=' apps/api/.dev.vars | sort)
+diff <(grep -oE '^[A-Z_][A-Z0-9_]*=' apps/mobile/.env.example | sort) <(grep -oE '^[A-Z_][A-Z0-9_]*=' apps/mobile/.env | sort)
+diff <(grep -oE '^[A-Z_][A-Z0-9_]*=' apps/web/.env.example | sort) <(grep -oE '^[A-Z_][A-Z0-9_]*=' apps/web/.env | sort)
+diff <(grep -oE '^[A-Z_][A-Z0-9_]*=' apps/api/.dev.vars.example | sort) <(grep -oE '^[A-Z_][A-Z0-9_]*=' apps/api/.dev.vars | sort)
 ```
 
 **4b. Put new starter code in your words.** New starter files arrive in
