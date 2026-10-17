@@ -23,10 +23,13 @@ export const Route = createFileRoute('/_app/profile_/share')({
 
 function SharePage() {
   const { profile } = useLoaderData({ from: '/_app' });
-  // The loader is the one source of the uid: after a replace it re-runs, so
-  // neither the page nor the router's cache can keep showing a retired code.
-  const { uid } = Route.useLoaderData();
+  // The loader is the source of the uid: after a replace it re-runs, so the
+  // router's cache cannot keep a retired code. Until that reload lands (or
+  // if it fails), the uid replace() returned is the live one.
+  const loaded = Route.useLoaderData();
   const router = useRouter();
+  const [replaced, setReplaced] = useState<string | null>(null);
+  const uid = replaced ?? loaded.uid;
   const [status, setStatus] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -47,10 +50,17 @@ function SharePage() {
     setBusy(true);
     setStatus(null);
     try {
-      await api.app.shareCode.replace();
-      await router.invalidate({ sync: true });
+      const next = await api.app.shareCode.replace();
+      // The old code is retired from here on, whatever the reload does.
+      setReplaced(next.uid);
       setConfirming(false);
       setStatus('New code ready. The old one no longer opens your card.');
+      try {
+        await router.invalidate({ sync: true });
+        setReplaced(null);
+      } catch {
+        // Keep showing next.uid; the loader catches up on the next visit.
+      }
     } catch (error) {
       setStatus(
         (error as { code?: string }).code === 'TOO_MANY_REQUESTS'
