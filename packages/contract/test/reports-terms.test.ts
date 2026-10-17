@@ -5,6 +5,7 @@ import {
   REPORT_DETAILS_MAX,
   REPORT_REASON_LABELS,
   REPORT_REASONS,
+  shellGate,
   TERMS_VERSION,
   termsAreCurrent,
   UpdateProfileInputSchema,
@@ -72,5 +73,44 @@ describe('terms', () => {
   it('fits the database shape', () => {
     // profiles_terms_version_shape.
     expect(TERMS_VERSION).toMatch(/^[A-Za-z0-9._-]{1,32}$/);
+  });
+});
+
+describe('shellGate', () => {
+  type P = { terms_version: string | null; affiliation: string | null };
+  const current: P = { terms_version: TERMS_VERSION, affiliation: 'Riverside GC' };
+  const stale: P = { terms_version: null, affiliation: 'Riverside GC' };
+  // A fork's stricter rule, as extend-profile passes isProfileComplete.
+  const complete = (p: P | null) => p !== null && p.affiliation !== null;
+
+  /** Follows the gate's redirects from `start`; fails if they never settle. */
+  function settle(profile: P | null, start: string, isComplete?: (p: P | null) => boolean) {
+    let path = start;
+    for (let hop = 0; hop < 4; hop += 1) {
+      const next = shellGate(profile, path, isComplete);
+      if (next === null) return path;
+      path = next;
+    }
+    throw new Error(`no settled page from ${start}`);
+  }
+
+  it('sends no profile to /profile, old terms to /terms, and lets a current one through', () => {
+    expect(shellGate(null, '/gatherings')).toBe('/profile');
+    expect(shellGate(null, '/terms')).toBe('/profile');
+    expect(shellGate(null, '/profile')).toBeNull();
+    expect(shellGate(stale, '/gatherings')).toBe('/terms');
+    expect(shellGate(stale, '/profile')).toBe('/terms');
+    expect(shellGate(current, '/gatherings')).toBeNull();
+  });
+
+  it('an incomplete profile on old terms settles on /terms, never bouncing', () => {
+    const incompleteStale: P = { terms_version: null, affiliation: null };
+    for (const start of ['/gatherings', '/profile', '/terms', '/connections']) {
+      expect(settle(incompleteStale, start, complete)).toBe('/terms');
+    }
+    // Once the terms are accepted, the completion gate takes over.
+    const incompleteCurrent: P = { terms_version: TERMS_VERSION, affiliation: null };
+    expect(settle(incompleteCurrent, '/gatherings', complete)).toBe('/profile');
+    expect(settle(current, '/gatherings', complete)).toBe('/gatherings');
   });
 });

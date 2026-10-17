@@ -23,3 +23,24 @@ export function termsAreCurrent(profile: { terms_version: string | null }): bool
 }
 
 export type AcceptTermsInput = z.infer<typeof AcceptTermsInputSchema>;
+
+/**
+ * Where the signed-in web shell sends someone before it shows `pathname`,
+ * or null to show it. Two gates, in order: a profile (a complete one, once
+ * extend-profile passes `isProfileComplete` as `isComplete`), then the
+ * current terms. A profile that exists but is incomplete may still open
+ * /terms, so a profile that is incomplete AND on old terms reaches /terms,
+ * accepts, then /profile, instead of bouncing between the two forever.
+ * Without any profile, everything leads to /profile: terms are accepted on
+ * a profile row.
+ */
+export function shellGate<P extends { terms_version: string | null }>(
+  profile: P | null,
+  pathname: string,
+  isComplete: (profile: P | null) => boolean = (p) => p !== null,
+): '/profile' | '/terms' | null {
+  const exempt = pathname === '/profile' || (profile !== null && pathname === '/terms');
+  if (!isComplete(profile) && !exempt) return '/profile';
+  if (profile && !termsAreCurrent(profile) && pathname !== '/terms') return '/terms';
+  return null;
+}
