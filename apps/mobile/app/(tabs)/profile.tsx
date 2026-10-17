@@ -1,5 +1,5 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { AccountSection } from '../../components/AccountSection';
 import { AvatarPicker } from '../../components/AvatarPicker';
@@ -24,7 +24,7 @@ export default function ProfileScreen() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoadFailed(false);
     api.app.profile
       .get()
@@ -40,9 +40,15 @@ export default function ProfileScreen() {
       // A failed load must NOT render the blank create form: saving it
       // would silently overwrite the existing profile.
       .catch(() => setLoadFailed(true));
-  };
-  // oxlint-disable-next-line exhaustive-deps
-  useEffect(load, []);
+  }, []);
+  // On every focus, not once: a tab stays mounted, so a load on mount alone
+  // would keep showing (and the next Save would write back) values changed
+  // since on another device. Web's loader re-reads on every visit the same way.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   async function save() {
     setBusy(true);

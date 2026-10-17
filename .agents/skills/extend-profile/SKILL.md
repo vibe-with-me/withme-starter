@@ -74,7 +74,8 @@ card builders and skips every `details` line:
   green checkpoint is the same count over the baseline.
 - §3: no `profile_details` table, trigger, grants, or policies, and no
   `v_details` block in `accept_connect_request`.
-- §4: `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile` only. No
+- §4: `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile`, and `listBlocks`'
+  stand-in card only. No
   `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, or
   `listConnections` change, and the API router is unchanged:
   `updateProfile` already passes its input whole to `upsertOwnProfile`.
@@ -175,7 +176,7 @@ mirroring above does not apply; this does.
 | Contract | `packages/contract/src/schemas/profile.ts` (`ProfileSchema`, `PublicProfileSchema`, `UpdateProfileInputSchema`) | `schemas/profile.ts` (`ProfileDetailsSchema`), `schemas/connection.ts` (`ConnectionSchema.details`), `contract/app.ts` (`profile.get` / `profile.update` outputs) |
 | SQL | `public.profiles`; every function that builds a card (`resolve_tag`, `accept_connect_request`) | `public.profile_details` and its policies; `accept_connect_request` |
 | RLS tests | `packages/db/test/profile-fields.test.ts` (both tiers), `enumeration.test.ts`, `cascade.test.ts`, `account.test.ts` | same |
-| Queries | `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile` in `packages/db/src/queries/handshake.ts` | `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, `listConnections` (same file; it already embeds links, keep that) |
+| Queries | `CARD_COLUMNS`, `ProfileCard`, `upsertOwnProfile`, and `listBlocks`' stand-in card in `packages/db/src/queries/handshake.ts` (asserted in `packages/db/test/blocks.test.ts`) | `DETAILS_COLUMNS`, `getOwnDetails`, `upsertOwnDetails`, `listConnections` (same file; it already embeds links, keep that) |
 | API | `apps/api/src/routers/app.ts`: `getProfile`, `updateProfile` | same; `acceptRequest` and `connectionsList` pass it through |
 | SDK | `PublicProfileCard` in `packages/nfc-sdk/src/client.ts` | never |
 | Web (`apps/web/src/`) | `components/ProfileCard.tsx`, `routes/_app.profile.tsx`, `routes/claim.$uid.tsx` | `routes/_app.profile.tsx`, `routes/_app.connections.tsx` (its local `PersonRow`) |
@@ -197,20 +198,39 @@ works). The claim pages ask for the required fields themselves (§6, §7).
 uses `CardLineSchema`):
 
 ```ts
-/** Card tier: a free-text line on the card. Crosses the anonymous resolve boundary. DB CHECK mirrors it. */
-export const CardLineSchema = z.string().min(1).max(80);
+/**
+ * Card tier: a free-text line on the card. Crosses the anonymous resolve
+ * boundary. Plain text, like display_name: no control, bidi or invisible
+ * characters. DB CHECKs mirror it.
+ */
+export const CardLineSchema = z
+  .string()
+  .min(1)
+  .max(80)
+  .refine((v) => isPlainText(v), PLAIN_TEXT_MESSAGE);
 
 /**
  * Connections tier: read only by the owner and accepted connections. Never
  * part of PublicProfileSchema, never on resolve, a pending request, or a
- * gathering member list. DB CHECK mirrors it.
+ * gathering member list. Plain text too. DB CHECKs mirror it.
  */
 export const ProfileDetailsSchema = z.object({
-  contact_handle: z.string().min(1).max(120).nullable(),
+  contact_handle: z
+    .string()
+    .min(1)
+    .max(120)
+    .refine((v) => isPlainText(v), PLAIN_TEXT_MESSAGE)
+    .nullable(),
 });
 
 export type ProfileDetails = z.infer<typeof ProfileDetailsSchema>;
 ```
+
+`isPlainText` and `PLAIN_TEXT_MESSAGE` are already imported at the top of
+the file (`./text.ts`), for `display_name` and `bio`; the SQL twin is
+`private.is_plain_text` (§3). Every free-text field a person can set
+carries both, so a direct PostgREST write cannot store a name or a line
+that reads as someone else's.
 
 - `ProfileSchema` (the owner's own row): add
   `affiliation: CardLineSchema.nullable()`.
@@ -293,13 +313,13 @@ describe('profile tiers', () => {
     expect(keys).not.toContain('details');
   });
 
-  it('rejects empty and oversized fields in either tier', () => {
-    expect(UpdateProfileInputSchema.safeParse({ affiliation: '' }).success).toBe(false);
-    expect(UpdateProfileInputSchema.safeParse({ affiliation: 'x'.repeat(81) }).success).toBe(false);
-    expect(UpdateProfileInputSchema.safeParse({ details: { contact_handle: '' } }).success).toBe(false);
-    expect(
-      UpdateProfileInputSchema.safeParse({ details: { contact_handle: 'x'.repeat(121) } }).success,
-    ).toBe(false);
+  it('rejects empty, oversized and spoofing values in either tier', () => {
+    for (const affiliation of ['', 'x'.repeat(81), 'Riverside\u202EGC', 'River\u200Bside']) {
+      expect(UpdateProfileInputSchema.safeParse({ affiliation }).success).toBe(false);
+    }
+    for (const contact_handle of ['', 'x'.repeat(121), '@ali\u202Ece', '@ali\u200Bce']) {
+      expect(UpdateProfileInputSchema.safeParse({ details: { contact_handle } }).success).toBe(false);
+    }
   });
 
   it('a connection always carries the details key, null without a details row', () => {
@@ -399,11 +419,15 @@ describe('card tier', () => {
     expect(resolved.profile.affiliation).toBe('Riverside GC');
   });
 
-  it('is length-checked at the database boundary', async () => {
+  it('is length- and plain-text-checked at the database boundary', async () => {
     const alice = await createTestUser('Alice');
     for (const affiliation of ['', 'x'.repeat(81)]) {
       const { error } = await alice.client.from('profiles').update({ affiliation }).eq('id', alice.id);
       expect(error?.message).toContain('profiles_affiliation_length');
+    }
+    for (const affiliation of ['Riverside\u202EGC', 'River\u200Bside']) {
+      const { error } = await alice.client.from('profiles').update({ affiliation }).eq('id', alice.id);
+      expect(error?.message).toContain('profiles_affiliation_plain');
     }
   });
 
@@ -612,7 +636,7 @@ describe('connections tier', () => {
     expect(retenant?.code).toBe('42501');
   });
 
-  it('is length-checked at the database boundary', async () => {
+  it('is length- and plain-text-checked at the database boundary', async () => {
     const alice = await createTestUser('Alice');
     await setDetails(alice, '@alice');
     for (const contact_handle of ['', 'x'.repeat(121)]) {
@@ -621,6 +645,13 @@ describe('connections tier', () => {
         .update({ contact_handle })
         .eq('profile_id', alice.id);
       expect(error?.message).toContain('profile_details_contact_handle_length');
+    }
+    for (const contact_handle of ['@ali\u202Ece', '@ali\u200Bce']) {
+      const { error } = await alice.client
+        .from('profile_details')
+        .update({ contact_handle })
+        .eq('profile_id', alice.id);
+      expect(error?.message).toContain('profile_details_contact_handle_plain');
     }
   });
 });
@@ -716,9 +747,10 @@ now asserts nothing: fix it before going on. `bunx turbo run typecheck
 may already be red for `@withme/api` and `@vibewithme/nfc` from §1's contract
 change (§4 and §5 close those).
 
-A format-checked card field: the card-tier "is length-checked" test
-becomes "is format-checked", looping over `''` and a malformed value and
-expecting the format CHECK's name (see "A field with a format rule").
+A format-checked card field: the card-tier test's length loop becomes a
+format loop, over `''` and a malformed value, expecting the format
+CHECK's name (see "A field with a format rule"), and its plain-text loop
+drops with the plain-text CHECK (below).
 
 ## 3. Migration — both tiers, one additive file
 
@@ -747,7 +779,9 @@ newer one, so check `ls supabase/migrations | tail -1`):
 alter table public.profiles
   add column affiliation text
     constraint profiles_affiliation_length
-    check (affiliation is null or char_length(affiliation) between 1 and 80);
+    check (affiliation is null or char_length(affiliation) between 1 and 80)
+    constraint profiles_affiliation_plain
+    check (private.is_plain_text(affiliation));
 
 -- ======================================================== connections tier ==
 
@@ -756,7 +790,9 @@ create table public.profile_details (
   tenant_id uuid not null default private.current_tenant_id(),
   contact_handle text
     constraint profile_details_contact_handle_length
-    check (contact_handle is null or char_length(contact_handle) between 1 and 120),
+    check (contact_handle is null or char_length(contact_handle) between 1 and 120)
+    constraint profile_details_contact_handle_plain
+    check (private.is_plain_text(contact_handle)),
   updated_at timestamptz not null default now()
 );
 
@@ -805,7 +841,13 @@ create policy profile_details_update_own on public.profile_details
 
 A format-checked card field replaces the length CHECK with a format CHECK
 whose pattern is the zod regex, class for class (see "A field with a
-format rule").
+format rule"). It drops the plain-text CHECK too: a pattern spelled out
+in explicit classes already refuses control, bidi and invisible
+characters, and with two CHECKs failing on one value the error names
+either. `private.is_plain_text` (from
+`20261015140100_link_and_text_validation.sql`, the rule `display_name`
+and `bio` carry) is for free text; a typed field (a number, an enum)
+needs neither.
 
 **Every function that builds a card** gets the card tier. Find them:
 
@@ -895,7 +937,14 @@ others are red.)
 
 - `CARD_COLUMNS`: append `, affiliation`. `ProfileCard`: add
   `affiliation: string | null`. Gathering member lists and block lists use
-  the same constant, so they carry the card tier with no further change.
+  the same constant, so they carry the card tier with no further change,
+  with one exception: `listBlocks` (same file) builds a stand-in
+  `ProfileCard` for a blocked person whose card the block hides
+  (`display_name: BLOCKED_USER_NAME`, `avatar_path: null`, `bio: null`).
+  Add `affiliation: null` to it, and to the expected `user` in
+  `packages/db/test/blocks.test.ts` (the `toEqual` that names
+  `BLOCKED_USER_NAME`): both fail typecheck until they carry every card
+  field.
   Showing it is optional: the Requests and Blocked rows (§6, §7) and a
   gathering's member list may or may not display the card-tier field, and
   no check depends on it.
@@ -1228,6 +1277,19 @@ with no profile; when the tabs were not mounted yet, that push mounts them,
 the gate fires, and without the path check Save stays on Profile instead
 of returning to the tag.
 
+**Once per tabs mount is the design, not a gap.** Reviewers flag that an
+incomplete account can tab away from Profile after the gate sends it
+there. That is intended: the gate's job is the first entry into the
+shell, completion is UX and never a boundary (What must not move, 7), and
+an incomplete profile is still a valid card everywhere outside the tabs.
+Re-checking on every tab focus would bounce someone back to Profile in
+the middle of reading their Connections, for a field no safety rule
+reads. The next launch sends an incomplete account to Profile again. A
+fork that wants a hard gate re-checks on tab focus, and owns that UX.
+Profile itself reloads on every focus (the starter's screen uses
+`useFocusEffect`), so what it shows is the stored row, not the one from
+when the tabs mounted.
+
 - `apps/mobile/app/(tabs)/profile.tsx`. The screen is one identity `Card`
   (`Title`, `AvatarPicker` once a profile exists, the Name and Bio
   `Field`s, the status and error lines, the Save `Button`), then
@@ -1451,7 +1513,8 @@ contract seven, API e2e six (one per card surface §8 lists).
    pre-existing row stay valid. `isProfileComplete` is the only definition;
    both clients import it from the contract. The mobile gate checks once per
    user per tabs mount, while web's `ShellRoute` re-checks on every render;
-   either way completion is UX, never a boundary.
+   either way completion is UX, never a boundary, and the mobile difference
+   is deliberate (§7, after the gate).
 8. The new table carries the tenant seam, and every policy predicates on it.
 9. Any later migration that redefines `resolve_tag` or
    `accept_connect_request` copies the newest definition (this migration
