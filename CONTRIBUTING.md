@@ -50,6 +50,21 @@ Two things the slice doc says that are worth repeating:
   through the contract and the API, which runs as the signed-in user, never
   as an admin.
 
+Two rules for migrations, because several PRs are often open at once:
+
+- **A new migration sorts last.** Name it with a timestamp later than both
+  now and the newest file in `supabase/migrations` on `main`, and recheck
+  right before you merge: if another PR landed one after yours, rename
+  yours. Hosted projects apply migrations with `supabase db push`, which
+  refuses a file older than one already applied (the starter's demo does
+  this on every merge to `main`).
+- **Redefining a function starts from its newest body.** Several
+  migrations restate the same function (`delete_my_account`,
+  `create_gathering`, `resolve_tag`). Copy the latest definition, found
+  with `grep -l 'function public.<name>' supabase/migrations/* | sort |
+  tail -1`, and add your lines to it. Starting from an older one silently
+  drops whatever landed since.
+
 ## The verification gate
 
 With the local stack up (`bun run db:start`, then `bun run db:reset &&
