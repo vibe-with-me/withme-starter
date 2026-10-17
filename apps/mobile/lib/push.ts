@@ -99,28 +99,18 @@ export async function declinePushOffer(): Promise<void> {
 
 /**
  * Before signing out: this device stops receiving this account's pushes,
- * and whoever signs in next is asked afresh. Best effort, and bounded so
- * a dead network never holds the sign-out hostage; a token left behind is
- * moved to the next account on this phone, or dies in the 30-day sweep.
- * Returns how to undo it, for a sign-out that then fails.
+ * and whoever signs in next is asked afresh. Throws if the server cannot
+ * be told, so the sign-out fails with it and can be retried: signing out
+ * needs the network anyway, and a token left behind would keep this
+ * account's pushes coming to a phone it has left. Returns how to undo it,
+ * for a sign-out that then fails.
  */
 export async function forgetThisDevice(): Promise<() => Promise<void>> {
   const choice = await readChoice();
-  let unregistering: Promise<unknown> = Promise.resolve();
-  try {
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
-    if (token) {
-      unregistering = api.app.push.unregister({ token }).catch(() => undefined);
-      await Promise.race([unregistering, new Promise((resolve) => setTimeout(resolve, 3000))]);
-    }
-  } catch {
-    // Signing out matters more than this request.
-  }
+  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  if (token) await api.app.push.unregister({ token });
   await AsyncStorage.multiRemove([TOKEN_KEY, CHOICE_KEY]).catch(() => undefined);
   return async () => {
-    // A slow unregister must land before the token is registered again,
-    // or it would delete the restored row.
-    await unregistering;
     try {
       // The OS grant is still there, so turning back on asks nothing.
       if (choice === 'on') await turnPushOn();

@@ -30,7 +30,16 @@ export function AccountSection() {
     setState('signingOut');
     setFailed(false);
     // While the session still exists: the server forgets this device's token.
-    const restorePush = await forgetThisDevice();
+    // If it cannot be told, the sign-out fails here, with nothing changed.
+    let restorePush: () => Promise<void>;
+    try {
+      restorePush = await forgetThisDevice();
+    } catch {
+      setState('idle');
+      setFailed(true);
+      announceFailure();
+      return;
+    }
     let ok: boolean;
     try {
       // auth-js reports a network failure as { error } and keeps the session.
