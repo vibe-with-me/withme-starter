@@ -18,7 +18,7 @@ import {
   UpdateProfileInputSchema,
 } from '../schemas/profile.ts';
 import { RegisterPushTokenInputSchema, UnregisterPushTokenInputSchema } from '../schemas/push.ts';
-import { CreateReportInputSchema } from '../schemas/report.ts';
+import { CreateReportInputSchema, ReportGatheringInputSchema } from '../schemas/report.ts';
 import { ShareCodeSchema } from '../schemas/share-code.ts';
 import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
 import { AcceptTermsInputSchema } from '../schemas/terms.ts';
@@ -186,6 +186,15 @@ const updateGathering = oc
   // Host-only; a non-host's patch is NOT_FOUND, same as a stranger's read.
   .output(z.object({ gathering: GatheringSchema }));
 
+const reportGathering = oc
+  .route({ method: 'POST', path: '/gatherings/{id}/report', tags: ['Gatherings', 'Reports'] })
+  .input(ReportGatheringInputSchema)
+  // Filed against the host, with the gathering as it was. The same bare ack
+  // for a gathering you cannot see (no existence oracle), the same 10 per
+  // rolling day as reports.create. `block: true` also blocks the host,
+  // which hides the gathering from you.
+  .output(z.object({ ok: z.literal(true) }));
+
 const removeGathering = oc
   .route({ method: 'DELETE', path: '/gatherings/{id}', tags: ['Gatherings'] })
   .input(z.object({ id: z.uuid() }))
@@ -257,6 +266,7 @@ export const appContract = {
     listMine: listMyGatherings,
     update: updateGathering,
     remove: removeGathering,
+    report: reportGathering,
   },
   tags: { listMine: listMyTags, update: updateMyTag },
   shareCode: { get: getMyShareCode, replace: replaceMyShareCode },

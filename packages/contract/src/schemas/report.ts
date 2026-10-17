@@ -52,3 +52,14 @@ export const CreateReportInputSchema = z.object({
 
 export type ReportReason = z.infer<typeof ReportReasonSchema>;
 export type CreateReportInput = z.input<typeof CreateReportInputSchema>;
+
+/**
+ * Report a gathering in the feed. It is filed against the host, with the
+ * gathering as it was; `block` also blocks the host, which hides the
+ * gathering. A gathering you cannot see answers like a stored report.
+ */
+export const ReportGatheringInputSchema = CreateReportInputSchema.omit({ reported_id: true }).extend({
+  id: z.uuid(),
+});
+
+export type ReportGatheringInput = z.input<typeof ReportGatheringInputSchema>;

@@ -113,8 +113,9 @@ cannot join, in either direction.
 
 ## Reports are private
 
-**The promise.** You can report anyone whose card you see, and block them
-in the same step. Only the people who run the app read reports. The person
+**The promise.** You can report anyone whose card you see, and any
+gathering you can see (the report is filed against its host), and block
+them in the same step. Only the people who run the app read reports. The person
 you reported never learns of it, you cannot read your report back, and
 nothing about a report is ever public. Reporting is not a way to find out
 whether someone exists.

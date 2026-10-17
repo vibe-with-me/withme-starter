@@ -24,6 +24,7 @@ import {
   removeAvatarObjects,
   removeConnection,
   replaceOwnLinks,
+  reportGathering,
   reportUser,
   setOwnAvatarPath,
   unblockUser,
@@ -269,6 +270,13 @@ const reportsCreate = appProcedure.reports.create.handler(async ({ input, contex
   return { ok: true as const };
 });
 
+const gatheringsReport = appProcedure.gatherings.report.handler(async ({ input, context }) => {
+  await run(context, () => reportGathering(context.db, input));
+  // As with reports.create: the report is the record, not the log.
+  context.logger.info('report filed');
+  return { ok: true as const };
+});
+
 const gatheringsCreate = appProcedure.gatherings.create.handler(async ({ input, context }) => {
   const { data, error } = await context.db.rpc('create_gathering', {
     p_title: input.title,
@@ -411,6 +419,7 @@ export const appRouter = {
     listMine: gatheringsListMine,
     update: gatheringsUpdate,
     remove: gatheringsRemove,
+    report: gatheringsReport,
   },
   tags: { listMine: tagsListMine, update: tagsUpdate },
   shareCode: { get: shareCodeGet, replace: shareCodeReplace },

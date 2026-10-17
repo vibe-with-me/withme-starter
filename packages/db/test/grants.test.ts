@@ -48,6 +48,7 @@ const SIGNED_IN_RPCS = [
   'public.my_share_code',
   'public.register_push_token',
   'public.replace_my_share_code',
+  'public.report_gathering',
   'public.report_user',
   'public.send_connect_request',
   'public.set_my_links',

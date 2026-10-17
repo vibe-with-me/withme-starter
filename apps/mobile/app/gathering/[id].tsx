@@ -248,6 +248,22 @@ function GatheringDetail({
     );
   }
 
+  function confirmBlock() {
+    Alert.alert(
+      'Block the host?',
+      "This gathering and any they host disappear for you, and they aren't told. You can undo it in Connections → Blocked.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          // A blocker cannot see the gathering any more: back to the list.
+          onPress: () => run(() => api.app.blocks.block({ user_id: gathering.host_id }), 'list'),
+        },
+      ],
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: t.bg }}
@@ -302,6 +318,25 @@ function GatheringDetail({
           {/* Joining is the consent moment: the accent's job, as on the resolver. */}
           {!editing && !isMember ? (
             <Button kind="connect" label={busy ? 'Joining…' : 'Join'} disabled={busy} onPress={join} />
+          ) : null}
+          {/* Report and Block (Guideline 1.2): everyone sees a gathering, so
+              anyone but the host can report it or block the person behind it. */}
+          {!editing && !isHost ? (
+            <>
+              <Button
+                label="Report"
+                kind="quiet"
+                disabled={busy}
+                accessibilityLabel="Report this gathering"
+                onPress={() =>
+                  router.push({
+                    pathname: '/report/[id]',
+                    params: { id: gathering.host_id, gathering: gathering.id },
+                  })
+                }
+              />
+              <Button label="Block host" kind="quiet" disabled={busy} onPress={confirmBlock} />
+            </>
           ) : null}
           {!editing ? <Button label="Back" kind="quiet" onPress={goBack} /> : null}
         </Card>
