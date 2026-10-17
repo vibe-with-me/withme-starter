@@ -11,7 +11,8 @@
 -- The API never holds the service-role key, and a token-reading RPC would
 -- be callable straight over PostgREST. So the send happens in triggers on
 -- the rows that already encode consent, through pg_net, to one configured
--- URL (Expo's push service). pg_net's queue is transactional: a rolled-back
+-- URL (Expo's push service; private.settings 'push_url'). pg_net's queue
+-- is transactional: a rolled-back
 -- write sends nothing, and a send silently dropped by a block writes no row
 -- and so cannot push. pg_net is asynchronous, so the caller's response time
 -- does not depend on whether a push went out.
@@ -65,14 +66,38 @@ grant select, delete on public.push_tokens to authenticated;
 
 -- ================================================================ ledgers ==
 
--- Where pushes go. A singleton row; endpoint null turns every push off.
--- Shipped pointing at Expo: nothing is sent until a device registers a
--- token, so a local stack or CI with no real devices sends nothing.
-create table private.push_config (
-  id boolean primary key default true check (id),
-  endpoint text check (endpoint is null or endpoint ~ '^https?://')
+-- Deployment settings the database itself reads: one row per key, so a
+-- later feature adds a key rather than a table. Private (never exposed,
+-- deny-all RLS); set per deployment with SQL, never from a client.
+-- Created if missing: the reports migration (20261016190000) makes the
+-- same table, and either may land first. Keep the two definitions equal.
+-- A key ending in `_url` holds an outbound URL; null means off.
+create table if not exists private.settings (
+  key text primary key check (key ~ '^[a-z][a-z0-9_]*$'),
+  value text,
+  constraint settings_url_shape
+    check (key !~ '_url$' or value is null or value ~ '^https?://')
 );
-insert into private.push_config (endpoint) values ('https://exp.host/--/api/v2/push/send');
+
+-- push_url: where pushes go; null turns every push off. Shipped pointing
+-- at Expo: nothing is sent until a device registers a token, so a local
+-- stack or CI with no real devices sends nothing.
+-- push_access_token: Expo's push access token ("enhanced push security"),
+-- sent as the bearer when set, so a leaked device token alone cannot be
+-- used to push to that device. Optional; go-live turns it on.
+insert into private.settings (key, value) values
+  ('push_url', 'https://exp.host/--/api/v2/push/send'),
+  ('push_access_token', null)
+on conflict (key) do nothing;
+
+create or replace function private.setting(p_key text)
+returns text
+language sql
+stable
+set search_path = ''
+as $$
+  select value from private.settings where key = p_key
+$$;
 
 -- In-flight batches: the pg_net request id and the tokens in message
 -- order, so a ticket can be matched back to its token. Deleted as soon as
@@ -100,7 +125,7 @@ create table private.push_throttle (
 create index push_throttle_subject_idx on private.push_throttle (subject_id);
 
 -- Deny-all RLS, as on the other private ledgers.
-alter table private.push_config enable row level security;
+alter table private.settings enable row level security;
 alter table private.push_batches enable row level security;
 alter table private.push_throttle enable row level security;
 
@@ -203,11 +228,13 @@ set search_path = ''
 as $$
 declare
   v_endpoint text;
+  v_access_token text;
   v_tokens text[];
   v_messages jsonb;
   v_request bigint;
 begin
-  select endpoint into v_endpoint from private.push_config;
+  v_endpoint := private.setting('push_url');
+  v_access_token := private.setting('push_access_token');
   if v_endpoint is null then
     return;
   end if;
@@ -242,7 +269,10 @@ begin
              headers := jsonb_build_object(
                'Content-Type', 'application/json',
                'Accept', 'application/json'
-             ),
+             ) || case
+               when v_access_token is null then '{}'::jsonb
+               else jsonb_build_object('Authorization', 'Bearer ' || v_access_token)
+             end,
              timeout_milliseconds := 5000
            )
       into v_request;

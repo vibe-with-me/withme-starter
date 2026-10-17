@@ -184,7 +184,8 @@ is asynchronous, so the sender's response time does not depend on
 whether a push went out. A request names the sender (their card is on
 the request); an acceptance names the person who accepted (you are
 connected now); a gathering push gives a count and never a name, because
-a host sees only their connections among the members. Bursts collapse:
+a host sees only their connections among the members (the count is
+the headcount the gathering page already shows everyone). Bursts collapse:
 one request push per sender per day, one gathering push per fifteen
 minutes with the joins in between counted into the next one.
 
@@ -194,7 +195,11 @@ tokens, and nobody reads anyone else's. A token Expo reports as
 refreshed in thirty days. Signing out deletes that device's token;
 deleting your account deletes all of them. The notification text passes
 through Expo and Apple or Google on its way to your phone, so it holds
-a display name, a gathering's title, or a count, and nothing else.
+a display name, a gathering's title, or a count, and nothing else. A
+request push shows the sender's name on the lock screen; iOS and Android
+both let a person hide notification previews, so the starter adds no
+setting of its own. Expo's push access token, when a deployment sets
+it, means a device token alone cannot be used to push to that phone.
 
 **The test.** `packages/db/test/push.test.ts`, against a stand-in for
 Expo's push endpoint, with a positive control for every "no push" case.

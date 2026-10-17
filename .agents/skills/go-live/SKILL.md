@@ -359,7 +359,16 @@ their explicit OK**. They are free.
    `bunx eas-cli credentials --platform android` → Google Service
    Account → Push Notifications (FCM V1). Delete the downloaded key file
    afterwards; EAS holds it.
-3. **A build.** Pushes reach a store or development build, not an EAS
+3. **Expo push security.** On expo.dev, turn on "Enhanced Security for
+   Push Notifications" in the project's push settings and create an
+   access token for the account (Access tokens; Expo's
+   sending-notifications docs show where both live today). Then, in the
+   SQL editor:
+   `update private.settings set value = '<token>' where key =
+   'push_access_token';`. The database sends it as the bearer on every
+   push; without it, anyone who learns a device token can push to that
+   phone. Treat the token as a secret: never commit it.
+4. **A build.** Pushes reach a store or development build, not an EAS
    Update alone, and never Expo Go on Android. `bunx eas-cli build
    --profile production` (or `development` for a device build) after the
    credentials exist. Builds beyond the free allotment bill, so ask.
@@ -368,8 +377,8 @@ their explicit OK**. They are free.
 "Turn on notifications"; after Allow, `select platform, last_seen_at
 from public.push_tokens` (SQL editor) shows the device. Send yourself a
 request from a second account: the push arrives and tapping it opens
-Requests. `select endpoint from private.push_config` reads Expo's URL;
-setting it to `null` is the kill switch for every push.
+Requests. `select value from private.settings where key = 'push_url'` reads
+Expo's URL; setting it to `null` is the kill switch for every push.
 
 ## 5. Before real users
 

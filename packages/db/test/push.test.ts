@@ -1,7 +1,7 @@
 // Push notifications: who may hold a token, who gets a push, what it says,
 // and what Expo's answers do to the tokens. The database sends through
 // pg_net, so a mock of Expo's push endpoint runs here (Bun.serve) and the
-// suite points private.push_config at it for its duration. The database
+// suite points private.settings 'push_url' at it for its duration. The database
 // container reaches the host as host.docker.internal.
 //
 // Negative cases ("no push") are proved with a positive control: a later
@@ -33,6 +33,7 @@ type Message = {
 };
 
 const received: Message[] = [];
+const authorizations: (string | null)[] = [];
 
 // Expo's documented answer: one ticket per message, in order. A token with
 // "Dead" in it answers the way Expo does for an uninstalled app.
@@ -42,6 +43,7 @@ const expo = Bun.serve({
   async fetch(request) {
     const messages = (await request.json()) as Message[];
     received.push(...messages);
+    for (const _ of messages) authorizations.push(request.headers.get('authorization'));
     return Response.json({
       data: messages.map((m) =>
         m.to.includes('Dead')
@@ -56,17 +58,21 @@ const expo = Bun.serve({
   },
 });
 
-let previousEndpoint: string | null = null;
+let previous: { key: string; value: string | null }[] = [];
+
+async function setSetting(key: string, value: string | null): Promise<void> {
+  await sql`update private.settings set value = ${value} where key = ${key}`;
+}
 
 beforeAll(async () => {
   await assertStackRunning();
-  const [row] = await sql`select endpoint from private.push_config`;
-  previousEndpoint = row.endpoint;
-  await sql`update private.push_config set endpoint = ${`http://host.docker.internal:${expo.port}/push/send`}`;
+  previous = await sql`select key, value from private.settings where key like 'push_%'`;
+  await setSetting('push_url', `http://host.docker.internal:${expo.port}/push/send`);
+  await setSetting('push_access_token', null);
 });
 
 afterAll(async () => {
-  await sql`update private.push_config set endpoint = ${previousEndpoint}`;
+  for (const { key, value } of previous) await setSetting(key, value);
   await sql.close();
   expo.stop(true);
 });
@@ -413,5 +419,35 @@ describe("Expo's answers", () => {
     await nextPush(fresh);
     expect(pushesTo(stale)).toEqual([]);
     expect(await myTokens(bob)).toEqual([fresh]);
+  });
+});
+
+describe("Expo's push security", () => {
+  it('sends the access token as the bearer when one is set, and no Authorization when not', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    const carol = await createTestUser('Carol');
+    const bobPhone = await register(bob);
+    const carolPhone = await register(carol);
+
+    await sendRequest(alice, bob);
+    await nextPush(bobPhone);
+    expect(authorizations[received.findIndex((m) => m.to === bobPhone)]).toBeNull();
+
+    await setSetting('push_access_token', 'test-access-token');
+    try {
+      await sendRequest(alice, carol);
+      await nextPush(carolPhone);
+      expect(authorizations[received.findIndex((m) => m.to === carolPhone)]).toBe(
+        'Bearer test-access-token',
+      );
+    } finally {
+      await setSetting('push_access_token', null);
+    }
+  });
+
+  it('a settings URL must be a URL', async () => {
+    const write = sql`update private.settings set value = 'exp.host' where key = 'push_url'`;
+    await expect(write).rejects.toThrow(/settings_url_shape/);
   });
 });
