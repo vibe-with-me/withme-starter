@@ -6,7 +6,7 @@ import {
 } from '@withme/contract';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Choice, ErrorText, Field, Muted, SectionHeader, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { space, useTokens } from '../../lib/tokens';
@@ -65,57 +65,60 @@ export default function ReportScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    // Not a KeyboardAvoidingView: in a modal sheet it pads the scroll view
+    // but never scrolls the details field, the last input, out from under
+    // the keyboard. The scroll view's own keyboard insets do both.
+    <ScrollView
       style={{ flex: 1, backgroundColor: t.bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Card>
-          <Title>Report {name}</Title>
-          <Muted>
-            Only the people who run this app see reports. {name} isn't told who reported them, or that
-            anyone did.
-          </Muted>
-          <SectionHeader>What's wrong?</SectionHeader>
-          <View accessibilityRole="radiogroup" style={styles.choices}>
-            {REPORT_REASONS.map((value) => (
-              <Choice
-                key={value}
-                kind="radio"
-                label={REPORT_REASON_LABELS[value]}
-                checked={reason === value}
-                onPress={() => setReason(value)}
-              />
-            ))}
-          </View>
-          <Field
-            label="Anything else? (optional)"
-            value={details}
-            onChangeText={setDetails}
-            maxLength={REPORT_DETAILS_MAX}
-            multiline
-            autoCorrect
-            spellCheck
-          />
-          {canBlock ? (
-            <Choice label={`Also block ${name}`} checked={block} onPress={() => setBlock(!block)} />
-          ) : null}
-          {state === 'failed' || state === 'limited' ? (
-            <ErrorText>
-              {state === 'limited'
-                ? "You've sent a lot of reports today. Try again tomorrow."
-                : "That didn't go through. Try again."}
-            </ErrorText>
-          ) : null}
-          <Button
-            label={state === 'sending' ? 'Sending…' : 'Send report'}
-            onPress={submit}
-            disabled={!reason || state === 'sending'}
-          />
-          <Button label="Cancel" kind="quiet" onPress={() => router.back()} />
-        </Card>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Card>
+        <Title>Report {name}</Title>
+        <Muted>
+          Only the people who run this app see reports. {name} isn't told who reported them, or that
+          anyone did.
+        </Muted>
+        <SectionHeader>What's wrong?</SectionHeader>
+        <View accessibilityRole="radiogroup" style={styles.choices}>
+          {REPORT_REASONS.map((value) => (
+            <Choice
+              key={value}
+              kind="radio"
+              label={REPORT_REASON_LABELS[value]}
+              checked={reason === value}
+              onPress={() => setReason(value)}
+            />
+          ))}
+        </View>
+        <Field
+          label="Anything else? (optional)"
+          value={details}
+          onChangeText={setDetails}
+          maxLength={REPORT_DETAILS_MAX}
+          multiline
+          autoCorrect
+          spellCheck
+        />
+        {canBlock ? (
+          <Choice label={`Also block ${name}`} checked={block} onPress={() => setBlock(!block)} />
+        ) : null}
+        {state === 'failed' || state === 'limited' ? (
+          <ErrorText>
+            {state === 'limited'
+              ? "You've sent a lot of reports today. Try again tomorrow."
+              : "That didn't go through. Try again."}
+          </ErrorText>
+        ) : null}
+        <Button
+          label={state === 'sending' ? 'Sending…' : 'Send report'}
+          onPress={submit}
+          disabled={!reason || state === 'sending'}
+        />
+        <Button label="Cancel" kind="quiet" onPress={() => router.back()} />
+      </Card>
+    </ScrollView>
   );
 }
 
