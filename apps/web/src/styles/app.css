@@ -899,6 +899,8 @@ a.link:hover {
     align-self: flex-start;
     margin: calc(-1 * var(--space-5)) var(--space-2) 0;
   }
+}
+
 /* --- choices and the report dialog ----------------------------------------- */
 
 /* A checkbox or radio with its label: the whole line is the hit area. */

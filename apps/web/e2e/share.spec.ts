@@ -1,7 +1,7 @@
 // Your code: a QR code that opens your card through the same resolver a tap
 // does, and replacing it turns every copy of the old one into an inactive tag.
 import { expect, test } from '@playwright/test';
-import { admin, returnToOf, signUp, signUpWithProfile } from './helpers.ts';
+import { admin, agreeToTerms, returnToOf, signUp, signUpWithProfile } from './helpers.ts';
 
 test('a share code opens the card, logs as qr, and a replaced one goes inactive', async ({
   browser,
@@ -66,6 +66,7 @@ test('without a profile, the button asks for one first and comes back', async ({
   await expect(page.getByRole('heading', { name: 'Create your profile' })).toBeVisible();
   await expect.poll(() => returnToOf(page)).toBe('/share');
   await page.getByLabel('Name').fill('Smoke Later');
+  await agreeToTerms(page);
   await page.getByRole('button', { name: 'Save' }).click();
   await page.waitForURL('**/share');
   await expect(page.getByRole('img', { name: /QR code that opens Smoke Later/ })).toBeVisible();
