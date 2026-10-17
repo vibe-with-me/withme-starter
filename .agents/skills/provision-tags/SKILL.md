@@ -268,8 +268,8 @@ you keep the CSV, delete `provisioned-tags.html` and `provision.log` from
 the batch directory: both carry the same UIDs. A printed sheet is the
 same bearer list on paper: shred it once the batch has shipped.
 
-**Checkpoint:** `ls "$OUT"` answers `No such file or directory`, or lists
-only the CSV you chose to keep.
+**Checkpoint:** `if [ -e "$OUT" ]; then ls "$OUT"; else echo retired; fi`
+prints `retired`, or lists only the CSV you chose to keep.
 
 If a `provisioned-tags.*` file was ever committed, deleting it does not
 remove it from history: every UID in it that is still unclaimed is

@@ -10,7 +10,7 @@ Symptom → cause for the go-live runbook (`SKILL.md` beside this file).
 | Deploy says "register a workers.dev subdomain", link 404s | Retired onboarding URL — Workers & Pages → account details → Subdomain; redeploy |
 | New workers.dev URL: `curl` prints `000` | The subdomain is still propagating — wait ~2 minutes |
 | Python body check gets 403 | Cloudflare blocks urllib's default User-Agent — send a browser one |
-| `db push` refuses: migration history differs | Reused project with an older schema — owner runs `supabase db reset --linked` |
+| `db push` refuses: migration history differs | Reused project with an older schema. Only if it holds no data worth keeping (a demo or throwaway): owner runs `supabase db reset --linked`. A project whose data matters is never reset: `supabase migration repair` and a reviewed migration (SKILL.md section 1) |
 | Authed calls 401 after a good sign-in | Project JWKS has no asymmetric key — enable JWT signing keys |
 | `bunx eas-cli`: `Cannot find module 'yallist'` | Broken bunx cache — `npx -y eas-cli@24.13.0 …` (the version last verified) |
 | Web resolver errors only in production SSR | Service binding name ≠ api worker name |

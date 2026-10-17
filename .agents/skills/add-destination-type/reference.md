@@ -59,7 +59,9 @@ const { error: e } = await db.auth.signInWithPassword({ email, password });
 if (e) throw e;
 const a = await db.rpc('claim_tag', { p_uid: link, p_destination: { type: 'link', url: 'https://example.com/menu' } });
 const b = await db.rpc('claim_tag', { p_uid: profile });
-console.log('link claim:', a.error?.message ?? 'ok', '| profile claim:', b.error?.message ?? 'ok');
+if (a.error) throw a.error;
+if (b.error) throw b.error;
+console.log('link claim: ok | profile claim: ok');
 EOF
 REPO="$REPO" DEMO_EMAIL="$DEMO_EMAIL" DEMO_PASSWORD="$DEMO_PASSWORD" bun run "$OUT/claim.ts"
 LINK_UID=$(sed -n 2p "$OUT/provisioned-tags.csv" | cut -d, -f1)
