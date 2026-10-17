@@ -32,10 +32,11 @@ that was missing, out of order, or unclear, with what you did instead.
 Don't fix the starter's docs from inside this fork; the list goes
 upstream separately.
 
-**Repository.** Clone the starter, create `[owner/repo]` on GitHub, push,
-add the starter as the `upstream` remote, and point `gh` at your repo
-with `gh repo set-default` (`docs/run-with-me.md` step 0 has the
-commands, for a public or a private repo).
+**Repository.** Clone the starter and create `[owner/repo]` on GitHub.
+Before the first push, rename the clone's `origin` (the starter) to
+`upstream` and add `[owner/repo]` as `origin`; then push, and point `gh`
+at your repo with `gh repo set-default` (`docs/run-with-me.md` step 0 has
+the commands, for a public or a private repo).
 One PR per skill step, merged when CI is green.
 
 **Brand** (for `make-it-yours`; run `design-direction` first if the

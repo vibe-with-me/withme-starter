@@ -103,8 +103,10 @@ git push -u origin main
 gh repo set-default <org>/<app>
 ```
 
-Either way, `gh repo set-default` matters: with an `upstream` remote
-present, `gh` sends `gh pr create` to the starter instead of your repo.
+Either way, `gh repo set-default` matters: with more than one remote and
+no default set, `gh pr create` either stops to ask which repository you
+mean or picks the starter (an `upstream` remote ranks first) and opens
+the PR there. Setting the default names your repo once.
 [Staying current](staying-current.md) is the routine for taking an update.
 
 ## Step 1: `design-direction` (optional)

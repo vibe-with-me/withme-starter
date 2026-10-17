@@ -27,10 +27,10 @@ the same lines. The rest of this page keeps those rare and small.
 
 ## One-time setup
 
-A fork made with GitHub's **Fork** button, or a `git clone` of the
-starter, already shares its history. Add the starter as a second remote,
-and tell `gh` which repository is yours (with an `upstream` remote
-present, `gh pr create` otherwise targets the starter):
+A fork made with GitHub's **Fork** button shares the starter's history
+and already has your repository as `origin`. Add the starter as a second
+remote, and tell `gh` which repository is yours (with two remotes and no
+default, `gh pr create` asks, or targets the starter):
 
 ```sh
 git remote add upstream https://github.com/vibe-with-me/withme-starter.git
@@ -43,8 +43,9 @@ Do this at step 0, before your first skill, and the rest is routine.
 **A private app** cannot use the Fork button (a fork of a public
 repository stays public, and GitHub will not fork a repository into the
 organization that owns it). Clone the starter and push it to a new
-private repository; the starter becomes `upstream` and the history is
-shared, so everything below works unchanged:
+private repository. The clone's `origin` is the starter, so rename it to
+`upstream` and add your repository as `origin` before the first push; the
+history is shared, so everything below works unchanged:
 
 ```sh
 git clone https://github.com/vibe-with-me/withme-starter.git <app>
