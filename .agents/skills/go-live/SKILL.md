@@ -437,7 +437,7 @@ store app:
 - [ ] **Report notifications.** Create a Slack or Discord incoming
   webhook for a channel the report owner watches, and set it in the
   hosted database (SQL Editor, the owner's OK first: a production write):
-  `update private.report_config set webhook_url = '<webhook URL>';`.
+  `update private.settings set value = '<webhook URL>' where key = 'report_webhook_url';`.
   Checkpoint: file a report from a test account; the channel shows "A
   report was filed: <id>", and nothing else. Never commit the URL.
 - [ ] **A named report owner.** Someone runs the "Open reports" query

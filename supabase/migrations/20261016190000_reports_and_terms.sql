@@ -31,8 +31,8 @@
 --     request expiry is (the stack has no background jobs): every report
 --     and every profile deletion first deletes the expired rows.
 --   * The ledger is cleared by delete_my_account.
---   * Optional notification: private.report_config holds one webhook URL,
---     unset by default (the private.push_config shape). When set, every new
+--   * Optional notification: the 'report_webhook_url' row of private.settings,
+--     unset by default. When set, every new
 --     report POSTs {"text", "content"} naming the report id only, through
 --     pg_net (asynchronous, transactional: a report that rolls back sends
 --     nothing). Slack and Discord incoming webhooks both read it.
@@ -175,14 +175,32 @@ create trigger profiles_before_delete_reports
 
 create extension if not exists pg_net with schema extensions;
 
-create table private.report_config (
-  id boolean primary key default true check (id),
-  -- Unset by default: no report leaves the database until the operator
-  -- sets it (go-live). https in production; http for the local test mock.
-  webhook_url text check (webhook_url is null or webhook_url ~ '^https?://')
+-- Operator settings, one row per key, null meaning off. Shared with push
+-- notifications (20261017120000), which creates the same table and
+-- function: whichever migration runs first creates them, so both are
+-- written to run in either order. A key ending in _url holds an http(s)
+-- URL or nothing (https in production; http for a local test mock).
+create table if not exists private.settings (
+  key text primary key check (key ~ '^[a-z][a-z0-9_]*$'),
+  value text,
+  constraint settings_url_shape check (key !~ '_url$' or value is null or value ~ '^https?://')
 );
-insert into private.report_config (webhook_url) values (null);
-alter table private.report_config enable row level security;
+alter table private.settings enable row level security;
+
+-- Not granted to clients: definer functions and triggers read it.
+create or replace function private.setting(p_key text)
+returns text
+language sql
+stable
+set search_path = ''
+as $$
+  select value from private.settings where key = p_key
+$$;
+
+-- Unset by default: no report leaves the database until the operator sets
+-- it (go-live).
+insert into private.settings (key, value) values ('report_webhook_url', null)
+on conflict (key) do nothing;
 
 create function private.notify_report()
 returns trigger
@@ -194,7 +212,7 @@ declare
   v_url text;
   v_message text := 'A report was filed: ' || new.id::text;
 begin
-  select webhook_url into v_url from private.report_config;
+  v_url := private.setting('report_webhook_url');
   if v_url is null then
     return new;
   end if;

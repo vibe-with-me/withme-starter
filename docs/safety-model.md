@@ -144,8 +144,8 @@ the authorities. The purge runs lazily, as request expiry does: every
 new report and every account deletion first deletes the rows past their
 window. Your report ledger is cleared by `delete_my_account`.
 
-**Notification.** `private.report_config` holds one optional webhook URL,
-unset by default. When it is set, each new report POSTs the report's id
+**Notification.** The `report_webhook_url` row of `private.settings` holds
+one optional webhook URL, unset by default. When it is set, each new report POSTs the report's id
 and nothing else (no names, no reason, no text) through pg_net, so the
 operator learns a report exists and reads it in Studio.
 

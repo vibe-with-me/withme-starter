@@ -55,14 +55,15 @@ behind with `reporter_id` null.
 
 ## How you find out
 
-**A webhook (recommended).** Point `private.report_config` at a Slack or
+**A webhook (recommended).** Point the `report_webhook_url` setting at a Slack or
 Discord incoming webhook (both free) and every new report posts "A report
 was filed: <id>" to that channel. The id only: no names, no reason, no
 text, so the channel never holds what the report says. In the SQL Editor:
 
 ```sql
-update private.report_config
-   set webhook_url = 'https://hooks.slack.com/services/…';  -- or a Discord webhook URL
+update private.settings
+   set value = 'https://hooks.slack.com/services/…'  -- or a Discord webhook URL
+ where key = 'report_webhook_url';
 ```
 
 Treat the URL as a secret (anyone holding it can post to the channel): it

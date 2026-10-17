@@ -218,10 +218,10 @@ describe('the report webhook', () => {
   });
 
   beforeAll(async () => {
-    await sql`update private.report_config set webhook_url = ${`http://host.docker.internal:${hook.port}/hook`}`;
+    await sql`update private.settings set value = ${`http://host.docker.internal:${hook.port}/hook`} where key = 'report_webhook_url'`;
   });
   afterAll(async () => {
-    await sql`update private.report_config set webhook_url = null`;
+    await sql`update private.settings set value = null where key = 'report_webhook_url'`;
     await hook.stop(true);
     await sql.close();
   });
