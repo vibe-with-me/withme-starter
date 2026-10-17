@@ -355,7 +355,9 @@ their explicit OK**. They are free.
    push; without it, anyone who learns a device token can push to that
    phone. Treat the token as a secret: never commit it.
 4. **A build.** Pushes reach a store or development build, not an EAS
-   Update alone, and not Expo Go (no remote pushes since SDK 53).
+   Update alone. Expo Go on Android receives no remote pushes (since SDK
+   53); Expo Go on iOS still does, but under Expo Go's own credentials,
+   so it proves nothing about yours.
    `bunx eas-cli build --profile production` (or `development` for a
    device build) after the
    credentials exist. Builds beyond the free allotment bill, so ask.
@@ -486,6 +488,13 @@ with the owner's name next to it.
 DB: new migrations via `supabase db push`; reseed only with the owner's
 OK, and never on an app with real users (section 1). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
 `eas update`. API: `bunx wrangler deploy` (secrets persist).
+
+**Checkpoint:** rerun the checkpoint of each section you redeployed, in
+deploy order: section 1's (`db push` lists the new migrations and ends
+`Finished`), section 2's (`/health` returns `{"ok":true}`), section 3's
+(the landing page and `/t/<seeded-uid>` 200), section 4's (the plain-JS
+export greps print a file, then nothing). A redeploy is done when each
+one passes.
 
 The starter's own demo DB is migrated by
 `.github/workflows/demo-migrate.yml`: after migrations merge to `main`,

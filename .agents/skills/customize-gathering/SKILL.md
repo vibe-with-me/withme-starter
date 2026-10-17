@@ -334,6 +334,16 @@ In slice order:
    header (`[g.course_name]`) and `gatheringLine()`
    (`[g.title, g.course_name]`), so the tag card reads
    "Title · Course · when · where".
+   The Maps link searches whatever a `MetaLine` carries as `location`
+   (`mapsSearchUrl` in `schemas/gathering.ts`). If your new field is the
+   place and `location` becomes something else (golf: `course_name` is
+   the course, `location` is "Meet at"), have `whenAndWhere()` and
+   `gatheringLine()` return the new field as `location`, on both
+   platforms, and move the old one into `before` or `after`. To search
+   both, return them joined (`[g.course_name, g.location]` with `', '`).
+   On mobile a row's head (`before` and the date) is one line and the
+   location starts the next, so a long field there is cut short rather
+   than hiding the link.
    The join preview ("Join this gathering?") does not fetch the gathering:
    it shows display-only hints, `title` and `starts_at`, that the tag
    screen passes along. Web: `t.$uid.tsx`'s Join `Link` `search`, read by

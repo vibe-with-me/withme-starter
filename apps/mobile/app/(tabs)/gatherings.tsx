@@ -155,13 +155,14 @@ export default function GatheringsScreen() {
       >
         <View style={styles.rowBody}>
           <Text style={[styles.rowName, { color: t.ink }]}>{gathering.title}</Text>
-          {/* Two lines, as on web: the status and date never fill both, so the
-              location's link always starts on a visible line. */}
-          <Text numberOfLines={2} style={[styles.rowSub, { color: t.inkMuted }]}>
+          {/* The location's link starts its own line, so a long head (a fork's
+              field joined before the date) is cut short instead of hiding it. */}
+          <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
             {line.head}
-            {where ? (
-              <>
-                {' · '}
+          </Text>
+          {where || line.tail ? (
+            <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
+              {where ? (
                 <Text
                   style={[styles.rowLink, { color: t.ink }]}
                   suppressHighlighting
@@ -169,10 +170,11 @@ export default function GatheringsScreen() {
                 >
                   {where}
                 </Text>
-              </>
-            ) : null}
-            {line.tail ? ` · ${line.tail}` : null}
-          </Text>
+              ) : null}
+              {where && line.tail ? ' · ' : null}
+              {line.tail || null}
+            </Text>
+          ) : null}
           {names ? (
             <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
               {names}

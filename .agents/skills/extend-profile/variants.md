@@ -12,8 +12,8 @@ apply (a card-only fork with a typed field and nothing required).
 every `details` line:
 
 - §1: no `ProfileDetailsSchema`, no `details` on `UpdateProfileInputSchema`
-  or `ConnectionSchema`, and `contract/app.ts` untouched (its
-  `getProfile` / `updateProfile` outputs change only to carry `details`).
+  or `ConnectionSchema`; leave `contract/app.ts` untouched (the worked
+  example changes it only to carry `details`).
   "A connection always carries the details key" drops, and so do the
   `contact_handle` lines in the other tests. The checkpoint counts only
   the tests you appended.

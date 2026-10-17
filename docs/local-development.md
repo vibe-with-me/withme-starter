@@ -91,9 +91,12 @@ push service. Nothing goes out until a phone registers a token, so a
 local stack and CI send nothing. The RLS suite points `push_url` at a
 stand-in on your machine for its run and puts it back afterwards.
 
-Receiving a real push needs a development build (`npx expo run:ios` on
-a device, or an EAS development build): Expo Go has not supported remote
-pushes since SDK 53. Expo Go on the iOS simulator still covers the rest:
+Receiving a real push on Android needs a development build: Expo Go on
+Android has not received remote pushes since SDK 53. Expo Go on iOS
+still does, under Expo Go's credentials rather than your app's, so a
+development build (`npx expo run:ios` on a device, or an EAS development
+build) is the real test of yours. Expo Go on the iOS simulator covers the
+rest:
 Connections offers "Turn on notifications", Allow registers a token, a
 request to that account makes your local database post to Expo, and a
 notification you send the simulator yourself shows what a tap opens. In

@@ -349,7 +349,10 @@ type-level).
     and `details: { contact_handle: contact.trim() === '' ? null : contact.trim() },`.
     `details` is always sent, so the first save creates the row even with
     Contact empty; every reader goes through `details?.contact_handle`, so
-    do not special-case the empty field.
+    do not special-case the empty field. Keep the
+    `await router.invalidate({ sync: true })` that follows the mutation:
+    `shellGate` reads the refreshed `/_app` loader, and a save that
+    completes the profile must reach it before `navigate`.
   - the `<h1>`:
     `{!profile ? 'Create your profile' : isProfileComplete(profile) ? 'Your profile' : 'Finish your profile'}`
   - Save's `disabled` gains `|| !affiliation.trim()` and keeps the

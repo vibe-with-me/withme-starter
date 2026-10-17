@@ -31,8 +31,14 @@ describe('pushScreen', () => {
     expect(pushScreen(`/gathering/${id}`)).toBe(gatheringHref(id));
   });
 
+  test('an accepted push names the Connections segment', () => {
+    // The tab stays mounted on whichever segment was last open (Requests,
+    // after the request push), so a bare /connections would leave it there.
+    expect(pushScreen('/connections')).toBe('/connections?segment=connections');
+  });
+
   test('every other path opens as it is', () => {
     expect(pushScreen('/connections?segment=requests')).toBe('/connections?segment=requests');
-    expect(pushScreen('/connections')).toBe('/connections');
+    expect(pushScreen('/profile')).toBe('/profile');
   });
 });

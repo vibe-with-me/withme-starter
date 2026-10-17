@@ -27,9 +27,11 @@ export function pushSetting(permission: PushPermission, choice: PushChoice): Pus
  * internal names (`/gathering/<id>`, like the API's routes), so a gathering
  * push goes through gatheringHref: a fork that renames the screen
  * (customize-gathering's URL step) renames it there, once, for links and
- * pushes alike.
+ * pushes alike. An accepted request's bare `/connections` names its
+ * segment: the tab stays mounted on whichever one was last open.
  */
 export function pushScreen(path: string): string {
   const gathering = /^\/gathering\/([0-9a-f-]{36})$/.exec(path);
-  return gathering ? gatheringHref(gathering[1]) : path;
+  if (gathering) return gatheringHref(gathering[1]);
+  return path === '/connections' ? '/connections?segment=connections' : path;
 }

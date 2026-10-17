@@ -17,7 +17,8 @@ import { cardLine } from '../../lib/card-line';
 import { space, useTokens } from '../../lib/tokens';
 
 type BlockRow = Awaited<ReturnType<Api['app']['blocks']['list']>>['blocks'][number];
-type Segment = 'connections' | 'requests' | 'blocked';
+const SEGMENTS = ['connections', 'requests', 'blocked'] as const;
+type Segment = (typeof SEGMENTS)[number];
 type ListKey = 'pending' | 'connections' | 'blocks';
 
 /**
@@ -105,11 +106,13 @@ export default function ConnectionsScreen() {
     [loadPending, loadConnections, loadBlocks],
   );
 
-  // A tapped request notification opens /connections?segment=requests; the
-  // tab stays mounted, so follow the param whenever it arrives.
+  // A tapped notification opens /connections?segment=requests (a request)
+  // or ?segment=connections (an accept); the tab stays mounted, so follow
+  // the param whenever it arrives.
   useEffect(() => {
-    if (params.segment !== 'requests') return;
-    setSegment('requests');
+    const next = SEGMENTS.find((s) => s === params.segment);
+    if (!next) return;
+    setSegment(next);
     // The tab may have been mounted, and loaded, before the request arrived.
     loadAll();
     // Cleared, so the next tapped notification changes it again.

@@ -134,8 +134,9 @@ starter (or a throwaway fork), the way Golf With Me's rebuild did. Where
 the skill is missing a step, has steps out of order, or says something
 the code contradicts, the agent writes it down in an `UPSTREAM-SNAGS.md`
 kept outside the PR: what the skill said, what happened, and what it did
-instead. Fix each snag in the skill, then run it again until the run is
-clean. Mention the run and its snag count in the PR description.
+instead. Fix each snag in the skill, then run the changed skill again on
+a fresh clone; repeat until a run is clean, and merge only after that
+clean run. Mention the runs and the snag count in the PR description.
 
 [docs/skills-roadmap.md](docs/skills-roadmap.md) records which skills
 exist, which were deliberately skipped, and the decisions behind both.

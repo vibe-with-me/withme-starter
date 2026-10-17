@@ -128,19 +128,31 @@ the starter's nouns, paths and brand, with no conflict to warn you: a page
 title that says "— withme", a `navigate` to `/gatherings`, a spec that
 clicks "Events", a test that calls `create_gathering` without your
 field's argument. Typecheck and the tests catch some; nothing catches the
-copy. Sweep what the merge brought in (on the merge commit, `HEAD^1` is
+copy. Sweep what the merge brought in, in two passes, so the real hits
+are not buried under internal names (on the merge commit, `HEAD^1` is
 your `main` before it):
 
 ```sh
-git diff --name-only HEAD^1 HEAD -- apps packages supabase/seed \
-  | xargs grep -nE "withme|/gatherings?\b|'Events'|[Gg]athering|create_gathering|gatherings\.create" \
-  | grep -v '@withme/'
+git diff --name-only --diff-filter=d HEAD^1 HEAD -- apps packages supabase/seed > /tmp/sync-files
+
+# 1. Copy: string literals and JSX text that read as words (a space, or a
+#    capital first letter), so `gathering_id` and `feed.gatherings` stay out.
+xargs perl -ne 'while (/(["\x27`])((?:\\.|(?!\1).)*?)\1|>([^<>{}]+)</g) { my $s = $2 // $3;
+  print "$ARGV:$.: $s\n" if $s =~ /\b(withme|[Gg]atherings?|Events?)\b/ && $s =~ /\s|^[A-Z]/ }
+  close ARGV if eof' < /tmp/sync-files
+
+# 2. Paths and calls: a URL a person visits, and callers of create_gathering.
+xargs grep -nE "['\"\`]/gatherings?\b|create_gathering|gatherings\.create" < /tmp/sync-files
 ```
+
+Every line of pass 1 is something a person reads, a spec clicks, or a
+test names; change the ones in the starter's words. Pass 2's paths take
+your route names; its callers take your fields' arguments.
 
 Internal identifiers stay as they are (`gathering` in code, `@withme/*`),
 as everywhere else. What a person reads or a URL they visit takes your
 words: the same rules as `make-it-yours` step 3 and `customize-gathering`
-§1. A new caller of `create_gathering` takes your fields' arguments.
+§1.
 
 **5. Run the gate, then the e2e suites.**
 

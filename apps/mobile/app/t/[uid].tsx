@@ -14,6 +14,16 @@ import { supabase } from '../../lib/supabase';
 import { space, useTokens } from '../../lib/tokens';
 
 /**
+ * Leave the card: back to wherever the scan started, or into the app when a
+ * cold tap or link opened this screen alone (nothing to go back to, and no
+ * swipe back from it).
+ */
+function close() {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
+/**
  * The resolver — a physical tap (deep link) or a scan lands here and a
  * person appears. Unknown and malformed UIDs land on a calm card, never a
  * crash.
@@ -90,7 +100,7 @@ export default function ResolveScreen() {
               ? "This doesn't look like a live tag. Give it another tap in a moment."
               : "There's nothing connected to it right now."}
           </Muted>
-          <Button label="Close" kind="quiet" onPress={() => router.replace('/')} />
+          <Button label="Close" kind="quiet" onPress={close} />
         </Card>
       </View>
     );
@@ -113,6 +123,7 @@ export default function ResolveScreen() {
           <GatheringMeta line={gatheringLine(result.gathering)} />
           <GatheringInvite gathering={result.gathering} ownerId={result.profile.id} />
           <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
+          <Button label="Close" kind="quiet" onPress={close} />
         </Card>
       </View>
     );
@@ -126,6 +137,7 @@ export default function ResolveScreen() {
         {result.profile.bio ? <Muted>{result.profile.bio}</Muted> : null}
         <ConnectAction profileId={result.profile.id} uid={result.uid} />
         <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
+        <Button label="Close" kind="quiet" onPress={close} />
       </Card>
     </View>
   );
