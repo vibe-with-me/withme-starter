@@ -24,7 +24,7 @@ async function openStore(url: string): Promise<void> {
 export default function MerchScreen() {
   const t = useTokens();
   const [failed, setFailed] = useState(false);
-  if (!STORE_URL) return <Redirect href="/gatherings" />;
+  if (!STORE_URL) return __DEV__ ? <MerchSetup /> : <Redirect href="/gatherings" />;
   return (
     <View style={[styles.page, { backgroundColor: t.bg }]}>
       <Card>
@@ -38,6 +38,26 @@ export default function MerchScreen() {
             openStore(STORE_URL).catch(() => setFailed(true));
           }}
         />
+      </Card>
+    </View>
+  );
+}
+
+/** Development builds only: what this tab is for and how to turn it on. */
+function MerchSetup() {
+  const t = useTokens();
+  return (
+    <View style={[styles.page, { backgroundColor: t.bg }]}>
+      <Card>
+        <Title>Merch</Title>
+        <Muted>
+          No store yet. Your users don't see this tab until you set EXPO_PUBLIC_STORE_URL; it then
+          opens your store.
+        </Muted>
+        <Muted>
+          You see it now because this is a development build. docs/merch.md is the tested path to a
+          store selling tags for your vertical.
+        </Muted>
       </Card>
     </View>
   );

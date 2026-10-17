@@ -56,7 +56,7 @@ For Run With Me:
 | Worker names | `runwithme-api`, `runwithme-web`, `runwithme-site` |
 | Domain for tags | `https://app.runwithme.example`, the app's hostname (one you own, forever); the site takes `runwithme.example` in step 8 |
 | Contact email | `hello@runwithme.example`, for the support and privacy pages |
-| Store URL | none yet; the Merch tab stays absent |
+| Store URL | none yet; the Merch tab stays hidden from users (a development build shows it as a setup card) |
 
 ## Step 0: fork and run the demo
 

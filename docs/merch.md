@@ -23,6 +23,10 @@ on.
 | Mobile, local | `EXPO_PUBLIC_STORE_URL` in `apps/mobile/.env` | The Merch tab appears (`href: null` hides it otherwise) |
 | Mobile, production | `EXPO_PUBLIC_STORE_URL` in the EAS `production` environment (`eas env:create`), and the same line in `apps/mobile/.env.production` for go-live's local verification export | `eas update --environment production` ships it. With `--environment`, EAS reads its own environment and ignores local `.env` files, so a value only in `.env.production` never reaches the published update. |
 
+Without a store URL, a development build (`bun run dev`, or Expo Go)
+still shows the Merch tab, as a card explaining what it does and how to
+turn it on; production builds and release binaries hide it.
+
 Use the plain storefront URL, https only, with no tokens or tracking
 parameters you would not print on a flyer: the value is public in both
 bundles. The copy ("Tags and gear from the store.") lives in
