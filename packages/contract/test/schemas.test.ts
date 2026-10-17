@@ -17,6 +17,7 @@ import {
   LINK_PLATFORM_IDS,
   LINK_PLATFORMS,
   linkHref,
+  linkIcon,
   linkLabel,
   normalizeLinkValue,
   ProfileLinkSchema,
@@ -491,6 +492,18 @@ describe('profile links', () => {
     expect(linkHref('website', 'https://example.com')).toBe('https://example.com');
     expect(linkHref('discord', 'ada')).toBeNull();
     expect(linkHref('signal', '+15551234567')).toBeNull();
+  });
+
+  it('every platform has an icon: its mark, or a glyph for its kind', () => {
+    for (const platform of LINK_PLATFORM_IDS) {
+      const icon = linkIcon(platform);
+      if ('path' in icon) expect(icon.path).toMatch(/^M[\d.\s,a-zA-Z-]+$/);
+    }
+    expect(linkIcon('instagram')).toEqual({ path: LINK_PLATFORMS.instagram.icon! });
+    expect(linkIcon('signal')).toHaveProperty('path');
+    expect(linkIcon('phone')).toEqual({ glyph: 'phone' });
+    expect(linkIcon('email')).toEqual({ glyph: 'email' });
+    expect(linkIcon('website')).toEqual({ glyph: 'website' });
   });
 
   it('writes the @ only where the platform does', () => {

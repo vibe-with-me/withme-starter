@@ -60,8 +60,10 @@ Instagram handle, a website); `extend-profile` adds fields of either tier.
 **Links.** Profile → Links: the places you can be reached, one per
 platform from the registry in `packages/contract/src/schemas/link.ts`.
 Connections tier, so they never ride the card; a connection's row shows
-them as chips. A fork adds a platform to the registry and to
-`private.is_link_value`.
+them as chips, each with the platform's icon in ink. A fork adds a
+platform to the registry and to `private.is_link_value`; an icon is
+optional (its path goes in `link-icons.ts`), and without one the chip
+draws a plain glyph for the kind.
 
 **Tenant seam.** Every table carries a `tenant_id` column with one fixed
 value. The starter never varies it; it exists so a future multi-tenant

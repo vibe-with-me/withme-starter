@@ -2,13 +2,16 @@ import {
   LINK_PLATFORM_IDS,
   LINK_PLATFORMS,
   linkHref,
+  linkIcon,
   linkLabel,
   normalizeLinkValue,
+  type LinkGlyph,
   type LinkKind,
   type LinkPlatformId,
   type ProfileLink,
 } from '@withme/contract';
 import { useRouter } from '@tanstack/react-router';
+import { Globe, Link, Mail, Phone, type LucideIcon } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { api } from '../lib/api.ts';
@@ -28,6 +31,34 @@ const INVALID: Record<LinkKind, string> = {
   email: 'Enter an email address.',
   url: 'Enter a web address.',
 };
+
+const GLYPHS: Record<LinkGlyph, LucideIcon> = { phone: Phone, email: Mail, website: Globe, link: Link };
+
+/**
+ * A platform's icon, in the text colour of whatever holds it. Decorative:
+ * the chip and the picker button already say the platform's name.
+ */
+function PlatformIcon({ platform }: { platform: LinkPlatformId }) {
+  const icon = linkIcon(platform);
+  if ('glyph' in icon) {
+    const Glyph = GLYPHS[icon.glyph];
+    return <Glyph className="platform-icon" size={16} aria-hidden="true" focusable="false" />;
+  }
+  // The marks fill their 24×24 box; a 2-unit margin sets them at Lucide's weight.
+  return (
+    <svg
+      className="platform-icon"
+      width={16}
+      height={16}
+      viewBox="-2 -2 28 28"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={icon.path} />
+    </svg>
+  );
+}
 
 interface Row {
   platform: LinkPlatformId;
@@ -229,6 +260,7 @@ function LinksForm({ initial, headingId }: { initial: ProfileLink[]; headingId: 
               disabled={busy}
               onClick={() => add(platform)}
             >
+              <PlatformIcon platform={platform} />
               {LINK_PLATFORMS[platform].label}
             </button>
           ))}
@@ -351,11 +383,13 @@ export function LinkList({ links, name }: { links: ProfileLink[]; name: string }
             {href ? (
               // noreferrer: the platform must not learn which app sent the visit.
               <a className="link" href={href} target="_blank" rel="noopener noreferrer">
+                <PlatformIcon platform={link.platform} />
                 <span className="link__platform">{label}</span>
                 <span className="link__value">{text}</span>
               </a>
             ) : (
               <span className="link">
+                <PlatformIcon platform={link.platform} />
                 <span className="link__platform">{label}</span>
                 <span className="link__value">{text}</span>
               </span>

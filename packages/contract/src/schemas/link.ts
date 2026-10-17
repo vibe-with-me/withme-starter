@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BRAND_ICON_PATHS } from './link-icons.ts';
 import { isPlainText } from './text.ts';
 
 /**
@@ -7,8 +8,9 @@ import { isPlainText } from './text.ts';
  * (public.profile_links and its policies); the card never carries them.
  *
  * The registry below is the one list every surface derives from: the
- * picker, the input, the chip, the public URL. A fork adds a platform here
- * and in private.is_link_value (the database restates the shape).
+ * picker, the input, the chip and its icon, the public URL. A fork adds a
+ * platform here and in private.is_link_value (the database restates the
+ * shape).
  */
 
 /** What an input for this platform holds, and how it is checked. */
@@ -23,6 +25,11 @@ export interface LinkPlatform {
   at?: boolean;
   /** The public page for a canonical value, or null when the platform has none. */
   href: ((value: string) => string) | null;
+  /**
+   * The platform's mark: SVG path data on a 24×24 viewBox (link-icons.ts).
+   * Without one the client draws a plain glyph for the kind (linkIcon).
+   */
+  icon?: string;
 }
 
 export const LINK_PLATFORM_IDS = [
@@ -57,6 +64,7 @@ export const LINK_PLATFORMS: Record<LinkPlatformId, LinkPlatform> = {
     placeholder: 'username',
     at: true,
     href: (h) => `https://instagram.com/${h}`,
+    icon: BRAND_ICON_PATHS.instagram,
   },
   tiktok: {
     label: 'TikTok',
@@ -64,26 +72,37 @@ export const LINK_PLATFORMS: Record<LinkPlatformId, LinkPlatform> = {
     placeholder: 'username',
     at: true,
     href: (h) => `https://tiktok.com/@${h}`,
+    icon: BRAND_ICON_PATHS.tiktok,
   },
-  x: { label: 'X', kind: 'handle', placeholder: 'username', at: true, href: (h) => `https://x.com/${h}` },
+  x: {
+    label: 'X',
+    kind: 'handle',
+    placeholder: 'username',
+    at: true,
+    href: (h) => `https://x.com/${h}`,
+    icon: BRAND_ICON_PATHS.x,
+  },
   threads: {
     label: 'Threads',
     kind: 'handle',
     placeholder: 'username',
     at: true,
     href: (h) => `https://threads.net/@${h}`,
+    icon: BRAND_ICON_PATHS.threads,
   },
   snapchat: {
     label: 'Snapchat',
     kind: 'handle',
     placeholder: 'username',
     href: (h) => `https://snapchat.com/add/${h}`,
+    icon: BRAND_ICON_PATHS.snapchat,
   },
   facebook: {
     label: 'Facebook',
     kind: 'handle',
     placeholder: 'username',
     href: (h) => `https://facebook.com/${h}`,
+    icon: BRAND_ICON_PATHS.facebook,
   },
   youtube: {
     label: 'YouTube',
@@ -91,18 +110,21 @@ export const LINK_PLATFORMS: Record<LinkPlatformId, LinkPlatform> = {
     placeholder: 'channel',
     at: true,
     href: (h) => `https://youtube.com/@${h}`,
+    icon: BRAND_ICON_PATHS.youtube,
   },
   linkedin: {
     label: 'LinkedIn',
     kind: 'handle',
     placeholder: 'your-name',
     href: (h) => `https://linkedin.com/in/${h}`,
+    icon: BRAND_ICON_PATHS.linkedin,
   },
   bluesky: {
     label: 'Bluesky',
     kind: 'handle',
     placeholder: 'you.bsky.social',
     href: (h) => `https://bsky.app/profile/${h}`,
+    icon: BRAND_ICON_PATHS.bluesky,
   },
   telegram: {
     label: 'Telegram',
@@ -110,16 +132,30 @@ export const LINK_PLATFORMS: Record<LinkPlatformId, LinkPlatform> = {
     placeholder: 'username',
     at: true,
     href: (h) => `https://t.me/${h}`,
+    icon: BRAND_ICON_PATHS.telegram,
   },
   // No public page for a username: shown, not linked.
-  discord: { label: 'Discord', kind: 'handle', placeholder: 'username', href: null },
+  discord: {
+    label: 'Discord',
+    kind: 'handle',
+    placeholder: 'username',
+    href: null,
+    icon: BRAND_ICON_PATHS.discord,
+  },
   whatsapp: {
     label: 'WhatsApp',
     kind: 'phone',
     placeholder: '+1 555 123 4567',
     href: (v) => `https://wa.me/${digits(v)}`,
+    icon: BRAND_ICON_PATHS.whatsapp,
   },
-  signal: { label: 'Signal', kind: 'phone', placeholder: '+1 555 123 4567', href: null },
+  signal: {
+    label: 'Signal',
+    kind: 'phone',
+    placeholder: '+1 555 123 4567',
+    href: null,
+    icon: BRAND_ICON_PATHS.signal,
+  },
   phone: { label: 'Phone', kind: 'phone', placeholder: '+1 555 123 4567', href: (v) => `tel:${v}` },
   email: { label: 'Email', kind: 'email', placeholder: 'you@example.com', href: (v) => `mailto:${v}` },
   website: { label: 'Website', kind: 'url', placeholder: 'https://example.com', href: (v) => v },
@@ -199,6 +235,32 @@ export function normalizeLinkValue(platform: LinkPlatformId, raw: string): strin
 /** The public page for a stored link, or null when the platform has none. */
 export function linkHref(platform: LinkPlatformId, value: string): string | null {
   return LINK_PLATFORMS[platform].href?.(value) ?? null;
+}
+
+/** A plain glyph for a platform with no mark of its own, by what its value is. */
+export type LinkGlyph = 'phone' | 'email' | 'website' | 'link';
+
+const GLYPH: Record<LinkKind, LinkGlyph> = {
+  handle: 'link',
+  phone: 'phone',
+  email: 'email',
+  url: 'website',
+};
+
+/**
+ * What to draw beside a link: the platform's mark where the registry has
+ * one, otherwise a glyph each client maps to its own icon set (Lucide on
+ * web, Feather on mobile). A platform a fork adds without an icon still
+ * gets one: a phone, a letter, a globe, or a plain link.
+ *
+ * Every icon is ink, in the text colour of whatever holds it, like the rest
+ * of the starter's links (tokens.css). A fork that wants brand colours adds
+ * a colour beside `icon` in the registry and reads it in PlatformIcon, the
+ * one component per client that draws these.
+ */
+export function linkIcon(platform: LinkPlatformId): { path: string } | { glyph: LinkGlyph } {
+  const { icon, kind } = LINK_PLATFORMS[platform];
+  return icon ? { path: icon } : { glyph: GLYPH[kind] };
 }
 
 /** The value as a person reads it: "@ada" where the platform writes an @, the value otherwise. */
