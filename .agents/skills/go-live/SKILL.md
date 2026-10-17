@@ -509,8 +509,12 @@ never touches Worker secrets. It ships off: every job's `if:` names
 `your-org/your-repo`, which matches no repository.
 
 **What gates a run.** A person starting it: Actions → Deploy → Run
-workflow, branch `main` (other branches skip). Read the `migrate` job's
-dry run on the first runs. **Environment required reviewers are enforced
+workflow, branch `main` (other branches skip). The `migrate` job's dry
+run lands in the same run that applies it, so it is a record, not a
+preview: to read what will apply first, tick `preview` on the run form
+(it prints the dry run and deploys nothing), then run again without it.
+Do that before any run that carries a migration on an app with real
+users. **Environment required reviewers are enforced
 only on public repositories and GitHub Enterprise**: on a private
 Team-plan repository the setting saves and does nothing, so the manual
 dispatch is the only approval there. The `push` trigger is commented out
@@ -558,8 +562,11 @@ their accounts):
 **Checkpoint:** all four jobs are green, the `api` job's health check
 prints `{"ok":true}`, and the section 3 checks pass against the live web
 worker. A red `api` or `web` job after a green `migrate` leaves the
-database ahead of the code: fix the cause and re-run the failed jobs (the
-migrations are already applied, so `migrate` has nothing left to push).
+database ahead of the code. "Re-run failed jobs" checks out the same
+commit again, so use it only when nothing in the repository changed (a
+Cloudflare 5xx, a token fixed in the environment). A fix that needed a
+commit ships with a new run from `main` once it merges; its `migrate` job
+finds nothing left to push.
 
 The marketing site, the privacy and support URLs the store listings ask
 for, and the hostname split between site and app are

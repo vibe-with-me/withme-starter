@@ -13,13 +13,19 @@ name: Deploy
 # deletes that file (the migrate job below does the same work).
 #
 # A run starts by hand: Actions → Deploy → Run workflow, branch main. That
-# dispatch is the approval. Environment required reviewers are enforced
+# dispatch is the approval. With `preview` ticked, a run only prints the
+# migrations that would apply and stops: run that first, read it, then run
+# again without it. Environment required reviewers are enforced
 # only on public repositories and GitHub Enterprise; on a private
 # Team-plan repository the setting saves and does nothing, so do not
 # count on it.
 on:
   workflow_dispatch:
     inputs:
+      preview:
+        description: Preview only (print the migrations that would apply, deploy nothing)
+        type: boolean
+        default: false
       mobile:
         description: Publish an EAS Update (untick when the change needs a new store build instead)
         type: boolean
@@ -78,11 +84,12 @@ jobs:
       # Never --include-seed, and never `supabase config push`
       # (supabase/config.toml holds local-only auth values).
       - name: Push migrations
+        if: ${{ !inputs.preview }}
         run: supabase db push --yes
 
   api:
     needs: migrate
-    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main'
+    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main' && !inputs.preview
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -125,7 +132,7 @@ jobs:
 
   web:
     needs: api
-    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main'
+    if: github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main' && !inputs.preview
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -181,7 +188,7 @@ jobs:
     needs: web
     if: >-
       github.repository == 'your-org/your-repo' && github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' || inputs.mobile)
+      !inputs.preview && (github.event_name == 'push' || inputs.mobile)
     runs-on: ubuntu-latest
     environment: production
     env:
