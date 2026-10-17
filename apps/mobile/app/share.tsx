@@ -106,7 +106,6 @@ export default function ShareScreen() {
               {url}
             </Text>
             <Button label="Share link" onPress={() => Share.share({ message: url })} />
-            <Button label="Scan a code" kind="quiet" onPress={() => router.push('/scan-qr')} />
             {status ? <Muted accessibilityLiveRegion="polite">{status}</Muted> : null}
           </Card>
           <Card>
@@ -131,6 +130,11 @@ export default function ShareScreen() {
             )}
           </Card>
         </>
+      ) : null}
+      {/* Scanning someone else's code needs no code of your own: it stays
+          whenever the origin is set, even with no profile or a failed load. */}
+      {webUrl ? (
+        <Button label="Scan a code" kind="quiet" onPress={() => router.push('/scan-qr')} />
       ) : null}
       <Button label="Back" kind="quiet" onPress={goBack} />
     </ScrollView>
