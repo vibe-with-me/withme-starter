@@ -1,5 +1,5 @@
 import { tagUrl } from '@withme/contract';
-import { createFileRoute, Link, useLoaderData } from '@tanstack/react-router';
+import { createFileRoute, Link, useLoaderData, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
 import { ShareCodeImage } from '../components/ShareCode.tsx';
@@ -23,8 +23,10 @@ export const Route = createFileRoute('/_app/profile_/share')({
 
 function SharePage() {
   const { profile } = useLoaderData({ from: '/_app' });
-  const loaded = Route.useLoaderData();
-  const [uid, setUid] = useState(loaded.uid);
+  // The loader is the one source of the uid: after a replace it re-runs, so
+  // neither the page nor the router's cache can keep showing a retired code.
+  const { uid } = Route.useLoaderData();
+  const router = useRouter();
   const [status, setStatus] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -45,8 +47,8 @@ function SharePage() {
     setBusy(true);
     setStatus(null);
     try {
-      const next = await api.app.shareCode.replace();
-      setUid(next.uid);
+      await api.app.shareCode.replace();
+      await router.invalidate({ sync: true });
       setConfirming(false);
       setStatus('New code ready. The old one no longer opens your card.');
     } catch (error) {
