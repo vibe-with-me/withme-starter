@@ -182,8 +182,10 @@ required). Without branch protection you can also merge locally with
 `git switch main && git merge --no-ff starter-sync` and push `main` (the
 switch matters: on `starter-sync` itself the merge has nothing to do); a
 protected `main` refuses that push unless your account can bypass its
-rules (a ruleset's bypass list, or an admin under a classic protection
-rule that doesn't include administrators). Afterwards, check
+rules: on a ruleset's bypass list with the mode set to **Always** (a
+**Pull requests only** bypass still refuses a direct push), or an admin
+under a classic protection rule that doesn't include administrators.
+Afterwards, check
 (fetch `origin` only, so `upstream/main` is still the commit you merged):
 
 ```sh
