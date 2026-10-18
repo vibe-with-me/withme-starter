@@ -107,6 +107,8 @@ select r.created_at,
        r.details,
        r.snapshot ->> 'display_name' as reported_name,
        r.snapshot -> 'gathering' ->> 'title' as gathering_title,
+       -- the whole gathering as reported, a fork's own fields included
+       r.snapshot -> 'gathering' as gathering_snapshot,
        r.reported_id,
        r.gathering_id,
        case when r.reported_id is not null
