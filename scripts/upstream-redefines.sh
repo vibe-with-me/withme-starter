@@ -26,14 +26,14 @@ flat() { git show "$1" | tr -s '[:space:]' ' '; }
 found=0
 for file in $incoming; do
   names=$(flat "$up:$file" \
-    | grep -oE 'function public\.[a-z_]+|grant update \([^)]*\) on public\.[a-z_]+|add constraint [a-z_]+' \
-    | sed -E 's/^function //; s/^grant update \([^)]*\) on /column grant on /; s/^add constraint /constraint /' \
+    | grep -oE 'function public\.[a-z_]+|grant update \([^)]*\) on public\.[a-z_]+|constraint [a-z_]+ (check|unique|primary|foreign|exclude)' \
+    | sed -E 's/^function //; s/^grant update \([^)]*\) on /column grant on /; s/^constraint ([a-z_]+) .*/constraint \1/' \
     | sort -u || true)
   while IFS= read -r name; do
     [ -n "$name" ] || continue
     case "$name" in
       "column grant on "*) pattern="grant update \\([^)]*\\) on ${name#column grant on }([^a-z_]|\$)" ;;
-      "constraint "*) pattern="add constraint ${name#constraint }([^a-z_]|\$)" ;;
+      "constraint "*) pattern="constraint ${name#constraint } (check|unique|primary|foreign|exclude)" ;;
       *) pattern="function ${name//./\\.}([^a-z_]|\$)" ;;
     esac
     hits=""
