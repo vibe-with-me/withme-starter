@@ -370,8 +370,9 @@ In slice order:
    location starts the next, so a long field there is cut short rather
    than hiding the link. Keep the date in the head where you can: it is
    what a row is scanned for. A helper that moves it into `after` (golf's,
-   with the course as `location`) still renders whole, because the
-   location-and-tail line wraps once, and an empty head takes no line.
+   with the course as `location`) still renders while it fits, because
+   the location-and-tail line can wrap to two lines (past two it is cut);
+   an empty head takes no line.
    The join preview ("Join this gathering?") does not fetch the gathering:
    it shows display-only hints, `title` and `starts_at`, that the tag
    screen passes along. Web: `t.$uid.tsx`'s Join `Link` `search`, read by

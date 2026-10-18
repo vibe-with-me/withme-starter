@@ -39,8 +39,9 @@ on:
 # Two deploys must never run at once. A newer run waits for the one in
 # progress, but GitHub keeps only one waiting run per group: start a third
 # while one waits and the waiting one is cancelled (never the one in
-# progress). Each run deploys main as it is when it starts, so the newest
-# waiting run already carries everything the cancelled one would have.
+# progress). A run deploys the commit main pointed at when it was
+# dispatched, not when it starts; the newest waiting run was dispatched
+# last, so it already carries everything the cancelled one would have.
 concurrency:
   group: deploy
   cancel-in-progress: false

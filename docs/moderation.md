@@ -54,7 +54,8 @@ gathering's id in `gathering_id` and the gathering as it was in
 `snapshot -> 'gathering'` (title, start time, location). A gathering
 listed to everyone (the default visibility) is seen by every signed-in
 person; a connections-only one by its host, its members and the host's
-connections. Either way it reaches people the host may not know, so this
+connections; in both cases minus anyone who blocked the host or whom the
+host blocked. Either way it reaches people the host may not know, so this
 is the report a scam ("$20 on Venmo to hold your spot") or a lure to a
 place arrives as. Only someone who can see a gathering can report it. `gathering_id` is
 cleared if the gathering is deleted; the snapshot stays.

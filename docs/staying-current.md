@@ -102,9 +102,12 @@ bun run sync:check
 ```
 
 It prints `<incoming migration> redefines <name>; yours: <your
-migrations>` per hit, or that there are none. Every hit is a follow-up
-migration to write after the merge (see [Migrations](#migrations),
-"Objects you both changed"). A starter PR that does this says so in its
+migrations>` per hit, or that there are none. It matches names, not
+bodies, so read each hit: the incoming file against yours. One that
+changes what you changed (a body you extended, a grant you widened) is a
+follow-up migration to write after the merge (see
+[Migrations](#migrations), "Objects you both changed"); one that leaves
+it alone needs nothing. A starter PR that does this says so in its
 title ("redefines create_gathering"), so the step 1 log shows it too.
 
 **2. Merge.**
@@ -240,7 +243,8 @@ does not know SQL.
   function, policy, or view you altered replaces your version, or fails
   because your version changed its signature. `bun run sync:check` (step
   1) lists the functions, column grants and constraints; policies and
-  views you check by hand. For each hit, write a new migration of yours,
+  views you check by hand. For each hit that changes what you changed
+  (it matches names, so read it first), write a new migration of yours,
   dated after the starter's, that starts from the starter's new body
   (that incoming file) and reapplies your lines on it.
 - **Signatures you changed.** A fork that added an argument has a

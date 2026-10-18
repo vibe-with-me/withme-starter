@@ -57,8 +57,9 @@ export function parseLocalDateTime(date: string, time: string): string | null {
  * The seam for a fork's own field: `location` is the one place a map can
  * open (a fork may put its own place there, a course or a venue); `head`
  * is the row's first line, cut to one line; the location and `tail` share
- * the next, which may wrap once. The date reads best in `head`, but a
- * helper that moves it into `tail` still renders whole.
+ * the next, which may wrap to two lines and is cut past that. The date reads
+ * best in `head`; a helper that moves it into `tail` still shows it while
+ * the second line fits.
  */
 export interface MetaLine {
   head: string;
