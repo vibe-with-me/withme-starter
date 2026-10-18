@@ -281,7 +281,19 @@ In slice order:
    migration added, such as extend-profile's. Add the field to
    `v_gathering_json`, and restate every attribute:
    `language plpgsql stable security definer set search_path = ''`; the
-   same signature keeps its existing grants). Re-issue the whole host column grant:
+   same signature keeps its existing grants).
+   If the field is something a host types and every viewer sees (a course
+   name, a venue: anything a scam or a lure could be written in), it also
+   belongs in what a moderator reads: `report_gathering` snapshots the
+   gathering as the reporter saw it, so the report survives an edit. Copy
+   its newest body
+   (`grep -lE 'create (or replace )?function public\.report_gathering' supabase/migrations/*.sql | sort | tail -1`),
+   add the field to the snapshot's inner `jsonb_build_object('gathering', …)`
+   beside `title` and `location`, and restate its attributes and signature
+   unchanged. In `packages/db/test/reports.test.ts`, the "filed against
+   the host, with the gathering kept" test then asserts the field in
+   `snapshot.gathering` after the host edits it, as it does for the title.
+   Re-issue the whole host column grant:
    `grant update (title, starts_at, location, visibility, capacity, course_name) on public.gatherings to authenticated;`
    (leave `visibility` or `capacity` out and the host can no longer
    change that setting after creating).
@@ -356,7 +368,10 @@ In slice order:
    both, return them joined (`[g.course_name, g.location]` with `', '`).
    On mobile a row's head (`before` and the date) is one line and the
    location starts the next, so a long field there is cut short rather
-   than hiding the link.
+   than hiding the link. Keep the date in the head where you can: it is
+   what a row is scanned for. A helper that moves it into `after` (golf's,
+   with the course as `location`) still renders whole, because the
+   location-and-tail line wraps once, and an empty head takes no line.
    The join preview ("Join this gathering?") does not fetch the gathering:
    it shows display-only hints, `title` and `starts_at`, that the tag
    screen passes along. Web: `t.$uid.tsx`'s Join `Link` `search`, read by

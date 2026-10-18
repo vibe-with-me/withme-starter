@@ -557,7 +557,8 @@ their accounts):
    `apps/web/.env.production`):
    - `CLOUDFLARE_ACCOUNT_ID`: pins the account (section 2).
    - `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`:
-     required; the `web` job stops without them.
+     required; the `web` job stops without them, and the `api` job stops
+     without `VITE_API_URL` before it deploys (its health check needs it).
    - `VITE_TERMS_URL`, `VITE_PRIVACY_URL`: required for an app with real
      users (section 5).
    - `VITE_STORE_URL`, and `VITE_DEMO_CREDENTIALS` for a public demo
@@ -568,8 +569,10 @@ their accounts):
    all four `if:` lines, delete `demo-migrate.yml`, and merge.
 7. Run it from the Actions tab.
 
-**Checkpoint:** all four jobs are green, the `api` job's health check
-prints `{"ok":true}`, and the section 3 checks pass against the live web
+**Checkpoint:** `migrate`, `api` and `web` are green, and `mobile` is too
+when the run's `mobile` box was ticked (unticked, it shows as skipped,
+which is right for a change that needs a store build); the `api` job's
+health check prints `{"ok":true}`, and the section 3 checks pass against the live web
 worker. A red `api` or `web` job after a green `migrate` leaves the
 database ahead of the code. "Re-run failed jobs" checks out the same
 commit again, so use it only when nothing in the repository changed (a

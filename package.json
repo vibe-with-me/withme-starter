@@ -22,7 +22,8 @@
     "db:seed": "bun run supabase/seed/index.ts",
     "db:unseed": "bun run supabase/seed/unseed.ts",
     "db:types": "supabase gen types typescript --local > packages/db/src/types/supabase.ts.tmp && prettier --parser typescript --no-semi --trailing-comma all --print-width 80 --write packages/db/src/types/supabase.ts.tmp && mv packages/db/src/types/supabase.ts.tmp packages/db/src/types/supabase.ts",
-    "db:provision": "bun run supabase/seed/provision.ts"
+    "db:provision": "bun run supabase/seed/provision.ts",
+    "sync:check": "bash scripts/upstream-redefines.sh"
   },
   "devDependencies": {
     "oxlint": "^1.87.0",

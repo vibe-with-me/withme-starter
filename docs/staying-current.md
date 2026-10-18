@@ -90,6 +90,23 @@ The starter squash-merges, so each line is one PR with a title that says
 what changed. Read the ones that touch migrations, the contract, or a
 skill you ran; the PR description says why.
 
+Then find the migrations that will undo yours. A starter migration that
+redefines a function you changed (`create_gathering` after
+customize-gathering, `resolve_tag` after extend-profile), re-issues a
+column grant you widened, or re-adds a constraint you replaced merges
+with no conflict, and when it runs, the starter's version replaces yours:
+your field silently stops being written. This lists each one:
+
+```sh
+bun run sync:check
+```
+
+It prints `<incoming migration> redefines <name>; yours: <your
+migrations>` per hit, or that there are none. Every hit is a follow-up
+migration to write after the merge (see [Migrations](#migrations),
+"Objects you both changed"). A starter PR that does this says so in its
+title ("redefines create_gathering"), so the step 1 log shows it too.
+
 **2. Merge.**
 
 ```sh
@@ -138,7 +155,7 @@ git diff --name-only --diff-filter=d HEAD^1 HEAD -- apps packages supabase/seed 
 # 1. Copy: string literals and JSX text that read as words (a space, or a
 #    capital first letter), so `gathering_id` and `feed.gatherings` stay out.
 xargs perl -ne 'while (/(["\x27`])((?:\\.|(?!\1).)*?)\1|>([^<>{}]+)</g) { my $s = $2 // $3;
-  print "$ARGV:$.: $s\n" if $s =~ /\b(withme|[Gg]atherings?|Events?)\b/ && $s =~ /\s|^[A-Z]/ }
+  print "$ARGV:$.: $s\n" if $s =~ /\b(withme|[Gg]atherings?|Events?|Happening|Yours|Hosting|[Gg]oing)\b/ && $s =~ /\s|^[A-Z]/ }
   close ARGV if eof' < /tmp/sync-files
 
 # 2. Paths and calls: a URL a person visits, and callers of create_gathering.
@@ -146,7 +163,11 @@ xargs grep -nE "['\"\`]/gatherings?\b|create_gathering|gatherings\.create" < /tm
 ```
 
 Every line of pass 1 is something a person reads, a spec clicks, or a
-test names; change the ones in the starter's words. Pass 2's paths take
+test names; change the ones in the starter's words. Its word list is the
+starter's own labels that `customize-gathering` §1 renames: the nouns,
+the tab ("Events"), the section titles ("Happening", "Yours"), the marks
+("Hosting", "Going") and the counter ("N going", "N of M going"). If you
+renamed more, add your starter originals to the list. Pass 2's paths take
 your route names; its callers take your fields' arguments.
 
 Internal identifiers stay as they are (`gathering` in code, `@withme/*`),
@@ -217,10 +238,18 @@ does not know SQL.
   `supabase db push --include-all`.
 - **Objects you both changed.** A starter migration that recreates a
   function, policy, or view you altered replaces your version, or fails
-  because your version changed its signature. For each incoming
-  migration, search your own migrations for the objects it names. If you
-  find one, write a new migration of yours, dated after the starter's,
-  that reapplies your change on top.
+  because your version changed its signature. `bun run sync:check` (step
+  1) lists the functions, column grants and constraints; policies and
+  views you check by hand. For each hit, write a new migration of yours,
+  dated after the starter's, that starts from the starter's new body
+  (that incoming file) and reapplies your lines on it.
+- **Signatures you changed.** A fork that added an argument has a
+  function the starter's `drop function if exists …(<old signature>)`
+  does not name, so after the merge both versions exist: yours as a second
+  overload that misses the starter's new behaviour, and PostgREST picks
+  between them by argument names. In that follow-up migration, drop your
+  signature too, so one version is left (`select oid::regprocedure from
+  pg_proc where proname = '<name>'` lists them).
 - **Never edit a migration that has run.** That goes for the starter's and
   yours. Fix forward with a new file; editing one that has already run
   makes the merge and production disagree.

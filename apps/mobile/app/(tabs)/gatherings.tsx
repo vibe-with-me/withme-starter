@@ -173,12 +173,17 @@ export default function GatheringsScreen() {
         <View style={styles.rowBody}>
           <Text style={[styles.rowName, { color: t.ink }]}>{gathering.title}</Text>
           {/* The location's link starts its own line, so a long head (a fork's
-              field joined before the date) is cut short instead of hiding it. */}
-          <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
-            {line.head}
-          </Text>
-          {where || line.tail ? (
+              field joined before the date) is cut short instead of hiding it.
+              That line may wrap once: a fork whose line helper moves the date
+              into the tail (its own field in the location slot) still shows
+              all of it, and an empty head takes no line at all. */}
+          {line.head ? (
             <Text numberOfLines={1} style={[styles.rowSub, { color: t.inkMuted }]}>
+              {line.head}
+            </Text>
+          ) : null}
+          {where || line.tail ? (
+            <Text numberOfLines={2} style={[styles.rowSub, { color: t.inkMuted }]}>
               {where ? (
                 <Text
                   style={[styles.rowLink, { color: t.ink }]}
