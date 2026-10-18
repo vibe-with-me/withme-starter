@@ -51,7 +51,10 @@ afterwards does not erase what was reported.
 
 A report about a gathering is filed against its host. It carries the
 gathering's id in `gathering_id` and the gathering as it was in
-`snapshot -> 'gathering'` (title, start time, location). A gathering
+`snapshot -> 'gathering'` (title, start time, location, plus any field a
+fork adds that a host types and every viewer sees: customize-gathering §2
+puts it in `report_gathering`'s snapshot, as Golf With Me does with the
+course). A gathering
 listed to everyone (the default visibility) is seen by every signed-in
 person; a connections-only one by its host, its members and the host's
 connections; in both cases minus anyone who blocked the host or whom the

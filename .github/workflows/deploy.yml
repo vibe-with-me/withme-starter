@@ -42,8 +42,11 @@ on:
 # progress). A run deploys the commit main pointed at when it was
 # dispatched, not when it starts; the newest waiting run was dispatched
 # last, so it already carries everything the cancelled one would have.
+# Only main is in that group: a run dispatched from another branch deploys
+# nothing (every job's `if:` requires main), and in a group of its own it
+# can neither wait behind a production deploy nor cancel one that waits.
 concurrency:
-  group: deploy
+  group: ${{ github.ref == 'refs/heads/main' && 'deploy' || format('deploy-{0}', github.ref) }}
   cancel-in-progress: false
 
 permissions:

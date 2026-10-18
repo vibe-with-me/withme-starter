@@ -101,6 +101,14 @@ your field silently stops being written. This lists each one:
 bun run sync:check
 ```
 
+The first sync that brings the script in has neither the script nor the
+`sync:check` entry yet (both arrive with that merge), so that once, run
+the starter's copy straight from `upstream/main`:
+
+```sh
+bash <(git show upstream/main:scripts/upstream-redefines.sh) HEAD upstream/main
+```
+
 It prints `<incoming migration> redefines <name>; yours: <your
 migrations>` per hit, or that there are none. It matches names, not
 bodies, so read each hit: the incoming file against yours. One that
