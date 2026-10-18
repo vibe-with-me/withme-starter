@@ -173,8 +173,9 @@ Not "Squash and merge", even if every other PR in your repo is squashed
 starter's commits ancestors of your `main`; a squash drops it, so the
 next sync starts from the old merge base and asks you to resolve every
 conflict you already resolved. If the repository allows only squash
-merges, turn on **Settings → General → Allow merge commits** (you can
-leave it for sync PRs only). A branch ruleset or protection rule on
+merges, turn on **Settings → General → Allow merge commits**. The
+setting covers every pull request in the repository, and GitHub can't
+limit it to sync PRs, so keep squashing ordinary PRs by habit. A branch ruleset or protection rule on
 `main` can still refuse it: remove **Require linear history**, and add
 **Merge** to the pull-request rule's allowed merge methods (Settings →
 Rules → Rulesets). Keep the rest (no deletion, no force push, PRs and CI
