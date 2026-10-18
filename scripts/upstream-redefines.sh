@@ -19,9 +19,12 @@ up=${2:-upstream/main}
 yours=$(git diff --name-only --diff-filter=A "$up...$ours" -- supabase/migrations)
 incoming=$(git diff --name-only --diff-filter=A "$ours...$up" -- supabase/migrations)
 
-# A migration's SQL on one line: a statement may span lines (a column grant
-# often does), and every pattern below then matches it whole.
-flat() { git show "$1" | tr -s '[:space:]' ' '; }
+# A migration's SQL on one line and in lower case: a statement may span
+# lines (a column grant often does), and Postgres reads unquoted keywords and
+# names case-insensitively (`CREATE FUNCTION public.Create_Gathering` is
+# create_gathering). Quoted mixed-case names, which the starter never uses,
+# would fold too.
+flat() { git show "$1" | tr -s '[:space:]' ' ' | tr '[:upper:]' '[:lower:]'; }
 
 found=0
 for file in $incoming; do
