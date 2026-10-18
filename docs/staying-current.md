@@ -174,9 +174,14 @@ starter's commits ancestors of your `main`; a squash drops it, so the
 next sync starts from the old merge base and asks you to resolve every
 conflict you already resolved. If the repository allows only squash
 merges, turn on **Settings → General → Allow merge commits** (you can
-leave it for sync PRs only), or merge the branch locally with
+leave it for sync PRs only). A branch ruleset or protection rule on
+`main` can still refuse it: remove **Require linear history**, and add
+**Merge** to the pull-request rule's allowed merge methods (Settings →
+Rules → Rulesets). Keep the rest (no deletion, no force push, PRs and CI
+required). Without branch protection you can also merge locally with
 `git switch main && git merge --no-ff starter-sync` and push `main` (the
-switch matters: on `starter-sync` itself the merge has nothing to do). Afterwards, check
+switch matters: on `starter-sync` itself the merge has nothing to do); a
+protected `main` refuses that push. Afterwards, check
 (fetch `origin` only, so `upstream/main` is still the commit you merged):
 
 ```sh
