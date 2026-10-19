@@ -212,8 +212,8 @@ Before you call a new flow done, run it three times in a row; a flow that
 passes once and fails on a repeat depends on order or timing.
 
 The runner (`apps/mobile/e2e/run.ts`) seeds, through the service role,
-the people, connections, tags and gatherings every flow needs, stamped
-for this run, then runs the flows in `e2e/flows`. Screenshots and the
+the people, connections, tags and gatherings the flows being run need,
+stamped for this run, then runs them. Screenshots and the
 view hierarchy of every step are in `apps/mobile/e2e/.maestro`. Settings,
 all optional: `MAESTRO_OPEN_URL` (default `exp://127.0.0.1:8081`, Metro's
 address), `MAESTRO_DEVICE` (a simulator UDID when more than one is booted),
@@ -266,10 +266,11 @@ signal`. Maestro prints that name when the flow goes red.
 
 The same rules as the web suite keep it deterministic:
 
-- **Seed setup through the service role, act through the UI.** `run.ts`
-  creates a flow's people, connections and tags and passes them in as
-  `-e` variables (`HS_UID`, `GC_HOST_EMAIL`...). Each flow has its own
-  people, so flows run alone, together, or in any order.
+- **Seed setup through the service role, act through the UI.** Each flow
+  has an entry in `run.ts`'s `seeds`, named for its file, that creates its
+  people, connections and tags and returns them as `-e` variables
+  (`HS_UID`, `GC_HOST_EMAIL`...). Each flow has its own people, so flows
+  run alone, together, or in any order.
 - **Everything stamped.** Emails, names and titles carry the run's stamp.
 - **No sleeps.** Wait on what a person would see: `extendedWaitUntil`.
 - **Absence needs the whole list.** Maestro only sees what is on screen,

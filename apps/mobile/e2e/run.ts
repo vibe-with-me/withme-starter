@@ -100,119 +100,133 @@ async function gathering(
 }
 
 // Every flow gets its own people, so the flows run in any order, alone or
-// together, and a rerun never meets the last run's state.
+// together, and a rerun never meets the last run's state. Each entry seeds
+// one flow and returns its -e variables; only the flows being run are seeded.
+const seeds: Record<string, () => Promise<Record<string, string>>> = {
+  // Ada signs in and finds Bob among her connections.
+  'sign-in': async () => {
+    const ada = await person('ada');
+    const bob = await person('bob');
+    await connect(ada, bob);
+    return { EMAIL: ada.email, NAME: ada.name, FRIEND: bob.name };
+  },
+  // The flow makes this account itself.
+  'sign-up': async () => ({ NEW_EMAIL: `maestro-new-${stamp}@rls.test`, NEW_NAME: `Maestro New ${stamp}` }),
+  // Kim claims a fresh tag; Lee taps it and asks to connect.
+  handshake: async () => {
+    const kim = await person('kim');
+    const lee = await person('lee');
+    return {
+      HS_UID: await tag(),
+      HS_OWNER_EMAIL: kim.email,
+      HS_OWNER_NAME: kim.name,
+      HS_TAPPER_EMAIL: lee.email,
+      HS_TAPPER_NAME: lee.name,
+    };
+  },
+  // Hal hosts; Gus, his connection, finds it and joins.
+  gatherings: async () => {
+    const hal = await person('hal');
+    const gus = await person('gus');
+    await connect(hal, gus);
+    return {
+      GA_HOST_EMAIL: hal.email,
+      GA_HOST_NAME: hal.name,
+      GA_GUEST_EMAIL: gus.email,
+      GA_TITLE: `Maestro Rooftop ${stamp}`,
+    };
+  },
+  // Cora's connections-only gathering with two spots, her tag pointed at it.
+  // Finn takes the second spot, Fay finds it full, and Sid, a stranger,
+  // never sees it.
+  'gathering-controls': async () => {
+    const cora = await person('cora');
+    const finn = await person('finn');
+    const fay = await person('fay');
+    const sid = await person('sid');
+    await connect(cora, finn);
+    await connect(cora, fay);
+    return {
+      GC_HOST_EMAIL: cora.email,
+      GC_HOST_NAME: cora.name,
+      GC_HOST_UID: await tag(cora),
+      GC_FRIEND_EMAIL: finn.email,
+      GC_LATE_EMAIL: fay.email,
+      GC_STRANGER_EMAIL: sid.email,
+      GC_TITLE: `Maestro Supper ${stamp}`,
+    };
+  },
+  // Bea blocks Ben, her connection, whose tag she can no longer read.
+  blocks: async () => {
+    const bea = await person('bea');
+    const ben = await person('ben');
+    await connect(bea, ben);
+    return {
+      BL_BLOCKER_EMAIL: bea.email,
+      BL_BLOCKER_NAME: bea.name,
+      BL_BLOCKER_UID: await tag(bea),
+      BL_BLOCKED_EMAIL: ben.email,
+      BL_BLOCKED_NAME: ben.name,
+    };
+  },
+  // Rae taps Rex's tag and reports him.
+  reports: async () => {
+    const rae = await person('rae');
+    const rex = await person('rex');
+    return { RP_REPORTER_EMAIL: rae.email, RP_TARGET_NAME: rex.name, RP_TARGET_UID: await tag(rex) };
+  },
+  // Tom agreed to an older version of the terms.
+  terms: async () => ({ TM_EMAIL: (await person('tom', 'maestro-old')).email }),
+  // Sue, signed out, taps Oli's tag and then Oli's gathering tag.
+  'signed-out': async () => {
+    const sue = await person('sue');
+    const oli = await person('oli');
+    const title = `Maestro Picnic ${stamp}`;
+    return {
+      SO_EMAIL: sue.email,
+      SO_OWNER_NAME: oli.name,
+      SO_OWNER_UID: await tag(oli),
+      SO_GATHERING_UID: await tag(oli, await gathering(oli, title)),
+      SO_GATHERING_TITLE: title,
+    };
+  },
+  // Max asks Mae, at a gathering they're both going to, starting within the
+  // hour; her older connection with Nia was made at none.
+  'met-at': async () => {
+    const mae = await person('mae');
+    const max = await person('max');
+    const nia = await person('nia');
+    await connect(mae, nia);
+    const title = `Maestro Mixer ${stamp}`;
+    const gatheringId = await gathering(mae, title, new Date(Date.now() + 30 * 60 * 1000));
+    const { error } = await admin.from('gathering_members').insert({ gathering_id: gatheringId, profile_id: max.id });
+    if (error) throw error;
+    return {
+      MA_HOST_EMAIL: mae.email,
+      MA_HOST_NAME: mae.name,
+      MA_HOST_UID: await tag(mae),
+      MA_GUEST_EMAIL: max.email,
+      MA_GUEST_NAME: max.name,
+      MA_OTHER_NAME: nia.name,
+      MA_TITLE: title,
+    };
+  },
+};
 
-// sign-in.yaml: Ada signs in and finds Bob among her connections.
-const ada = await person('ada');
-const bob = await person('bob');
-await connect(ada, bob);
-
-// handshake.yaml: Kim claims a fresh tag; Lee taps it and asks to connect.
-const kim = await person('kim');
-const lee = await person('lee');
-const handshakeUid = await tag();
-
-// gatherings.yaml: Hal hosts; Gus, his connection, finds it and joins.
-const hal = await person('hal');
-const gus = await person('gus');
-await connect(hal, gus);
-
-// gathering-controls.yaml: Cora's connections-only gathering with two spots,
-// her tag pointed at it. Finn takes the second spot, Fay finds it full, and
-// Sid, a stranger, never sees it.
-const cora = await person('cora');
-const finn = await person('finn');
-const fay = await person('fay');
-const sid = await person('sid');
-await connect(cora, finn);
-await connect(cora, fay);
-const coraUid = await tag(cora);
-
-// blocks.yaml: Bea blocks Ben, her connection, whose tag she can no longer read.
-const bea = await person('bea');
-const ben = await person('ben');
-await connect(bea, ben);
-const beaUid = await tag(bea);
-
-// reports.yaml: Rae taps Rex's tag and reports him.
-const rae = await person('rae');
-const rex = await person('rex');
-const rexUid = await tag(rex);
-
-// terms.yaml: Tom agreed to an older version of the terms.
-const tom = await person('tom', 'maestro-old');
-
-// signed-out.yaml: Sue, signed out, taps Oli's tag and then Oli's gathering tag.
-const sue = await person('sue');
-const oli = await person('oli');
-const oliUid = await tag(oli);
-const oliGatheringTitle = `Maestro Picnic ${stamp}`;
-const oliGatheringUid = await tag(oli, await gathering(oli, oliGatheringTitle));
-
-// met-at.yaml: Max asks Mae, at a gathering they're both going to, starting
-// within the hour; her older connection with Nia was made at none.
-const mae = await person('mae');
-const max = await person('max');
-const nia = await person('nia');
-await connect(mae, nia);
-const maeUid = await tag(mae);
-const metAtTitle = `Maestro Mixer ${stamp}`;
-const metAtId = await gathering(mae, metAtTitle, new Date(Date.now() + 30 * 60 * 1000));
-const { error: metAtMemberError } = await admin
-  .from('gathering_members')
-  .insert({ gathering_id: metAtId, profile_id: max.id });
-if (metAtMemberError) throw metAtMemberError;
-
+// No arguments runs every flow; otherwise the named files (flows/<name>.yaml).
+const flows = process.argv.slice(2);
+const names = flows.length > 0 ? flows.map((f) => f.replace(/^.*\//, '').replace(/\.yaml$/, '')) : Object.keys(seeds);
 const env: Record<string, string> = {
   APP_ID: process.env.MAESTRO_APP_ID ?? 'host.exp.Exponent',
   OPEN_URL: process.env.MAESTRO_OPEN_URL ?? 'exp://127.0.0.1:8081',
   PASSWORD,
-  EMAIL: ada.email,
-  NAME: ada.name,
-  FRIEND: bob.name,
-  // sign-up.yaml makes this account itself.
-  NEW_EMAIL: `maestro-new-${stamp}@rls.test`,
-  NEW_NAME: `Maestro New ${stamp}`,
-  HS_UID: handshakeUid,
-  HS_OWNER_EMAIL: kim.email,
-  HS_OWNER_NAME: kim.name,
-  HS_TAPPER_EMAIL: lee.email,
-  HS_TAPPER_NAME: lee.name,
-  GA_HOST_EMAIL: hal.email,
-  GA_HOST_NAME: hal.name,
-  GA_GUEST_EMAIL: gus.email,
-  GA_TITLE: `Maestro Rooftop ${stamp}`,
-  GC_HOST_EMAIL: cora.email,
-  GC_HOST_NAME: cora.name,
-  GC_HOST_UID: coraUid,
-  GC_FRIEND_EMAIL: finn.email,
-  GC_LATE_EMAIL: fay.email,
-  GC_STRANGER_EMAIL: sid.email,
-  GC_TITLE: `Maestro Supper ${stamp}`,
-  BL_BLOCKER_EMAIL: bea.email,
-  BL_BLOCKER_NAME: bea.name,
-  BL_BLOCKER_UID: beaUid,
-  BL_BLOCKED_EMAIL: ben.email,
-  BL_BLOCKED_NAME: ben.name,
-  RP_REPORTER_EMAIL: rae.email,
-  RP_TARGET_NAME: rex.name,
-  RP_TARGET_UID: rexUid,
-  TM_EMAIL: tom.email,
-  SO_EMAIL: sue.email,
-  SO_OWNER_NAME: oli.name,
-  SO_OWNER_UID: oliUid,
-  SO_GATHERING_UID: oliGatheringUid,
-  SO_GATHERING_TITLE: oliGatheringTitle,
-  MA_HOST_EMAIL: mae.email,
-  MA_HOST_NAME: mae.name,
-  MA_HOST_UID: maeUid,
-  MA_GUEST_EMAIL: max.email,
-  MA_GUEST_NAME: max.name,
-  MA_OTHER_NAME: nia.name,
-  MA_TITLE: metAtTitle,
 };
+for (const name of names) {
+  const seed = seeds[name];
+  if (!seed) throw new Error(`No flow named ${name} (flows/${name}.yaml): add its seed to run.ts`);
+  Object.assign(env, await seed());
+}
 
-const flows = process.argv.slice(2);
 const args = [
   ...(process.env.MAESTRO_DEVICE ? ['--device', process.env.MAESTRO_DEVICE] : []),
   'test',
