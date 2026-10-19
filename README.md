@@ -26,6 +26,15 @@ run club, tailgate crew, climbing gym, dog park, book club, pickleball
 league: the handshake is the same, and the starter is built so that only
 the vocabulary and the look need to change.
 
+**Why.** *Join or Die*, the documentary about Robert Putnam's *Bowling
+Alone*, makes the case that the clubs and leagues that used to build
+social capital have thinned out, and that much of what replaced them
+online is built for scrolling, not meeting people. This starter is a small
+push the other way: every connection starts with two people in the same
+place, doing something they both love. Music and golf are mine. Someone
+else is the right person to build the version for their run club,
+climbing gym or book club, and this is meant to give them a head start.
+
 The stack is opinionated and we like it that way: TanStack Start, Hono,
 oRPC, Cloudflare Workers, Supabase, Bun. [Why those](docs/stack.md) is
 written down, and the choices are not up for substitution in this repo.
