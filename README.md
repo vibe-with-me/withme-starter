@@ -52,7 +52,9 @@ Alone*, makes the case that the clubs and leagues that used to build
 social capital have thinned out, and that much of what replaced them
 online is built for scrolling, not meeting people. This starter is a small
 push the other way: every connection starts with two people in the same
-place, doing something they both love.
+place, doing something they both love. Someone out there is the right
+person to build the run club or climbing gym version, and they shouldn't
+need a company behind them to do it.
 
 ## What you could build
 
@@ -77,9 +79,10 @@ A working product, not a template:
 
 - **Tags and the card.** Each tag carries one permanent URL; what it
   points at lives in the database, so you can re-point it forever. A
-  stranger sees only your card: name, photo, bio.
+  stranger sees only your card: name, photo, bio, and which platforms
+  you're on.
 - **The handshake.** Connect, accept, connected. Your links unlock for
-  connections only.
+  connections only, and your connections list remembers where you met.
 - **Gatherings.** An Events tab to discover gatherings or see yours, a
   headcount, Add to calendar, and a who's-going list that shows only
   people you know.
@@ -97,7 +100,7 @@ A working product, not a template:
 
 Needs [Bun](https://bun.sh), [Docker](https://www.docker.com/products/docker-desktop/)
 (running), and the [Supabase CLI](https://supabase.com/docs/guides/cli)
-2.118 or newer. No cloud accounts.
+2.118 or newer. No cloud accounts, and about ten minutes.
 
 ```sh
 git clone https://github.com/vibe-with-me/withme-starter.git
@@ -140,8 +143,10 @@ in its [`settings.md`](.agents/skills/feature-dev/settings.md).
 
 ## The promises your users get
 
-Enforced in the database and proven by tests, so they hold in every fork
-that extends through the skills. [The safety model](docs/safety-model.md)
+The hard part is done: forking means changing the vocabulary and the
+look, not rebuilding trust and safety. These are enforced in Postgres
+row-level security and proven by 70+ policy tests, so they hold in every
+fork that extends through the skills. [The safety model](docs/safety-model.md)
 explains each one.
 
 - **Nobody can list your users.** A card is reachable only by a tap, a
@@ -173,14 +178,20 @@ bulletin board of your own domain's gatherings, in time order. Software
 that decides who you should meet is a different product, and the
 promises above depend on not building one.
 
-The handshake layer is free and open, permanently. Vibe With Me sells
-tags for its own app at [vibewithme.co/shop](https://vibewithme.co/shop);
-a fork runs its own store.
+The handshake layer is free and open, permanently. To pay for itself, a
+community can sell its own gear instead: almost any accessory can carry a
+tag, with no ads and no data sold. That's how Vibe With Me runs,
+at [vibewithme.co/shop](https://vibewithme.co/shop). The optional Merch tab
+links to a fork's own store.
 
 ## Contributing
 
 Issues and PRs are welcome, maintained on a best-effort basis; v0.x means
-breaking changes. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and report
+breaking changes. Help is wanted most in two places: admin tooling for the
+people who run a community
+([#100](https://github.com/vibe-with-me/withme-starter/issues/100)), and a
+real visual identity forks can build on
+([#101](https://github.com/vibe-with-me/withme-starter/issues/101)). Start with [CONTRIBUTING.md](CONTRIBUTING.md), and report
 vulnerabilities privately as [SECURITY.md](SECURITY.md) describes.
 
 ## License
