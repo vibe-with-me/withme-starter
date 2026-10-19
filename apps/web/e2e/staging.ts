@@ -69,9 +69,11 @@ async function sweep(): Promise<number> {
     if (tags.error) throw tags.error;
     for (const id of chunk) {
       // Photos live under the owner's folder; deleting the account leaves them.
-      const listed = await admin.storage.from('avatars').list(id);
-      if (listed.error) throw listed.error;
-      if (listed.data.length > 0) {
+      // `list` answers a page at a time: remove and list again until empty.
+      for (;;) {
+        const listed = await admin.storage.from('avatars').list(id, { limit: 100 });
+        if (listed.error) throw listed.error;
+        if (listed.data.length === 0) break;
         const removed = await admin.storage
           .from('avatars')
           .remove(listed.data.map((f) => `${id}/${f.name}`));
