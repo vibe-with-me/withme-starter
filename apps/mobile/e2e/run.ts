@@ -69,7 +69,9 @@ const args = [
   ...(process.env.MAESTRO_DEVICE ? ['--device', process.env.MAESTRO_DEVICE] : []),
   'test',
   ...Object.entries(env).flatMap(([key, value]) => ['-e', `${key}=${value}`]),
-  // Screenshots and the view hierarchy of a failing step land here.
+  // Screenshots and the view hierarchy of each step; maestro.log beside them.
+  '--test-output-dir',
+  'e2e/.maestro',
   '--debug-output',
   'e2e/.maestro',
   '--format',

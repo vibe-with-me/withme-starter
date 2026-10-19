@@ -89,11 +89,15 @@ with no spec is a gap. Close it before you build on it.
 | A shared code can be taken back | `share` |
 | Deleting an account deletes everything | `profile`, `terms` |
 
-One thing the browser cannot show, by design: a tap on the web resolves
-the card before it knows who is signed in, so a blocked person who holds
-your tag's URL still sees the card, the same as anyone with the URL. What
-the block takes from them is connecting, your gatherings, and any sign of
-the block. `blocks.spec.ts` asserts exactly that.
+There are two ways a tag resolves, and blocks treat them differently. A
+tag URL opened in a browser is rendered on the server before the page knows
+who is signed in, so that `resolve_tag` call is anonymous: a blocked person
+who opens your tag's URL still sees the card, the same as anyone with the
+URL. A signed-in call to `resolve_tag` (the mobile app, the SDK) answers
+`disabled` to a blocked viewer, as [safety-model.md](safety-model.md#blocks-are-absolute-and-invisible)
+says; `packages/db/test/blocks.test.ts` and `apps/api/e2e` cover that path.
+On the web, what the block takes away is connecting, your gatherings, and
+any sign of the block, and `blocks.spec.ts` asserts exactly that.
 
 ### Writing a spec
 

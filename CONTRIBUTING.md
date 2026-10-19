@@ -91,9 +91,10 @@ bun run lint && bun run typecheck && bun run test
 ```
 
 All three must be green before you open a PR, and the e2e harness your
-slice touches must pass too: a change a person can see comes with a spec
-in `apps/web/e2e` ([Testing](docs/testing.md) has how, and the map of what
-is covered). [Local development](docs/local-development.md) has the setup,
+slice touches must pass too: a change a person can see on the web comes
+with a spec in `apps/web/e2e`, and a change to a mobile screen with a
+Maestro flow in `apps/mobile/e2e` (run locally; no CI job runs those yet).
+[Testing](docs/testing.md) has how, and the map of what is covered. [Local development](docs/local-development.md) has the setup,
 the ports, and the fixes for what goes wrong on a fresh machine.
 
 ## Review

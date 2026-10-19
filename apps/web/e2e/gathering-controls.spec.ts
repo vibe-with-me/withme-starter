@@ -10,6 +10,7 @@ import {
   profileIdByName,
   revealInFeed,
   signUpWithProfile,
+  uniqueStamp,
 } from './helpers.ts';
 
 test.setTimeout(180_000);
@@ -17,7 +18,7 @@ test.setTimeout(180_000);
 test('a connections-only gathering with three spots: hidden from a stranger, full after two connections', async ({
   browser,
 }) => {
-  const stamp = Date.now();
+  const stamp = uniqueStamp();
   const hostName = `Cap Host ${stamp}`;
   const title = `Cap Round ${stamp}`;
 

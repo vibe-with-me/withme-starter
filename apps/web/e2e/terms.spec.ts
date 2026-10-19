@@ -3,14 +3,15 @@
 // and the gate never traps anyone who would rather leave.
 import { expect, test, type Page } from '@playwright/test';
 import { TERMS_VERSION } from '@withme/contract';
-import { admin, signUp, signUpWithProfile } from './helpers.ts';
+import { admin, signUp, signUpWithProfile, uniqueStamp } from './helpers.ts';
 
 test('sign-up needs the terms agreement; a new version asks again before the app opens', async ({
   page,
 }) => {
-  const name = `Smoke Terms ${Date.now()}`;
+  const stamp = uniqueStamp();
+  const name = `Smoke Terms ${stamp}`;
   await page.goto('/login');
-  await signUp(page, `smoke-terms-${Date.now()}@rls.test`);
+  await signUp(page, `smoke-terms-${stamp}@rls.test`);
   await page.waitForURL(/\/profile\?/);
   await page.getByLabel('Name').fill(name);
   const save = page.getByRole('button', { name: 'Save' });
@@ -51,8 +52,9 @@ test('sign-up needs the terms agreement; a new version asks again before the app
 
 /** Signs up with a profile, then moves it to an older terms version: the gate holds it on /terms. */
 async function stuckOnOldTerms(page: Page, label: string): Promise<{ email: string; id: string }> {
-  const email = `smoke-terms-${label}-${Date.now()}@rls.test`;
-  const name = `Smoke Terms ${label} ${Date.now()}`;
+  const stamp = uniqueStamp();
+  const email = `smoke-terms-${label}-${stamp}@rls.test`;
+  const name = `Smoke Terms ${label} ${stamp}`;
   await signUpWithProfile(page, email, name);
   const { data, error } = await admin
     .from('profiles')
