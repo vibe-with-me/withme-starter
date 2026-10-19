@@ -77,7 +77,7 @@ say so here, and make sure it is one you can keep.]
 
 You keep ownership of what you add (your name, photo, bio, links,
 gatherings). You give us permission to store it and to show it to the
-people the app shows it to (people who tap your tag, your connections),
+people the app shows it to (people who tap your tag or scan your code, your connections),
 only to run [App name].
 
 ### 7. Tags
@@ -123,9 +123,9 @@ Have a lawyer write this section.]
 - **Your relationships:** who you connected with, requests you sent or
   received, who you blocked, and the gatherings you host or join.
 - **Your tags:** which tags you claimed and where they point. When someone
-  taps a tag we record the time and the browser or app it was tapped from
-  (the user-agent string). Nothing else: not their location, not their IP
-  address.
+  taps your tag or scans your code we record the time, the browser or app
+  it came from (the user-agent string), and whether it was a tap or a scan.
+  Nothing else: not their location, not their IP address.
 - **Reports:** when you report someone, the reason, anything you write, and
   what their card said at that moment.
 
@@ -134,7 +134,7 @@ adds any, list them here.]
 
 ### 2. Who sees what
 
-- Anyone who taps your tag sees your card: name, photo, bio.
+- Anyone who taps your tag or scans your code sees your card: name, photo, bio.
 - Your connections also see your links.
 - Nobody can browse or search for people.
 - Reports are seen only by us.

@@ -13,8 +13,8 @@ moved a safety mechanism", this is what it means.
 ## Nobody can list your users
 
 **The promise.** There is no way to see a person you have not met. A card
-is reachable by tapping their tag (knowing the unguessable UID is the
-capability) or through a connection or a live incoming request. Sharing a
+is reachable by tapping their tag or scanning their code (knowing the
+unguessable UID is the capability) or through a connection or a live incoming request. Sharing a
 gathering reveals nothing.
 
 **How.** `profiles` has no anonymous select policy at all. `resolve_tag`
@@ -248,7 +248,7 @@ them, as they can read `created_at`; they are not on the card.
 ## Two tiers of profile data
 
 **The promise.** A field on your card is visible to anyone who taps your
-tag. A field in the connections tier is visible only to you and the
+tag or scans your code. A field in the connections tier is visible only to you and the
 people you accepted, and never to someone who blocked you or whom you
 blocked.
 
@@ -274,7 +274,7 @@ platforms and never a value), and
 
 ## Scans are privacy-default
 
-**The promise.** A tap records a user-agent string, a timestamp, and
+**The promise.** A tap or a scan records a user-agent string, a timestamp, and
 whether it came by NFC or a QR code. Nothing else.
 
 **How.** The `tag_scans` table has no columns for location, IP, or
