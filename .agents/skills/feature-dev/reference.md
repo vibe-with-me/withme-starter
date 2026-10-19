@@ -18,6 +18,15 @@ prefix, tracker, plans folder, verification, review, merge) are in
    ([docs/safety-model.md](../../../docs/safety-model.md)). A recipe
    knows what the code does not show at a glance, such as an RPC that
    answers with a hand-built object a new column must join.
+
+   With no recipe, find that yourself. For each contract schema the
+   feature changes, list every procedure that uses it
+   (`grep -rn <Schema> packages/contract/src/contract`), and for each RPC
+   behind those procedures, check whether it answers with a hand-built
+   object (`jsonb_build_object`). A new key must join that object, or,
+   for a field only the owner sees, stay out of a schema a public
+   procedure returns (give the owner's procedures a schema of their own).
+   Say which in the design doc.
 2. Ask the owner one question at a time, each with your recommended
    answer, and wait. The questions that always apply: who sees it (the
    owner, connections, everyone signed in, anon), what a blocked user

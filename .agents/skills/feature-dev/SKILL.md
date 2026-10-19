@@ -61,7 +61,10 @@ covers the change: a field or a new noun on a gathering is
 destination is `add-destination-type`. When one does, its steps are the
 build steps for step 4 (the files, the functions to redefine, the tests
 to extend), and this skill's gates still apply around them. Name the
-recipe in the design doc.
+recipe in the design doc. With no recipe, list every procedure that
+uses a contract schema the feature changes, and every RPC behind them
+that builds its answer by hand
+([reference.md → Design](reference.md#design)).
 
 Hold the design against the starter's invariants before writing it
 down. Nothing ranks, recommends, aggregates or monetizes; there is no
