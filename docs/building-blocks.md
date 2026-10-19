@@ -100,7 +100,7 @@ TanStack Start, deployed as a Worker. File routes in `src/routes/`:
   focused public pages outside the shell.
 - `_app.tsx`: the signed-in shell. Owns the session guard, the one
   profile fetch, and the chrome. Children are `_app.gatherings.tsx`,
-  `_app.gatherings_.$id.tsx`, `_app.connections.tsx`, `_app.merch.tsx`
+  `_app.gatherings_.new.tsx`, `_app.gatherings_.$id.tsx`, `_app.connections.tsx`, `_app.merch.tsx`
   (present only when a store URL is set), `_app.profile.tsx`, and
   `_app.share.tsx` (Your code, opened from the tab bar's raised button;
   not a tab).

@@ -166,7 +166,7 @@ git diff --name-only --diff-filter=d HEAD^1 HEAD -- apps packages supabase/seed 
 # 1. Copy: string literals and JSX text that read as words (a space, or a
 #    capital first letter), so `gathering_id` and `feed.gatherings` stay out.
 xargs perl -ne 'while (/(["\x27`])((?:\\.|(?!\1).)*?)\1|>([^<>{}]+)</g) { my $s = $2 // $3;
-  print "$ARGV:$.: $s\n" if $s =~ /\b(withme|[Gg]atherings?|Events?|Happening|Yours|Hosting|[Gg]oing)\b/ && $s =~ /\s|^[A-Z]/ }
+  print "$ARGV:$.: $s\n" if $s =~ /\b(withme|[Gg]atherings?|Events?|Discover|Yours|Hosting|[Gg]oing)\b/ && $s =~ /\s|^[A-Z]/ }
   close ARGV if eof' < /tmp/sync-files
 
 # 2. Paths and calls: a URL a person visits, and callers of create_gathering.
@@ -176,7 +176,7 @@ xargs grep -nE "['\"\`]/gatherings?\b|create_gathering|gatherings\.create" < /tm
 Every line of pass 1 is something a person reads, a spec clicks, or a
 test names; change the ones in the starter's words. Its word list is the
 starter's own labels that `customize-gathering` §1 renames: the nouns,
-the tab ("Events"), the section titles ("Happening", "Yours"), the marks
+the tab ("Events"), the segments ("Discover", "Yours"), the marks
 ("Hosting", "Going") and the counter ("N going", "N of M going"). If you
 renamed more, add your starter originals to the list. Pass 2's paths take
 your route names; its callers take your fields' arguments.

@@ -1,24 +1,35 @@
-import { isGatheringFull, type GatheringListItem, type GatheringVisibility } from '@withme/contract';
-import { createFileRoute, Link, useLoaderData, useRouter } from '@tanstack/react-router';
+import { isGatheringFull, type GatheringListItem } from '@withme/contract';
+import { createFileRoute, Link, useLoaderData } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
-import { GatheringControls } from '../components/GatheringControls.tsx';
 import { GatheringMeta } from '../components/GatheringMeta.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
-import { tomorrowEvening, whenAndWhere } from '../lib/format-time.ts';
-import { FULL_LABEL, audienceMark, goingLine, parseSpots, withLine } from '../lib/going.ts';
+import { whenAndWhere } from '../lib/format-time.ts';
+import { FULL_LABEL, audienceMark, goingLine, withLine } from '../lib/going.ts';
+
+type View = 'yours';
 
 /**
- * The Events tab: what is happening in the domain, and your own calendar.
- * "Happening" is every upcoming gathering the viewer may see — a bulletin
- * board, not a directory: a row carries the headcount and names only the
- * viewer's connections among the members (docs/the-slice.md). The tap is
- * still how people meet; the list is how they find out where.
+ * The Events tab: what is happening in the domain, and your own calendar,
+ * behind two in-page segments. "Discover" is every upcoming gathering the
+ * viewer may see — a bulletin board, not a directory: a row carries the
+ * headcount and names only the viewer's connections among the members
+ * (docs/the-slice.md). "Yours" is what you host or are going to, then what
+ * is past. The tap is still how people meet; the list is how they find out
+ * where. Creating one is its own page (_app.gatherings_.new.tsx).
+ *
+ * The segment is a search param, as on Connections: each list is a URL that
+ * a reload or a link keeps, and switching replaces the history entry.
  */
 export const Route = createFileRoute('/_app/gatherings')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Events — withme' }] }),
+  // Always returns the key: a route's search is the parent's spread under
+  // this result, so leaving `view` out would let a raw ?view=foo through.
+  validateSearch: (search): { view?: View } => ({
+    view: search.view === 'yours' ? search.view : undefined,
+  }),
   loader: async () => {
     const [feed, { gatherings: mine }] = await asSignedInAccount(() =>
       Promise.all([api.app.gatherings.list(), api.app.gatherings.listMine()]),
@@ -30,8 +41,10 @@ export const Route = createFileRoute('/_app/gatherings')({
 
 function GatheringsPage() {
   const { happening: firstPage, nextCursor: firstCursor, mine } = Route.useLoaderData();
-  // Later feed pages, appended under the loader's first one. A re-load (a
-  // create, an account switch) starts the feed over from its first page.
+  const { view } = Route.useSearch();
+  // Later feed pages, appended under the loader's first one. A re-load (an
+  // account switch, a return from a gathering) starts the feed over from its
+  // first page.
   const [laterPages, setLaterPages] = useState<GatheringListItem[]>([]);
   const [cursor, setCursor] = useState(firstCursor);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -54,14 +67,6 @@ function GatheringsPage() {
   // The layout fetched the viewer's profile once; every _app child may read it.
   const { profile } = useLoaderData({ from: '/_app' });
   const viewerId = profile?.id ?? null;
-  const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [startsAt, setStartsAt] = useState(tomorrowEvening);
-  const [location, setLocation] = useState('');
-  const [visibility, setVisibility] = useState<GatheringVisibility>('everyone');
-  const [spots, setSpots] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const now = Date.now();
   const upcoming = mine.filter((g) => Date.parse(g.starts_at) >= now);
@@ -85,134 +90,92 @@ function GatheringsPage() {
     }
   }
 
-  async function create(event: React.FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await api.app.gatherings.create({
-        title: title.trim(),
-        starts_at: new Date(startsAt).toISOString(),
-        location: location.trim() === '' ? null : location.trim(),
-        visibility,
-        capacity: parseSpots(spots) ?? null,
-      });
-      setTitle('');
-      setLocation('');
-      setVisibility('everyone');
-      setSpots('');
-      setStartsAt(tomorrowEvening());
-      // Wait for the re-fetch (sync) so the list never shows a stale set of gatherings.
-      await router.invalidate({ sync: true });
-    } catch {
-      setError('Could not create the gathering. Check the fields and try again.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="stack">
-      <form className="card" onSubmit={create}>
-        <h1>Create a gathering</h1>
-        <div className="field">
-          <label htmlFor="title">Title</label>
-          <input
-            id="title"
-            required
-            maxLength={120}
-            placeholder="e.g. Rooftop listening session"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="starts_at">Starts</label>
-          <input
-            id="starts_at"
-            type="datetime-local"
-            required
-            value={startsAt}
-            onChange={(e) => setStartsAt(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="location">Location (optional)</label>
-          <input
-            id="location"
-            maxLength={160}
-            placeholder="Where to find it"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
-        </div>
-        <GatheringControls
-          visibility={visibility}
-          onVisibility={setVisibility}
-          spots={spots}
-          onSpots={setSpots}
-        />
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <button
-          className="btn"
-          type="submit"
-          disabled={busy || !title.trim() || !startsAt || parseSpots(spots) === undefined}
-        >
-          {busy ? 'Creating…' : 'Create gathering'}
-        </button>
-      </form>
+      <h1 className="section-title">Events</h1>
+      <Link className="btn" to="/gatherings/new">
+        New gathering
+      </Link>
+      <nav className="segments" aria-label="Events lists">
+        <SegmentLink current={view} label="Discover" />
+        <SegmentLink current={view} view="yours" label="Yours" />
+      </nav>
 
-      <section aria-labelledby="happening">
-        <h2 className="section-title" id="happening">
-          Happening
-        </h2>
-        {happening.length === 0 ? (
-          <p className="empty">Nothing happening yet. Create the first one.</p>
-        ) : (
-          happening.map((g) => <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />)
-        )}
-        {moreError ? (
-          <p className="form-error" role="alert">
-            Could not load more. Try again.
-          </p>
-        ) : null}
-        {cursor !== null ? (
-          <button
-            className="btn btn--quiet"
-            type="button"
-            onClick={loadMore}
-            disabled={loadingMore}
-          >
-            {loadingMore ? 'Loading…' : 'Load more'}
-          </button>
-        ) : null}
-      </section>
-
-      <section aria-labelledby="yours">
-        <h2 className="section-title" id="yours">
-          Yours
-        </h2>
-        {mine.length === 0 ? (
-          <p className="empty">Join one above, or create your own.</p>
-        ) : upcoming.length === 0 ? (
-          <p className="empty">Nothing coming up.</p>
-        ) : (
-          upcoming.map((g) => <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />)
-        )}
-        {past.length > 0 ? (
-          <>
-            <h2 className="section-title">Past</h2>
-            {past.map((g) => (
-              <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />
-            ))}
-          </>
-        ) : null}
-      </section>
+      {view === 'yours' ? (
+        <section aria-label="Yours">
+          {mine.length === 0 ? (
+            <p className="empty">Join one from Discover, or create your own.</p>
+          ) : upcoming.length === 0 ? (
+            <p className="empty">Nothing coming up.</p>
+          ) : (
+            upcoming.map((g) => <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />)
+          )}
+          {past.length > 0 ? (
+            <>
+              <h2 className="section-title">Past</h2>
+              {past.map((g) => (
+                <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />
+              ))}
+            </>
+          ) : null}
+        </section>
+      ) : (
+        <section aria-label="Discover">
+          {happening.length === 0 ? (
+            <p className="empty">Nothing happening yet. Create the first one.</p>
+          ) : (
+            happening.map((g) => <GatheringRow key={g.id} gathering={g} viewerId={viewerId} />)
+          )}
+          {moreError ? (
+            <p className="form-error" role="alert">
+              Could not load more. Try again.
+            </p>
+          ) : null}
+          {cursor !== null ? (
+            <button
+              className="btn btn--quiet"
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Loading…' : 'Load more'}
+            </button>
+          ) : null}
+        </section>
+      )}
     </div>
+  );
+}
+
+/**
+ * One segment (mirrors Connections' SegmentLink). Active = ink and a 2px ink
+ * underline, never the accent; it follows the validated view, so a stale
+ * ?view=foo still shows Discover as current.
+ */
+function SegmentLink({
+  current,
+  view,
+  label,
+}: {
+  current: View | undefined;
+  view?: View;
+  label: string;
+}) {
+  const active = view === current;
+  return (
+    <Link
+      to="/gatherings"
+      search={view ? { view } : {}}
+      replace
+      className={active ? 'segments__item segments__item--active' : 'segments__item'}
+      aria-current={active ? 'page' : undefined}
+      // exact keeps the router's own active marking from disagreeing:
+      // without it, "Discover" would partially match ?view=yours too.
+      activeOptions={{ exact: true }}
+      activeProps={{}}
+    >
+      {label}
+    </Link>
   );
 }
 

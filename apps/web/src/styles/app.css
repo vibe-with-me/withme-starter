@@ -508,7 +508,7 @@ a.link:hover {
   padding: var(--space-5) var(--space-4);
 }
 
-/* --- in-page segments (Connections) — active = ink, never the accent ------ */
+/* --- in-page segments (Connections, Events) — active = ink, never the accent */
 
 /* Wraps rather than overflows: three segments and a "99+" badge do not fit
  * on one line at 320px. */

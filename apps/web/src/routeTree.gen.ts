@@ -23,6 +23,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ClaimUidRouteImport } from './routes/claim.$uid'
 import { Route as TUidRouteImport } from './routes/t.$uid'
 import { Route as AppGatheringsIdRouteImport } from './routes/_app.gatherings_.$id'
+import { Route as AppGatheringsNewRouteImport } from './routes/_app.gatherings_.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -93,6 +94,11 @@ const AppGatheringsIdRoute = AppGatheringsIdRouteImport.update({
   path: '/gatherings/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGatheringsNewRoute = AppGatheringsNewRouteImport.update({
+  id: '/gatherings_/new',
+  path: '/gatherings/new',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
   '/gatherings/$id': typeof AppGatheringsIdRoute
+  '/gatherings/new': typeof AppGatheringsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
   '/gatherings/$id': typeof AppGatheringsIdRoute
+  '/gatherings/new': typeof AppGatheringsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
   '/_app/gatherings_/$id': typeof AppGatheringsIdRoute
+  '/_app/gatherings_/new': typeof AppGatheringsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/claim/$uid'
     | '/t/$uid'
     | '/gatherings/$id'
+    | '/gatherings/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/claim/$uid'
     | '/t/$uid'
     | '/gatherings/$id'
+    | '/gatherings/new'
   id:
     | '__root__'
     | '/'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/claim/$uid'
     | '/t/$uid'
     | '/_app/gatherings_/$id'
+    | '/_app/gatherings_/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGatheringsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/gatherings_/new': {
+      id: '/_app/gatherings_/new'
+      path: '/gatherings/new'
+      fullPath: '/gatherings/new'
+      preLoaderRoute: typeof AppGatheringsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -311,6 +330,7 @@ interface AppRouteChildren {
   AppShareRoute: typeof AppShareRoute
   AppTermsRoute: typeof AppTermsRoute
   AppGatheringsIdRoute: typeof AppGatheringsIdRoute
+  AppGatheringsNewRoute: typeof AppGatheringsNewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -321,6 +341,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppShareRoute: AppShareRoute,
   AppTermsRoute: AppTermsRoute,
   AppGatheringsIdRoute: AppGatheringsIdRoute,
+  AppGatheringsNewRoute: AppGatheringsNewRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

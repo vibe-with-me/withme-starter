@@ -164,7 +164,7 @@ B. Components, both modes, every state. Card. Button: default, accent, quiet,
    confirmation (delete account).
 
 C. Screens at 390×844 in light and dark: the resolver card (profile tag and
-   gathering tag), login, Events (create form plus the three lists), gathering
+   gathering tag), login, Events (the Discover and Yours segments), the create page, gathering
    detail with "Who's going", Connections on the Requests segment with a
    pending row, Profile (photo, form, links editor, My tags, Account). Plus the
    Events tab at 1280 wide to show the desktop shell.

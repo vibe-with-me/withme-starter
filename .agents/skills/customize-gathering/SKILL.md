@@ -6,7 +6,7 @@ description: Use when a withme-starter fork wants its gathering in the vertical'
 # customize-gathering — make the core gathering yours
 
 The gathering ships in the starter: a host creates one, everyone signed in
-to the domain sees it in the Events tab ("Happening": title, time, place, a
+to the domain sees it in the Events tab ("Discover": title, time, place, a
 headcount), and a tap on a member's tag is still the invitation. The host
 chooses who can see it (everyone in the app, or their connections) and
 may cap it with Spots (2 to 500, counting the host). Who's
@@ -42,8 +42,8 @@ time, and after two failed attempts stop and tell the owner.
 | RLS tests | `packages/db/test/gatherings.test.ts`, `gathering-visibility.test.ts`, `gathering-capacity.test.ts`; `account.test.ts`, `blocks.test.ts`, `links.test.ts` and `plain-text.test.ts` also create gatherings |
 | Queries / API | `packages/db/src/queries/gatherings.ts`, `queries/tags.ts`; `apps/api/src/routers/app.ts` |
 | SDK mirror | `packages/nfc-sdk/src/client.ts` (`Destination`, `GatheringSummary`) |
-| Web | `apps/web/src/routes/_app.gatherings.tsx`, `_app.gatherings_.$id.tsx`, the branch in `t.$uid.tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts` ("N going", "3 of 4 going", "With …", Full, "Connections only", the visibility choices and the Spots help), `components/GatheringControls.tsx` (the two controls on both forms), `components/AppShell.tsx` (`navItems[0]`) |
-| Mobile | `apps/mobile/app/(tabs)/gatherings.tsx`, `app/gathering/[id].tsx`, the branch in `app/t/[uid].tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts`, `components/GatheringControls.tsx`, `lib/gathering-link.ts`, `(tabs)/_layout.tsx` |
+| Web | `apps/web/src/routes/_app.gatherings.tsx` (the Discover / Yours segments), `_app.gatherings_.new.tsx` (the create form), `_app.gatherings_.$id.tsx`, the branch in `t.$uid.tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts` ("N going", "3 of 4 going", "With …", Full, "Connections only", the visibility choices and the Spots help), `components/GatheringControls.tsx` (the two controls on both forms), `components/AppShell.tsx` (`navItems[0]`) |
+| Mobile | `apps/mobile/app/(tabs)/gatherings.tsx`, `app/gathering/new.tsx`, `app/gathering/[id].tsx`, the branch in `app/t/[uid].tsx`, `lib/format-time.ts`, `lib/my-tags.ts`, `lib/going.ts`, `components/GatheringControls.tsx`, `lib/gathering-link.ts`, `(tabs)/_layout.tsx` |
 | E2E | `apps/api/e2e/handshake.e2e.ts` §12–17a; `apps/web/e2e/gatherings.spec.ts`, `gathering-controls.spec.ts`; `profile.spec.ts` and `helpers.ts` also visit or create one |
 | Seed | `supabase/seed/index.ts` (Ada hosts one, her live tag points at it; Lin hosts one Ada has not joined, capped at 12, so the feed shows "1 of 12 going") |
 
@@ -88,27 +88,32 @@ strings in the same sweep: every file under `apps/web/e2e`, the shared
 use of the tab label.
 
 **URLs (optional).** To make `/rounds` the path:
-- Web: `git mv` `_app.gatherings.tsx` → `_app.rounds.tsx` and
+- Web: `git mv` `_app.gatherings.tsx` → `_app.rounds.tsx`,
+  `_app.gatherings_.new.tsx` → `_app.rounds_.new.tsx` and
   `_app.gatherings_.$id.tsx` → `_app.rounds_.$id.tsx`; change the
   `createFileRoute('/_app/gatherings…')` ids, every `to="/gatherings…"`
   (`AppShell.tsx`, `index.tsx`, `login.tsx`, `auth.callback.tsx`,
   `t.$uid.tsx`, the list's row link, the detail's leave/delete
-  navigations), the `startsWith('/gatherings/')` check behind the login
-  page's invitation line, the `NavItem.to` union, and every URL in the
+  navigations, the create page's own route, its Cancel link and the list's
+  New gathering link), the `startsWith('/gatherings/')` check and the
+  `'/gatherings/new'` exception behind the login page's invitation line, the `NavItem.to` union, and every URL in the
   Playwright files — `grep -rn '/gatherings' apps/web/e2e` (the
   `shell.spec.ts` and `gatherings.spec.ts` assertions, `profile.spec.ts`'s
   `goto`, and the `waitForURL` in `helpers.ts`'s `signUpWithProfile`,
   which other specs share);
   then `cd apps/web && bunx vite build` regenerates `routeTree.gen.ts`.
-- Mobile: rename `(tabs)/gatherings.tsx` → `(tabs)/rounds.tsx` and
+- Mobile: rename `(tabs)/gatherings.tsx` → `(tabs)/rounds.tsx`,
+  `gathering/new.tsx` → `round/new.tsx` and
   `gathering/[id].tsx` → `round/[id].tsx` (`git mv` does not create the
   folder: `mkdir -p apps/mobile/app/round` first, then
   `rmdir apps/mobile/app/gathering`, which the move leaves empty, after);
   update the `Tabs.Screen` name,
-  the root `Stack.Screen` name, and every `pathname` / `href` /
+  the root `Stack.Screen` names, and every `pathname` / `href` /
   `dismissTo('/gatherings')` / `redirect` string (`index.tsx`, `login.tsx`,
   `(tabs)/merch.tsx`, `t/[uid].tsx`, the detail, and the renamed list
-  screen itself, whose rows `router.push({ pathname: '/gathering/[id]' })`), the
+  screen itself, whose rows `router.push({ pathname: '/gathering/[id]' })` and
+  whose New gathering button pushes `/gathering/new`; the create screen's
+  `router.replace` and `dismissTo`), the
   `startsWith('/gathering/')` check behind the login screen's invitation
   line, and the `/gathering/` prefix that `gatheringHref` in
   `lib/gathering-link.ts` builds for redirects, and the same prefix in its
@@ -134,8 +139,8 @@ use of the tab label.
 **Copy the sweep cannot catch.** Some starter copy is vertical-specific
 without containing "gathering"; rewrite it for your vertical too:
 - the create form's title placeholder, `"e.g. Rooftop listening session"`,
-  in `apps/web/src/routes/_app.gatherings.tsx` and
-  `apps/mobile/app/(tabs)/gatherings.tsx` (or the files you renamed);
+  in `apps/web/src/routes/_app.gatherings_.new.tsx` and
+  `apps/mobile/app/gathering/new.tsx` (or the files you renamed);
 - the form labels, in the create form and in the detail's `EditForm`
   (`_app.gatherings_.$id.tsx`, mobile `gathering/[id].tsx`): the title
   label `Title`; the start label, one `Starts` field on web, two fields
@@ -143,8 +148,8 @@ without containing "gathering"; rewrite it for your vertical too:
   placeholder `"Where to find it"` (create forms only);
 - the members heading `Who's going` and the hint under it on the detail
   screen (web `_app.gatherings_.$id.tsx`, mobile `gathering/[id].tsx`),
-  the `Happening` / `Yours` section titles and their empty states on the
-  list, the `Hosting` / `Going` marks, and the `N going` / `With …` lines
+  the `Discover` / `Yours` segments, the `New gathering` button, the
+  `Past` heading and the empty states on the list, the `Hosting` / `Going` marks, and the `N going` / `With …` lines
   (`lib/going.ts` on both platforms);
 - the host's controls, also in both apps' `lib/going.ts`:
   `VISIBILITY_CHOICES` ("Everyone in the app" / "My connections" and the
@@ -346,8 +351,8 @@ In slice order:
 6. **Screens.** Web: a `field` in the create form and `EditForm`, the row
    `sub` line, the detail header; the resolver line comes from
    `gatheringLine()` in `lib/format-time.ts`. Mobile mirrors in
-   `(tabs)/gatherings.tsx`, `gathering/[id].tsx` (or the files you renamed
-   in §1), `lib/format-time.ts`. The display lines are composed in both
+   `(tabs)/gatherings.tsx`, `gathering/new.tsx`, `gathering/[id].tsx` (or the
+   files you renamed in §1), `lib/format-time.ts`. The display lines are composed in both
    apps' `lib/format-time.ts`: rows and the detail
    header call `whenAndWhere()` ("when · where"), and the resolver card
    calls `gatheringLine()` ("Title · when · where"). Both return a
@@ -406,9 +411,9 @@ then the API e2e ending `handshake e2e: all checks passed` and
 
 Capacity is core, so a vertical with a natural size sets a default, not
 a field. Golf's round is four, the host included: in both create forms
-(`_app.gatherings.tsx`, `(tabs)/gatherings.tsx`, or the files you
-renamed in §1) start Spots at `'4'` instead of `''`, in the `useState`
-and in the reset after a create, and rename the label ("Players") in §1's
+(`_app.gatherings_.new.tsx`, `gathering/new.tsx`, or the files you
+renamed in §1) start Spots at `'4'` instead of `''` in the `useState`
+(a created gathering leaves the page, so there is no reset), and rename the label ("Players") in §1's
 copy sweep. The host can still clear it or change it, and the database
 still refuses anything outside 2 to 500. Do not hard-code the cap in SQL:
 a fivesome is a host's call, and `join_gathering` already enforces
@@ -502,7 +507,7 @@ invitees, its own RLS and its own tests), not another value.
   its three kinds). Add those in your fork with the same discipline
   (every new read path asks: what does the blocked party see, and what
   does a stranger to a connections-only gathering see?).
-- "Happening" is the domain in start-time order. Nearby sorting would need
+- "Discover" is the domain in start-time order. Nearby sorting would need
   a location model the starter does not have (location is free text); a
   fork that adds one keeps the list a bare select — nothing ranks.
 - Date entry on mobile is two plain fields (`Date`, `Time`) by design — no
