@@ -149,6 +149,11 @@ select, a trigger by the row it writes, a CHECK by the `23514` it
 raises). For each `0`, find the test that exercises it and say which in
 the PR, or write one.
 
+The snippet sees only constraints with a name. Read the migration for
+unnamed inline ones too (`check (…)`, `unique`, `references`, `not
+null` on a new column) and give each a test the same way: a write that
+breaks it and the error it raises (`23514`, `23505`, `23503`, `23502`).
+
 A count above `0` is not a verdict either. A function the migration
 redefines (`create or replace`, or a drop and create with a new
 argument) is named by every older test of it, so the count says
