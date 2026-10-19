@@ -196,9 +196,11 @@ up the landing page shows `runwithme` in your accent.
 tab label in `apps/web/src/components/AppShell.tsx` and
 `apps/mobile/app/(tabs)/_layout.tsx`, each route's page title, the copy
 in the list and detail screens, the Playwright specs that select by that
-copy. The URL rename moves `_app.gatherings.tsx` to `_app.runs.tsx` and
+copy. The URL rename moves `_app.gatherings.tsx` to `_app.runs.tsx`,
+`_app.gatherings_.new.tsx` to `_app.runs_.new.tsx` and
 `_app.gatherings_.$id.tsx` to `_app.runs_.$id.tsx` on web, and
-`(tabs)/gatherings.tsx` to `(tabs)/runs.tsx` on mobile, with every link
+`(tabs)/gatherings.tsx` to `(tabs)/runs.tsx`, `gathering/new.tsx` to
+`run/new.tsx` and `gathering/[id].tsx` to `run/[id].tsx` on mobile, with every link
 and redirect that names the path. The API's REST paths and the
 `gathering` destination type stay; tags already in the field keep
 working.

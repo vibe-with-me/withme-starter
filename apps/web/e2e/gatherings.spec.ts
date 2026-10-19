@@ -31,22 +31,33 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await ada.waitForURL(`**/t/${uid}`);
   await expect(ada.getByText('This is your tag.')).toBeVisible();
 
-  // --- Ada creates a gathering: it lands in Happening and in Yours ------------
+  // --- Ada creates a gathering on its own page, and lands on it ------------------
   await ada.goto('/gatherings');
+  await ada.getByRole('link', { name: 'New gathering' }).click();
+  await ada.waitForURL('**/gatherings/new');
   const title = `Smoke Rooftop ${stamp}`;
   await ada.getByLabel('Title').fill(title);
   await ada.getByLabel('Location (optional)').fill('The roof');
   await ada.getByRole('button', { name: 'Create gathering' }).click();
-  const adaHappening = ada.getByRole('region', { name: 'Happening' });
+  await ada.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
+  const detailPath = new URL(ada.url()).pathname;
+  await expect(ada.getByRole('heading', { name: title })).toBeVisible();
+
+  // --- It lists in Discover and in Yours ----------------------------------------
+  await ada.goto('/gatherings');
+  const adaSegments = ada.getByRole('navigation', { name: 'Events lists' });
+  await expect(adaSegments.getByRole('link', { name: 'Discover' })).toHaveAttribute('aria-current', 'page');
+  const adaDiscover = ada.getByRole('region', { name: 'Discover' });
+  await revealInFeed(adaDiscover, title);
+  await expect(adaDiscover.getByText(/Hosting · .* · 1 going/)).toBeVisible();
+  await adaSegments.getByRole('link', { name: 'Yours' }).click();
+  await ada.waitForURL('**/gatherings?view=yours');
   const adaYours = ada.getByRole('region', { name: 'Yours' });
-  await revealInFeed(adaHappening, title);
-  await expect(adaHappening.getByText(/Hosting · .* · 1 going/)).toBeVisible();
   await expect(adaYours.getByText(title)).toBeVisible();
 
   // --- ...and she points her tag at it from the detail ---------------------------
   await adaYours.getByRole('link', { name: 'Open', exact: true }).click();
-  await ada.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
-  const detailPath = new URL(ada.url()).pathname;
+  await ada.waitForURL(`**${detailPath}`);
   await expect(ada.getByRole('heading', { name: title })).toBeVisible();
   await expect(ada.getByText('1 going')).toBeVisible();
   await expect(ada.getByText('Host', { exact: true })).toBeVisible();
@@ -92,9 +103,9 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
 
   // The feed lists it to Bob as Going; Ada's side counts him without naming him.
   await bob.goto('/gatherings');
-  const bobHappening = bob.getByRole('region', { name: 'Happening' });
-  await revealInFeed(bobHappening, title);
-  await expect(bobHappening.getByText(/Going · .* · 2 going/)).toBeVisible();
+  const bobDiscover = bob.getByRole('region', { name: 'Discover' });
+  await revealInFeed(bobDiscover, title);
+  await expect(bobDiscover.getByText(/Going · .* · 2 going/)).toBeVisible();
   await ada.reload();
   await expect(ada.getByText('2 going')).toBeVisible();
   await expect(ada.getByText('Smoke Bob')).toHaveCount(0);
@@ -107,17 +118,17 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   await bob.getByRole('button', { name: 'Connect' }).click();
   await expect(bob.getByText(/request sent/i)).toBeVisible();
   await ada.goto('/connections');
-  const adaSegments = ada.getByRole('navigation', { name: 'Connections lists' });
-  await adaSegments.getByRole('link', { name: 'Requests, 1 pending' }).click();
+  const adaConnections = ada.getByRole('navigation', { name: 'Connections lists' });
+  await adaConnections.getByRole('link', { name: 'Requests, 1 pending' }).click();
   await ada.getByRole('button', { name: 'Accept' }).click();
-  await expect(adaSegments.getByRole('link', { name: 'Requests', exact: true })).toBeVisible();
+  await expect(adaConnections.getByRole('link', { name: 'Requests', exact: true })).toBeVisible();
 
   // Now each sees the other in who's going, and the feed names them.
   await bob.goto(detailPath);
   await expect(bob.getByText('Smoke Ada')).toBeVisible();
   await bob.goto('/gatherings');
-  await revealInFeed(bobHappening, title);
-  await expect(bobHappening.getByText('With Smoke Ada')).toBeVisible();
+  await revealInFeed(bobDiscover, title);
+  await expect(bobDiscover.getByText('With Smoke Ada')).toBeVisible();
   await ada.goto(detailPath);
   await expect(ada.getByText('Smoke Bob')).toBeVisible();
 });
