@@ -6,7 +6,8 @@ store" button, plus a "Get tags" link on the landing page. Where that URL
 goes, what it sells, and how the tags get into people's hands is yours to
 decide. This page is one complete, tested path: a Shopify store selling
 NFC accessories made for your vertical, with the tags provisioned by the
-starter's script and encoded by GoToTags.
+starter's script and encoded by GoToTags. For a store already doing this,
+see Vibe With Me's own, [vibewithme.co/shop](https://vibewithme.co/shop).
 
 Two things never change along the way: the tag's URL is
 `https://<your-domain>/t/{UID}`, and the UID comes from
@@ -197,7 +198,7 @@ never becomes a store integration.
 
 ## Upstream
 
-Vibe With Me sells printed, encoded, and locked tags and will take
+Vibe With Me sells printed, encoded, and locked tags at [vibewithme.co/shop](https://vibewithme.co/shop) and will take
 fulfillment for forks that would rather not run this loop. The starter
 does not depend on that in any way; the pointer goes wherever you say.
 
