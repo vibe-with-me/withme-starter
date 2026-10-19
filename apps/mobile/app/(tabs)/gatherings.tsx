@@ -49,6 +49,9 @@ export default function GatheringsScreen() {
   // Bumped by every full load: a Load more answer from before it is dropped,
   // or it would append an old page (and an old cursor) to the new feed.
   const feedGeneration = useRef(0);
+  // While a full load is out, Load more waits: its cursor belongs to the feed
+  // that load is about to replace.
+  const fullLoadPending = useRef(false);
   const [gatherings, setGatherings] = useState<GatheringListItem[]>([]);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -58,6 +61,7 @@ export default function GatheringsScreen() {
 
   const load = useCallback(async () => {
     const generation = ++feedGeneration.current;
+    fullLoadPending.current = true;
     const bounds = whenWindow(when);
     try {
       const [feed, { gatherings: mine }, { data }] = await Promise.all([
@@ -79,6 +83,7 @@ export default function GatheringsScreen() {
     } catch {
       if (generation === feedGeneration.current) setLoadError(true);
     } finally {
+      if (generation === feedGeneration.current) fullLoadPending.current = false;
       setLoaded(true);
     }
   }, [when]);
@@ -93,7 +98,7 @@ export default function GatheringsScreen() {
   );
 
   async function loadMore() {
-    if (cursor === null || loadingMore || switching) return;
+    if (cursor === null || loadingMore || switching || fullLoadPending.current) return;
     const generation = feedGeneration.current;
     setLoadingMore(true);
     setMoreError(false);

@@ -32,10 +32,14 @@ test('Discover narrows to this weekend or later, and the URL keeps the window', 
   expect(hostError).toBeNull();
 
   // One in the middle of this weekend's window, one after this week, worked
-  // out in this machine's zone, which the browser shares.
-  const weekend = whenWindow('weekend');
+  // out in this machine's zone, which the browser shares. The browser's clock
+  // is held at the same instant, so a run across midnight on Sunday cannot
+  // put the seeds and the page's windows in different weeks.
+  const reference = new Date();
+  await page.clock.setFixedTime(reference);
+  const weekend = whenWindow('weekend', reference);
   const middle = (Date.parse(weekend.from!) + Date.parse(weekend.to!)) / 2;
-  const later = Date.parse(whenWindow('later').from!) + 86_400_000;
+  const later = Date.parse(whenWindow('later', reference).from!) + 86_400_000;
   const weekendTitle = `Weekend ${stamp}`;
   const laterTitle = `Later ${stamp}`;
   const { error } = await admin.from('gatherings').insert([
