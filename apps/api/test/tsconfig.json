@@ -1,8 +1,9 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    // bun for the runner; workers-types for the Worker source the tests import (RateLimit).
-    "types": ["bun", "@cloudflare/workers-types"]
+    // bun only: with @cloudflare/workers-types alongside, the two ReadableStream
+    // types collide. worker-globals.d.ts declares what the source needs instead.
+    "types": ["bun"]
   },
   "include": ["."]
 }
