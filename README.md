@@ -37,9 +37,9 @@ Fork freely.
     <td align="center" width="25%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/1-card-dark.png">
-        <img src="docs/images/readme/1-card-light.png" alt="Ada's card with her links locked, which is what a stranger sees after a tap" width="200">
+        <img src="docs/images/readme/1-card-light.png" alt="Ada's card with her links locked, which is what a stranger sees after a tap or scan" width="200">
       </picture>
-      <br><sub>A tap opens their card</sub>
+      <br><sub>A tap or scan opens their card</sub>
     </td>
     <td align="center" width="25%">
       <picture>
