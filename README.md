@@ -5,9 +5,9 @@
 **Tap a tag. Meet a person. Stay connected.**
 
 withme-starter grew out of [Vibe With Me](https://vibewithme.co), made
-for the people you meet at shows: tap a tag at a concert or a festival with
-any phone, no app needed, and stay connected with the stranger who loved
-the same set you did. This repo
+for the people you meet at shows: tap their tag or scan their code at a
+concert or a festival, no app needed, and stay connected with the stranger
+who loved the same set you did. This repo
 is a way to remix that idea for whatever you love. Live music is where it
 started. Golf is my other passion, so the first remix is
 [Golf With Me](https://github.com/vibe-with-me/golf-with-me): the same
