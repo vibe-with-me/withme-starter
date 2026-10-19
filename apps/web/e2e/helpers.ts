@@ -72,7 +72,7 @@ export async function revealInFeed(feed: Locator, title: string): Promise<void> 
  * gathering has to be missing from the whole feed, not just the first page.
  */
 export async function expectNotInFeed(page: Page, title: string): Promise<void> {
-  const feed = page.getByRole('region', { name: 'Happening' });
+  const feed = page.getByRole('region', { name: 'Discover' });
   const more = feed.getByRole('button', { name: 'Load more' });
   // The feed has rendered once it shows a row or its empty line.
   await expect(feed.locator('.row, .empty').first()).toBeVisible();
@@ -84,13 +84,11 @@ export async function expectNotInFeed(page: Page, title: string): Promise<void> 
   await expect(feed.getByText(title)).toHaveCount(0);
 }
 
-/** Creates a gathering from the Events tab and opens it; returns the detail path. */
+/** Creates a gathering on its own page, which lands on the detail; returns the detail path. */
 export async function createGathering(page: Page, title: string): Promise<string> {
-  await page.goto('/gatherings');
+  await page.goto('/gatherings/new');
   await page.getByLabel('Title').fill(title);
   await page.getByRole('button', { name: 'Create gathering' }).click();
-  const yours = page.getByRole('region', { name: 'Yours' });
-  await yours.locator('.row', { hasText: title }).getByRole('link', { name: 'Open', exact: true }).click();
   await page.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   return new URL(page.url()).pathname;

@@ -6,6 +6,8 @@ import { returnToOf, signUp, signUpWithProfile, uniqueStamp } from './helpers.ts
 
 const guarded = [
   '/gatherings',
+  '/gatherings?view=yours',
+  '/gatherings/new',
   '/gatherings/00000000-0000-4000-8000-000000000000',
   '/connections?tab=requests',
   '/profile',
