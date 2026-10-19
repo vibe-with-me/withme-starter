@@ -198,9 +198,11 @@ never becomes a store integration.
 
 ## Upstream
 
-Vibe With Me sells printed, encoded, and locked tags at [vibewithme.co/shop](https://vibewithme.co/shop) and will take
-fulfillment for forks that would rather not run this loop. The starter
-does not depend on that in any way; the pointer goes wherever you say.
+Vibe With Me sells its own printed, encoded, and locked tags at
+[vibewithme.co/shop](https://vibewithme.co/shop): a reference for what a
+store like this looks like. Fulfillment for a fork is the fork's own
+operation, from provisioning to shipping. The starter does not depend on
+Vibe With Me in any way; the pointer goes wherever you say.
 
 ## Sources
 
