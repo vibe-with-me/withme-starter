@@ -174,10 +174,11 @@ const listGatherings = oc
   // What is happening in the domain: every upcoming gathering the caller may
   // see (RLS: the tenant, minus a block either way with the host, and a
   // `connections` gathering only for the host's connections and its members), in
-  // start-time order. A bulletin board, not a directory: nothing ranks or
-  // filters, and no row reveals a stranger's card. Paged: one page holds at
-  // most 50, so its who-is-going lookup stays one bounded request however
-  // many gatherings the domain has.
+  // start-time order. A bulletin board, not a directory: nothing ranks, the
+  // only filter is an optional window of start times (`from`/`to`, which the
+  // client works out in its own time zone), and no row reveals a stranger's
+  // card. Paged: one page holds at most 50, so its who-is-going lookup stays
+  // one bounded request however many gatherings the domain has.
   .input(ListGatheringsInputSchema)
   .output(GatheringsPageSchema);
 

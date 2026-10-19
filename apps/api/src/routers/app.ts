@@ -324,7 +324,7 @@ const gatheringsList = appProcedure.gatherings.list.handler(async ({ input, cont
   }
   const limit = input?.limit ?? GATHERINGS_PAGE_SIZE;
   const page = await run(context, () =>
-    listUpcomingGatherings(context.db, userId, { cursor, limit }),
+    listUpcomingGatherings(context.db, userId, { cursor, limit, from: input?.from, to: input?.to }),
   );
   return {
     gatherings: page.gatherings,
