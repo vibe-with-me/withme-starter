@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { audienceMark, goingLine, parseSpots } from './going';
+import type { GatheringMember } from '@withme/contract';
+import { audienceMark, goingLine, parseSpots, withLine } from './going';
 
 describe('goingLine', () => {
   it('counts everyone, and reads against the capacity when there is one', () => {
@@ -28,5 +29,32 @@ describe('audienceMark', () => {
   it('marks a connections-only gathering and nothing else', () => {
     expect(audienceMark('connections')).toBe('Connections only');
     expect(audienceMark('everyone')).toBeNull();
+  });
+});
+
+const member = (id: string, display_name: string) =>
+  ({ profile: { id, display_name } }) as unknown as GatheringMember;
+
+describe('withLine', () => {
+  const me = member('me', 'Me');
+  const ada = member('a', 'Ada');
+  const lin = member('l', 'Lin');
+  const sam = member('s', 'Sam');
+  const kit = member('k', 'Kit');
+
+  it('names nobody when the viewer is alone or the list is empty', () => {
+    expect(withLine([], 'me')).toBeNull();
+    expect(withLine([me], 'me')).toBeNull();
+  });
+
+  it('names one, two, or two and a count, leaving the viewer out', () => {
+    expect(withLine([me, ada], 'me')).toBe('With Ada');
+    expect(withLine([ada, me, lin], 'me')).toBe('With Ada and Lin');
+    expect(withLine([ada, lin, me, sam], 'me')).toBe('With Ada, Lin, and 1 more');
+    expect(withLine([ada, lin, sam, kit], 'me')).toBe('With Ada, Lin, and 2 more');
+  });
+
+  it('a signed-out viewer (null) leaves nobody out', () => {
+    expect(withLine([me, ada], null)).toBe('With Me and Ada');
   });
 });

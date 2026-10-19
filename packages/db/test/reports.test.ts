@@ -394,6 +394,30 @@ describe('reports and account deletion', () => {
       .in('id', [aboutBob!.id, aboutCarol!.id]);
     expect(left).toEqual([{ id: aboutCarol!.id }]);
   });
+  it('an account deletion also runs the purge, and a report about a living person is never purged', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    const carol = await createTestUser('Carol');
+    expect((await report(alice, bob.id)).error).toBeNull();
+    expect((await report(alice, carol.id)).error).toBeNull();
+    const [aboutBob] = await reportsAbout(bob.id);
+    const [aboutCarol] = await reportsAbout(carol.id);
+    expect((await bob.client.rpc('delete_my_account')).error).toBeNull();
+
+    const longAgo = new Date(Date.now() - 91 * 24 * 3600 * 1000).toISOString();
+    await admin.from('reports').update({ reported_deleted_at: longAgo }).eq('id', aboutBob!.id);
+    // Carol still has her account: an old report about her has no clock at all.
+    await admin.from('reports').update({ created_at: longAgo }).eq('id', aboutCarol!.id);
+
+    const dave = await createTestUser('Dave');
+    expect((await dave.client.rpc('delete_my_account')).error).toBeNull();
+
+    const { data: left } = await admin
+      .from('reports')
+      .select('id')
+      .in('id', [aboutBob!.id, aboutCarol!.id]);
+    expect(left).toEqual([{ id: aboutCarol!.id }]);
+  });
 });
 
 describe('the report webhook', () => {

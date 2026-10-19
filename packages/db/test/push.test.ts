@@ -422,6 +422,87 @@ describe("Expo's answers", () => {
   });
 });
 
+// The sweep itself, fed by hand: a batch row and a stored pg_net answer,
+// then private.push_sweep() directly, so each branch is pinned without
+// waiting on Expo. Ids far above pg_net's sequence keep clear of real rows.
+async function batchExists(id: number): Promise<boolean> {
+  const [row] = await sql`select exists (select 1 from private.push_batches where request_id = ${id}) as hit`;
+  return row.hit;
+}
+
+const ticket = (error?: string) =>
+  error ? { status: 'error', message: error, details: { error } } : { status: 'ok', id: 'x' };
+
+describe('the sweep', () => {
+  let nextId = 9_000_000_000_000 + Math.floor(Math.random() * 1_000_000_000);
+
+  async function batch(
+    tokens: string[],
+    answer: { status: number; body: unknown } | null,
+    age = '0 seconds',
+  ): Promise<number> {
+    const id = nextId++;
+    await sql`
+      insert into private.push_batches (request_id, tokens, created_at)
+      values (${id}, ${sql.array(tokens, 'text')}, now() - ${age}::interval)`;
+    if (answer) {
+      await sql`
+        insert into net._http_response (id, status_code, content, created)
+        values (${id}, ${answer.status}, ${JSON.stringify(answer.body)}, now())`;
+    }
+    return id;
+  }
+
+  it('only a DeviceNotRegistered ticket in a 200 answer drops a token, matched by position', async () => {
+    const bob = await createTestUser('Bob');
+    const [first, second, third] = [await register(bob), await register(bob), await register(bob)];
+    const id = await batch([first, second, third], {
+      status: 200,
+      body: { data: [ticket('MessageRateExceeded'), ticket('DeviceNotRegistered'), ticket()] },
+    });
+
+    await sql`select private.push_sweep()`;
+    expect((await myTokens(bob)).toSorted()).toEqual([first, third].toSorted());
+    expect(await batchExists(id)).toBe(false);
+  });
+
+  it('a non-200 answer drops nothing, and the batch is still consumed', async () => {
+    const bob = await createTestUser('Bob');
+    const phone = await register(bob);
+    const id = await batch([phone], {
+      status: 500,
+      body: { data: [ticket('DeviceNotRegistered')] },
+    });
+
+    await sql`select private.push_sweep()`;
+    expect(await myTokens(bob)).toEqual([phone]);
+    expect(await batchExists(id)).toBe(false);
+  });
+
+  it('a 200 answer with no tickets drops nothing', async () => {
+    const bob = await createTestUser('Bob');
+    const phone = await register(bob);
+    const id = await batch([phone], { status: 200, body: { errors: [{ code: 'PUSH_TOO_MANY' }] } });
+
+    await sql`select private.push_sweep()`;
+    expect(await myTokens(bob)).toEqual([phone]);
+    expect(await batchExists(id)).toBe(false);
+  });
+
+  it('an unanswered batch waits for its answer, and is dropped after a day', async () => {
+    const bob = await createTestUser('Bob');
+    const phone = await register(bob);
+    const waiting = await batch([phone], null);
+    const abandoned = await batch([phone], null, '25 hours');
+
+    await sql`select private.push_sweep()`;
+    expect(await batchExists(waiting)).toBe(true);
+    expect(await batchExists(abandoned)).toBe(false);
+    expect(await myTokens(bob)).toEqual([phone]);
+    await sql`delete from private.push_batches where request_id = ${waiting}`;
+  });
+});
+
 describe("Expo's push security", () => {
   it('sends the access token as the bearer when one is set, and no Authorization when not', async () => {
     const alice = await createTestUser('Alice');

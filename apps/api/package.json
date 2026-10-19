@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "e2e": "bun run e2e/handshake.e2e.ts",
+    "test": "bun test test",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit && tsc -p e2e --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p e2e --noEmit && tsc -p test --noEmit",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {

@@ -100,6 +100,7 @@
     "@orpc/contract": "^1.15.5",
     "@supabase/supabase-js": "^2.117.3",
     "@types/node": "^22.20.5",
+    "@vitest/coverage-v8": "5.0.4",
     "@withme/contract": "workspace:*",
     "hono": "^4.13.13",
     "publint": "0.3.25",
