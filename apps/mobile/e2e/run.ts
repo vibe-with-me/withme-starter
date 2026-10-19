@@ -57,7 +57,9 @@ async function connect(a: { id: string }, b: { id: string }): Promise<void> {
 
 /** A fresh tag UID: 14 uppercase hex characters, as an NTAG213 reports. */
 function freshUid(): string {
-  return Array.from({ length: 14 }, () => '0123456789ABCDEF'[Math.floor(Math.random() * 16)]).join('');
+  return Array.from(crypto.getRandomValues(new Uint8Array(7)), (byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
 }
 
 /** A tag: unclaimed, or claimed by `owner` and pointing at their profile or a gathering. */
