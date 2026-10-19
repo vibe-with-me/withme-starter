@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { PushOffer } from '../../components/Push';
 import { GatheringMeta } from '../../components/GatheringMeta';
+import { LockedLinks } from '../../components/Links';
 import { Avatar, Button, Card, Muted, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { gatheringLine } from '../../lib/format-time';
@@ -135,6 +136,11 @@ export default function ResolveScreen() {
         <Avatar name={result.profile.display_name} path={result.profile.avatar_path} />
         <Title>{result.profile.display_name}</Title>
         {result.profile.bio ? <Muted>{result.profile.bio}</Muted> : null}
+        <LockedLinks
+          platforms={result.link_platforms}
+          name={result.profile.display_name}
+          ownerId={result.profile.id}
+        />
         <ConnectAction profileId={result.profile.id} uid={result.uid} />
         <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
         <Button label="Close" kind="quiet" onPress={close} />

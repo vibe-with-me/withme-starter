@@ -68,10 +68,15 @@ console.log('Seeding demo data…');
 const ada = await createDemoUser(DEMO_USERS.ada, 'Ada', 'Brings the good playlists.');
 const lin = await createDemoUser(DEMO_USERS.lin, 'Lin', 'Will trade book recs.');
 
-// Ada's links: what Lin will see once Ada accepts (Profile → Links).
+// Ada's links: what Lin will see once Ada accepts (Profile → Links). Her
+// tag's card lists the platforms, locked.
 const { error: linksError } = await ada.client.rpc('set_my_links', {
   p_links: [
     { platform: 'instagram', value: 'ada.plays' },
+    { platform: 'tiktok', value: 'ada.plays' },
+    { platform: 'x', value: 'ada_plays' },
+    { platform: 'youtube', value: 'adaplays' },
+    { platform: 'email', value: 'ada@demo.withme.local' },
     { platform: 'website', value: 'https://ada.example' },
   ],
 });
@@ -144,9 +149,9 @@ if (linGatheringError) throw linGatheringError;
 
 console.log(`
 Seeded.
-  Users     ${DEMO_USERS.ada} / ${DEMO_PASSWORD}   (has 1 pending request from Lin; hosts a gathering Lin joined; two links)
+  Users     ${DEMO_USERS.ada} / ${DEMO_PASSWORD}   (has 1 pending request from Lin; hosts a gathering Lin joined; six links)
             ${DEMO_USERS.lin} / ${DEMO_PASSWORD}   (hosts a second gathering, listed to the domain)
-  Tags      /t/${TAGS.claimed}  -> Ada's card, with Connect
+  Tags      /t/${TAGS.claimed}  -> Ada's card, her links locked behind Connect
             /t/${TAGS.unclaimed}  -> claim flow
             /t/${TAGS.disabled}  -> inactive
 `);

@@ -31,6 +31,25 @@ export interface PublicProfileCard {
   bio: string | null;
 }
 
+/** A platform a card owner can be reached on. The card names it; only connections see the value. */
+export type LinkPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'x'
+  | 'threads'
+  | 'snapchat'
+  | 'facebook'
+  | 'youtube'
+  | 'linkedin'
+  | 'bluesky'
+  | 'telegram'
+  | 'discord'
+  | 'whatsapp'
+  | 'signal'
+  | 'phone'
+  | 'email'
+  | 'website';
+
 export type TagStatus = 'unclaimed' | 'claimed' | 'disabled';
 
 export type ApiResolveResult =
@@ -42,6 +61,8 @@ export type ApiResolveResult =
       /** The summary for a gathering destination; null for every other type. */
       gathering: GatheringSummary | null;
       profile: PublicProfileCard;
+      /** The owner's link platforms, in their order, without values: the card shows them locked. */
+      link_platforms: LinkPlatform[];
     }
   | { status: 'disabled'; uid: string };
 
