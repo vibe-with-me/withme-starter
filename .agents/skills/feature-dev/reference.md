@@ -96,7 +96,7 @@ for another package (`apps/api`: `bun test test`; `apps/mobile`:
 ```sh
 cd packages/contract
 bun test --coverage --coverage-reporter=lcov
-for f in $(git diff --name-only --diff-filter=AM --relative origin/<base>...HEAD -- src | grep -E '\.tsx?$' | grep -v '\.test\.'); do
+for f in $(git diff --name-only --diff-filter=AMR --relative origin/<base>...HEAD -- src | grep -E '\.tsx?$' | grep -v '\.test\.'); do
   hit=$(awk -v f="SF:$f" '$0==f{on=1;next} on&&/^LH:/{print substr($0,4);exit} /^end_of_record/{on=0}' coverage/lcov.info)
   echo "${hit:-MISSING} lines hit  $f"
 done
@@ -166,16 +166,18 @@ bun run --filter @withme/mobile dev     # press i
 Walk the changed screen, then:
 
 ```sh
+mkdir -p .verify-screenshots
 xcrun simctl io booted screenshot .verify-screenshots/mobile-<slug>.png
 ```
 
-On Android: `adb exec-out screencap -p > .verify-screenshots/mobile-<slug>.png`.
+On Android: `mkdir -p .verify-screenshots && adb exec-out screencap -p > .verify-screenshots/mobile-<slug>.png`.
 Expo Go cannot read NFC; the scan screen's manual entry stands in for a
 tap.
 
-**When it cannot finish.** One retry, then write the blocker into the
-PR's Verification section ("tried to verify on iOS; the simulator would
-not boot") and go on. A flow blocked part-way (a system photo picker
+**When it cannot finish.** One retry, then stop and tell the owner what
+blocked it. Go on only with their waiver, written into the PR's
+Verification section ("tried to verify on iOS; the simulator would not
+boot; owner waived"). A flow blocked part-way (a system photo picker
 the driver cannot reach) is verified up to that point, screenshotted
 there, and the rest marked as a manual step for the owner.
 

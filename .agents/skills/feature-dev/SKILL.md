@@ -134,8 +134,9 @@ touched layer is tested:
 1. **Every touched layer has tests in this branch.** Read
    `git diff --stat origin/<base>...HEAD` against the layer table in
    [reference.md](reference.md#where-each-layers-tests-live). A layer
-   with source changes and no test changes fails the gate, unless the
-   PR says why no test can pin it (a pure style change, say).
+   with source changes and no test changes fails the gate. Where no
+   test can pin a change (a pure style change, say), ask the owner to
+   waive this item and record the waiver in the PR.
 2. **Coverage on each touched TypeScript package.** Run
    `bun test --coverage` in it (scoped as its `test` script is) and
    find every new or changed source file in the table. A new file at
@@ -169,11 +170,12 @@ RLS suite leaves test users behind.
 
 A change with no visible surface (a policy, a job, an API-only field)
 skips the drive with one line in the PR: "no UI to verify". When the
-tooling itself is broken, try once more, then write down what blocked
-it and carry on.
+tooling itself is broken, try once more, then stop and tell the owner
+what blocked it. Go on only if they waive the drive, and record the
+waiver in the PR.
 
 **Checkpoint:** one screenshot per changed platform in the screenshots
-folder, or the one-line reason there is none.
+folder, the "no UI to verify" line, or the owner's waiver.
 
 ## 7. Review
 
@@ -182,9 +184,11 @@ Read the whole diff as a reviewer would, with the checklist in
 behavior, the invariants, no secrets, no leftover debugging, docs and
 skills updated where a seam moved
 ([CONTRIBUTING.md](../../../CONTRIBUTING.md)). Fix what it finds and
-rerun the step 5 gate. Then the reviewer in settings.md, if any
-(`superpowers:requesting-code-review` if installed). Address every
-finding, nitpicks included: fix it, or answer it with the reason.
+rerun the step 5 gate (`superpowers:requesting-code-review` if
+installed). If settings.md names a reviewer that runs before the PR (a
+CLI), run it now. A reviewer that runs on the PR is handled in step 8.
+Either way, address every finding, nitpicks included: fix it, or answer
+it with the reason.
 
 **Checkpoint:** the self-review checklist passes, and the gate from
 step 5.4 is green after the last fix.
@@ -200,12 +204,13 @@ screenshot paths). Link the plans and, if settings.md names a tracker,
 the ticket. [reference.md → Pull request](reference.md#pull-request)
 has a body to start from and how the screenshots get onto the PR.
 
-Then follow the merge line in settings.md. CI and the PR reviewer run
-after the PR opens: fix what they find on this branch and rerun the
-gate before each push.
+CI and the PR reviewer from settings.md run after the PR opens. Fix
+what they find on this branch, rerun the gate before each push, and
+answer every reviewer finding in its thread (fixed, or why not). Then
+follow the merge line in settings.md.
 
-**Checkpoint:** the PR is open, CI is green, and the Tests and
-Verification sections are filled in.
+**Checkpoint:** the PR is open, CI is green, every reviewer finding is
+fixed or answered, and the Tests and Verification sections are filled in.
 
 ## Red flags: stop and go back
 
@@ -219,5 +224,5 @@ Verification sections are filled in.
 | A new file at 0%, or not in the coverage table | 5 |
 | A new policy or function no test names | 5 |
 | "The tests pass, so it works" for a UI change | 6 |
-| Skipping a reviewer finding because it is a nitpick | 7 |
+| Skipping a reviewer finding because it is a nitpick | 7, or 8 for a reviewer on the PR |
 | Loosening a test, policy or CHECK to get a checkpoint green | Stop: tell the owner |
