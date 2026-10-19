@@ -5,6 +5,10 @@ Every feature this starter grows — by hand or via a skill in `.agents/skills/`
 is the worked example: each layer cites the real file that plays that role
 today. This is a map, not a tutorial; read the cited files when you build.
 
+**To drive a feature through this map,** run the
+[`feature-dev`](../.agents/skills/feature-dev/SKILL.md) skill. It covers
+design, the plan, each layer's tests, the test gate, verification, and the PR.
+
 The V1 invariant still binds extensions: nothing that ranks, recommends,
 aggregates, or monetizes. Dormant seams (tenant, theming) stay dormant —
 extend through them, never around them.

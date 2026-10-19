@@ -127,7 +127,7 @@ Background the app first, then tap the banner.
 | `bun run test` | Contract schema tests, the RLS suite (`packages/db/test`), SDK tests | The local stack |
 | `bun run lint` | `oxlint --deny-warnings` | — |
 | `bun run typecheck` | Every workspace, including the e2e folders | — |
-| `bun run --cwd apps/api e2e` | The SDK through the API Worker into Supabase | The stack, and `cd apps/api && bun run dev` in another shell |
+| `bun run --cwd apps/api e2e` | The SDK through the API Worker into Supabase | The stack, the SDK built once (`bunx turbo run build --filter=@vibewithme/nfc`; the e2e imports its `dist/`), and `cd apps/api && bun run dev` in another shell |
 | `bun run --cwd apps/web test:e2e` | Playwright smoke against the production build: resolve → claim → connect, the shell, gatherings, connections, profile | The stack and the service-role key (below). Playwright starts the API Worker and the built web Worker itself. |
 
 ### The service-role key

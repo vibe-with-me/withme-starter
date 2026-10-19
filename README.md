@@ -133,6 +133,11 @@ it to an agent in one go.
 
 None of these moves a privacy boundary, and the tests stay green after each.
 
+For a feature no skill covers, run [`feature-dev`](.agents/skills/feature-dev/SKILL.md):
+it gates design, plan, tests per layer and a look at the running app
+before the PR. Your fork's choices (branch prefix, tracker, who merges) go
+in its [`settings.md`](.agents/skills/feature-dev/settings.md).
+
 ## The promises your users get
 
 Enforced in the database and proven by tests, so they hold in every fork

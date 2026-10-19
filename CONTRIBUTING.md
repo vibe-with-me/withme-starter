@@ -36,6 +36,10 @@ plays each role today. Read it before you open a PR; the review will ask
 where each layer of your slice is, and a slice nobody can walk end to end
 is not done.
 
+To have an agent drive a feature through the slice, run the
+[`feature-dev`](.agents/skills/feature-dev/SKILL.md) skill. It blocks the PR
+until every touched layer has its tests.
+
 Docs-only changes are the exception: they need no slice. Check that every
 link and file name you cite still exists.
 
@@ -146,7 +150,15 @@ skills.
 
 How a skill change is validated. Reading it is not enough: an agent runs
 the changed skill literally, word by word, on a fresh clone of the
-starter (or a throwaway fork), the way Golf With Me's rebuild did. Where
+starter (or a throwaway fork) with the skill's branch checked out, the
+way Golf With Me's rebuild did. Where the skill names a base branch
+(feature-dev's `settings.md`), set it to the skill's branch in that
+clone, so the run branches from the skill rather than from `main`, and
+hide the edit from git (`git update-index --skip-worktree
+.agents/skills/feature-dev/settings.md`) so the run's clean-status
+checkpoints hold. Merge the latest `main` into the skill's branch
+before each run: a branch behind `main` validates the skill against
+code a fork no longer gets. Where
 the skill is missing a step, has steps out of order, or says something
 the code contradicts, the agent writes it down in an `UPSTREAM-SNAGS.md`
 kept outside the PR: what the skill said, what happened, and what it did
