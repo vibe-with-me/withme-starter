@@ -1,0 +1,57 @@
+# Signed out, a tap still shows the card; the action on it goes through
+# sign-in and comes back to it: Connect on a person's tag, and Join on a
+# gathering's.
+appId: ${APP_ID}
+name: Signed out, a tapped tag's Connect and Join go through sign-in and come back
+---
+- runFlow: steps/open-signed-out.yaml
+
+# --- A person's tag: Connect -> sign in -> back on the card -----------------
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${SO_OWNER_UID}
+- extendedWaitUntil:
+    visible: ${SO_OWNER_NAME}
+    timeout: 30000
+- tapOn: Connect
+- extendedWaitUntil:
+    visible: to connect over the tag you just tapped
+    timeout: 15000
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${SO_EMAIL}
+      THEN: ${SO_OWNER_NAME}
+- tapOn: Connect
+- extendedWaitUntil:
+    visible: Request sent. They'll see it when they check in.
+    timeout: 15000
+
+# --- A gathering's tag: Join -> sign in -> the gathering -------------------
+- runFlow: steps/open-signed-out.yaml
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${SO_GATHERING_UID}
+- extendedWaitUntil:
+    visible: Join this gathering
+    timeout: 30000
+- assertVisible: '${SO_GATHERING_TITLE} · .*'
+- tapOn: Join this gathering
+- extendedWaitUntil:
+    visible: to join the gathering you were invited to
+    timeout: 15000
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${SO_EMAIL}
+      THEN: ${SO_GATHERING_TITLE}
+- assertVisible: 1 going
+- tapOn: Join
+- extendedWaitUntil:
+    visible: 2 going
+    timeout: 15000
+- assertVisible: Leave gathering
+- tapOn: Back
+- runFlow: steps/sign-out.yaml

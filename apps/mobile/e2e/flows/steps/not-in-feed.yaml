@@ -1,0 +1,33 @@
+# On Discover: the row titled ${TITLE} is nowhere in the feed. Absence needs
+# the whole feed, so every page is loaded and scrolled through, not just
+# the first screen.
+appId: ${APP_ID}
+---
+- scrollUntilVisible:
+    element: '${TITLE}, .*|Load more'
+    direction: DOWN
+    timeout: 20000
+    optional: true
+- assertNotVisible: '${TITLE}, .*'
+- repeat:
+    times: 20
+    while:
+      visible: Load more
+    commands:
+      # A short push up, so Load more clears the tab bar's raised share
+      # button (a tap at the bottom of the screen lands on it).
+      - swipe:
+          start: 50%, 60%
+          end: 50%, 45%
+          duration: 400
+      - tapOn: Load more
+      - scrollUntilVisible:
+          element: '${TITLE}, .*|Load more'
+          direction: DOWN
+          timeout: 20000
+          optional: true
+      - assertNotVisible: '${TITLE}, .*'
+# Still on Discover at the end of the feed: a walk that wandered off the
+# tabs would otherwise pass without seeing the feed at all.
+- assertNotVisible: Load more
+- assertVisible: Events

@@ -1,0 +1,28 @@
+# On the sign-in screen: sign in as ${EMAIL} and wait for ${THEN}, the
+# screen sign-in should lead to (the tabs, or where a deep link was going).
+# iOS may offer to save the password, and while its sheet is up the app's
+# own elements are hidden: wait for either, and decline the sheet.
+appId: ${APP_ID}
+---
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Email
+    below: Email
+- inputText: ${EMAIL}
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Password
+    below: Password
+- inputText: ${PASSWORD}
+- tapOn:
+    text: Sign in
+    below: Password
+- extendedWaitUntil:
+    visible: '${THEN}|Not Now'
+    timeout: 20000
+- tapOn:
+    text: Not Now
+    optional: true
+- extendedWaitUntil:
+    visible: ${THEN}
+    timeout: 15000

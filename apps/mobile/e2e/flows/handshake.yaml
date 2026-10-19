@@ -1,0 +1,84 @@
+# The handshake: a fresh tag is tapped signed out, sign-in leads straight to
+# claiming it, a second person taps the claimed tag and asks to connect,
+# the owner accepts from Requests, and both see the connection.
+appId: ${APP_ID}
+name: Two people tap a tag, one claims it, the other connects, and both see the connection
+---
+- runFlow: steps/open-signed-out.yaml
+
+# --- Kim taps an unclaimed tag signed out: sign in, then claim it ----------
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${HS_UID}
+- extendedWaitUntil:
+    visible: to connect over the tag you just tapped
+    timeout: 30000
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${HS_OWNER_EMAIL}
+      THEN: Claim this tag
+- tapOn: Claim tag
+- extendedWaitUntil:
+    visible: This is your tag.
+    timeout: 15000
+- assertVisible: ${HS_OWNER_NAME}
+- tapOn: Edit profile
+- runFlow: steps/sign-out.yaml
+
+# --- Lee taps the claimed tag and asks to connect ---------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${HS_TAPPER_EMAIL}
+      THEN: New gathering
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${HS_UID}
+- extendedWaitUntil:
+    visible: ${HS_OWNER_NAME}
+    timeout: 15000
+- tapOn: Connect
+- extendedWaitUntil:
+    visible: Request sent. They'll see it when they check in.
+    timeout: 15000
+- tapOn: Close
+- runFlow: steps/sign-out.yaml
+
+# --- Kim accepts from Requests ----------------------------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${HS_OWNER_EMAIL}
+      THEN: New gathering
+- tapOn: Connections
+- tapOn: Requests, 1 pending
+- extendedWaitUntil:
+    visible: ${HS_TAPPER_NAME}
+    timeout: 15000
+- tapOn: Accept
+- extendedWaitUntil:
+    visible: No requests right now.
+    timeout: 15000
+# The segment, not the tab bar's Connections.
+- tapOn:
+    text: Connections
+    leftOf: Requests
+- extendedWaitUntil:
+    visible: ${HS_TAPPER_NAME}
+    timeout: 15000
+- runFlow: steps/sign-out.yaml
+
+# --- and Lee sees Kim among his connections ---------------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${HS_TAPPER_EMAIL}
+      THEN: New gathering
+- tapOn: Connections
+- extendedWaitUntil:
+    visible: ${HS_OWNER_NAME}
+    timeout: 15000
+- runFlow: steps/sign-out.yaml

@@ -4,20 +4,10 @@ appId: ${APP_ID}
 name: Sign in, edit the profile, see a connection
 ---
 - runFlow: steps/open-signed-out.yaml
-# The input, not its label: both carry the name.
-- tapOn:
-    text: Email
-    below: Email
-- inputText: ${EMAIL}
-# The input, not its label: both carry the name.
-- tapOn:
-    text: Password
-    below: Password
-- inputText: ${PASSWORD}
-- tapOn:
-    text: Sign in
-    below: Password
-- runFlow: steps/past-password-sheet.yaml
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      THEN: Connections
 
 - tapOn: Profile
 - extendedWaitUntil:

@@ -1,0 +1,33 @@
+# Terms are agreed to, and recorded: someone who agreed to an older version
+# is held on the re-ask screen until they agree, and can still sign out
+# from it without agreeing.
+appId: ${APP_ID}
+name: Updated terms are asked again before the app opens, and signing out stays possible
+---
+- runFlow: steps/open-signed-out.yaml
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${TM_EMAIL}
+      THEN: Updated terms
+- assertNotVisible: New gathering
+# Leaving without agreeing: Account stays on the screen.
+- scrollUntilVisible:
+    element: Sign out
+    direction: DOWN
+- tapOn: Sign out
+- extendedWaitUntil:
+    visible: 'New here\? Create an account'
+    timeout: 15000
+
+# Back again: still asked, and agreeing opens the app.
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${TM_EMAIL}
+      THEN: Updated terms
+- tapOn: I agree
+- extendedWaitUntil:
+    visible: New gathering
+    timeout: 15000
+- runFlow: steps/sign-out.yaml

@@ -12,7 +12,7 @@ service-role key) is in [Local development](local-development.md#tests).
 | Database (RLS) | `packages/db/test` | Every safety promise, against real per-user clients. [The safety model](safety-model.md) names the file for each. | Yes, `ci` |
 | API e2e | `apps/api/e2e` | The published SDK through the API Worker into Supabase | Yes, `ci` |
 | Web e2e | `apps/web/e2e` | The user flows in a real browser, against the production build in workerd | Yes, `e2e` |
-| Mobile e2e | `apps/mobile/e2e` | Sign in, profile, connections in the Expo app | No: local and opt-in ([below](#mobile-e2e-local-and-opt-in)) |
+| Mobile e2e | `apps/mobile/e2e` | The core flows in the Expo app: handshake, gatherings, blocks, reports, terms, signed-out taps | No: local and opt-in ([below](#mobile-e2e-local-and-opt-in)) |
 
 The database suite is the spec: a promise holds because the database
 refuses the alternative. The browser suite proves the screens still walk a
@@ -183,13 +183,12 @@ because a flake in a safety flow is a bug to find, not noise to hide.
 ## Mobile e2e: local and opt-in
 
 `apps/mobile/e2e` holds [Maestro](https://maestro.dev) flows for the
-Expo app: sign up and create a profile, and sign in, edit the profile,
-see a connection, sign out. **No CI job runs them.** On GitHub-hosted
-runners, iOS needs a macOS runner, and those have no Docker for the
-Supabase stack. Android needs an emulator plus Expo Go or a native build,
-and nobody has shown that to be reliable here yet. A check that doesn't
-reliably test the app is worse than no check, so for now they are a
-step you run before merging a mobile change.
+Expo app, one per core flow, mirroring the web specs. **No CI job runs
+them.** On GitHub-hosted runners, iOS needs a macOS runner, and those have
+no Docker for the Supabase stack. Android needs an emulator plus Expo Go
+or a native build, and nobody has shown that to be reliable here yet. A
+check that doesn't reliably test the app is worse than no check, so for
+now they are a step you run before merging a mobile change.
 
 To run them on the iOS simulator with Expo Go:
 
@@ -200,25 +199,104 @@ To run them on the iOS simulator with Expo Go:
    is installed on the booted simulator.
 3. The [Maestro CLI](https://docs.maestro.dev/getting-started/installing-maestro)
    (needs Java 17).
-4. From the repo root:
+4. From the repo root, every flow, or one:
 
    ```sh
    bun run --cwd apps/mobile e2e
+   bun run --cwd apps/mobile e2e flows/handshake.yaml
    ```
 
-The runner (`apps/mobile/e2e/run.ts`) seeds a signed-up person with one
-connection through the service role, then runs every flow in
-`e2e/flows`. Screenshots and the view hierarchy of a failing step are in
-`apps/mobile/e2e/.maestro`. Settings, all optional:
-`MAESTRO_OPEN_URL` (default `exp://127.0.0.1:8081`, Metro's address),
-`MAESTRO_DEVICE` (a simulator UDID when more than one is booted), and,
-for a development build instead of Expo Go, `MAESTRO_APP_ID` (your bundle
-id) with `MAESTRO_OPEN_URL=<your scheme>://`.
+The whole suite takes about a quarter of an hour: most of it is signing
+people in and out, since one simulator plays every person in turn.
+Before you call a new flow done, run it three times in a row; a flow that
+passes once and fails on a repeat depends on order or timing.
+
+The runner (`apps/mobile/e2e/run.ts`) seeds, through the service role,
+the people, connections, tags and gatherings every flow needs, stamped
+for this run, then runs the flows in `e2e/flows`. Screenshots and the
+view hierarchy of every step are in `apps/mobile/e2e/.maestro`. Settings,
+all optional: `MAESTRO_OPEN_URL` (default `exp://127.0.0.1:8081`, Metro's
+address), `MAESTRO_DEVICE` (a simulator UDID when more than one is booted),
+`MAESTRO_BIN` (the Maestro CLI, if not on your PATH), and, for a
+development build instead of Expo Go, `MAESTRO_APP_ID` (your bundle id)
+with `MAESTRO_OPEN_URL=<your scheme>://`.
+
+**Another checkout or session already using the simulator?** Maestro
+drives whatever is on the screen, so give the run its own: create and
+boot a simulator, install Expo Go on it (`xcrun simctl install <udid>`
+with the `Expo Go.app` from `xcrun simctl get_app_container <other-udid>
+host.exp.Exponent app`), start Metro on another port (`bunx expo start
+--port 8098`), and pass `MAESTRO_DEVICE=<udid>` and
+`MAESTRO_OPEN_URL=exp://127.0.0.1:8098`. A second Supabase stack and API
+Worker go on other ports, as for the web suite: point `SUPABASE_URL`,
+`apps/api/.dev.vars` and `apps/mobile/.env` at them.
+
+### The mobile map
+
+| Screen | Flow |
+| --- | --- |
+| `login` | every flow; `sign-up`, `signed-out` (a tapped tag's action comes back after sign-in), `handshake` (an unclaimed tag goes on to the claim) |
+| `t/[uid]` | `handshake`, `signed-out`, `gathering-controls`, `blocks`, `reports` |
+| `claim/[uid]` | `handshake` |
+| `(tabs)/gatherings` (Discover, Yours) | `gatherings`, `gathering-controls` |
+| `gathering/new` | `gatherings`, `gathering-controls` |
+| `gathering/[id]` | `gatherings`, `gathering-controls`, `signed-out` |
+| `(tabs)/connections` (Connections, Requests, Blocked) | `handshake`, `blocks`, `reports`, `sign-in` |
+| `(tabs)/profile` | `sign-up`, `sign-in` |
+| `report/[id]` | `reports` |
+| `terms-update` | `terms` |
+| `scan`, `scan-qr` | not covered: NFC and the camera need a device |
+| `share`, `(tabs)/merch` | not covered yet: a gap |
+
+| Promise ([safety-model.md](safety-model.md)) | Flow |
+| --- | --- |
+| Blocks are absolute and invisible | `blocks` (the blocked side's tag tap reads as inactive), `reports` |
+| Connections are mutual | `handshake` |
+| Who's going is connections-only | `gatherings` (a row names only connections) |
+| Gathering visibility and capacity | `gathering-controls` (hidden from a stranger's tap and whole feed; Full) |
+| Reports are private | `reports` (the reporter is told the person isn't; the stored row is checked by the web spec and the database suite) |
+| Terms are agreed to, and recorded | `terms` |
+
+### Writing a flow
+
+A flow file is one flow, named for it (`blocks.yaml`), and its `name:`
+says what a person did and saw, as a web test title does:
+`Blocking a connection ends it for both, and the blocked side gets no
+signal`. Maestro prints that name when the flow goes red.
+
+The same rules as the web suite keep it deterministic:
+
+- **Seed setup through the service role, act through the UI.** `run.ts`
+  creates a flow's people, connections and tags and passes them in as
+  `-e` variables (`HS_UID`, `GC_HOST_EMAIL`...). Each flow has its own
+  people, so flows run alone, together, or in any order.
+- **Everything stamped.** Emails, names and titles carry the run's stamp.
+- **No sleeps.** Wait on what a person would see: `extendedWaitUntil`.
+- **Absence needs the whole list.** Maestro only sees what is on screen,
+  so "not in the feed" scrolls every page (`steps/not-in-feed.yaml`), and
+  finding a row scrolls to it (`steps/reveal-in-feed.yaml`).
+
+The steps in `flows/steps` are the ones most flows share:
+`open-signed-out` (a fresh start on the sign-in screen), `open-link` (a
+deep link: `${OPEN_URL}/--/t/<uid>` in Expo Go), `sign-in` (sign in and
+wait for where it should lead), `sign-out`.
 
 Selectors are the visible text and accessibility labels, the same names a
 screen reader uses, so a renamed button breaks a flow the way it would
-break a spec. Three iOS behaviors the flows work around, each commented
-where it happens: a field's label and its input share the name (tap
-`below:` the label), the system's Save Password sheet hides the app until
-it is declined, and in a new-password field iOS's strong-password
-suggestion takes over typed text.
+break a spec. Maestro's text is a regular expression matched against the
+whole label: escape `?`, `(` and `)`. The iOS behaviors the flows work
+around, each commented where it happens:
+
+- A field's label and its input share the name: tap `below:` the label.
+  A multiline input reads as its label plus its placeholder.
+- A pressable row is one element to a screen reader, so a gathering row
+  matches as `<title>, <when>, <going>, <names>`.
+- The system's Save Password sheet hides the app until it is declined,
+  and iOS asks "Open in Expo Go?" before a link from outside the app.
+- In a new-password field, iOS's strong-password suggestion takes over
+  typed text: fill the form in sign-in mode, then switch.
+- The keyboard covers buttons, and Maestro's `hideKeyboard` cannot close
+  it on every screen: tap a heading, or press Return in a one-line field.
+- The tab bar's raised share button sits over the bottom of the screen:
+  a row or Load more scrolled into view is pushed up clear of it before
+  it is tapped.

@@ -1,0 +1,28 @@
+# On Discover: scroll the feed, a page at a time, until the row titled
+# ${TITLE} is on screen. The feed is shared by every run, so the row may be
+# pages down. A row reads as one element: title, when, who's going.
+appId: ${APP_ID}
+---
+- repeat:
+    times: 20
+    while:
+      notVisible: '${TITLE}, .*'
+    commands:
+      - scrollUntilVisible:
+          element: '${TITLE}, .*|Load more'
+          direction: DOWN
+          timeout: 20000
+      # A short push up, so what was found clears the tab bar's raised share
+      # button (a tap at the bottom of the screen lands on it). Not
+      # scrollUntilVisible's centerElement: it cannot center the last row.
+      - swipe:
+          start: 50%, 60%
+          end: 50%, 45%
+          duration: 400
+      # Only while the row is still missing.
+      - runFlow:
+          when:
+            notVisible: '${TITLE}, .*'
+          commands:
+            - tapOn: Load more
+- assertVisible: '${TITLE}, .*'

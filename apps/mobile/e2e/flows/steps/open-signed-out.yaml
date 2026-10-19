@@ -4,7 +4,10 @@ appId: ${APP_ID}
 - launchApp:
     appId: ${APP_ID}
     stopApp: true
-- openLink: ${OPEN_URL}
+- runFlow:
+    file: open-link.yaml
+    env:
+      LINK: ${OPEN_URL}
 # Expo Go's first-run dev-menu card; absent in a dev build.
 - tapOn:
     text: Continue

@@ -1,0 +1,45 @@
+# Reports are private: a tapper reports the card and blocks in the same
+# step, is told the reported person isn't told, and finds the block under
+# Blocked.
+appId: ${APP_ID}
+name: A tapper reports the card and blocks in the same step
+---
+- runFlow: steps/open-signed-out.yaml
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${RP_REPORTER_EMAIL}
+      THEN: New gathering
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${RP_TARGET_UID}
+- extendedWaitUntil:
+    visible: Connect
+    timeout: 15000
+- assertVisible: ${RP_TARGET_NAME}
+- tapOn: Report
+- extendedWaitUntil:
+    visible: Report ${RP_TARGET_NAME}
+    timeout: 15000
+- tapOn: Spam or a scam
+- scrollUntilVisible:
+    element: Send report
+    direction: DOWN
+# Blocking in the same step is on by default.
+- assertVisible: Also block ${RP_TARGET_NAME}
+- tapOn: Send report
+- extendedWaitUntil:
+    visible: Your report is in and ${RP_TARGET_NAME} is blocked. They aren't told.
+    timeout: 15000
+- tapOn: Done
+- tapOn: Close
+# Under Blocked, unnamed: a block never reveals a card its blocker didn't
+# already know (Rae only saw Rex's tag, she isn't connected to him).
+- tapOn: Connections
+- tapOn: Blocked
+- extendedWaitUntil:
+    visible: Blocked user
+    timeout: 15000
+- assertVisible: Unblock
+- runFlow: steps/sign-out.yaml

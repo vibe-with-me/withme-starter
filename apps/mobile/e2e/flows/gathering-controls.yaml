@@ -1,0 +1,115 @@
+# The host's two controls: a connections-only gathering with two spots.
+# A stranger's tap on the host's tag shows the card and no gathering, and
+# the gathering is nowhere in their Discover; one connection takes the
+# last spot, and the next finds it full.
+appId: ${APP_ID}
+name: A connections-only gathering with two spots is hidden from a stranger and full after one connection joins
+---
+- runFlow: steps/open-signed-out.yaml
+
+# --- Cora creates it and points her tag at it --------------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${GC_HOST_EMAIL}
+      THEN: New gathering
+- tapOn: New gathering
+- extendedWaitUntil:
+    visible: Create a gathering
+    timeout: 15000
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Title
+    below: Title
+- inputText: ${GC_TITLE}
+# Return closes the keyboard, which covers the fields below.
+- pressKey: Enter
+- tapOn: 'My connections\..*'
+- scrollUntilVisible:
+    element: 'Spots \(optional\)'
+    direction: DOWN
+# The input, not its label: both carry the name.
+- tapOn:
+    text: 'Spots \(optional\).*'
+    below: 'Spots \(optional\)'
+- inputText: '2'
+- pressKey: Enter
+- scrollUntilVisible:
+    element: Create gathering
+    direction: DOWN
+- tapOn: Create gathering
+- extendedWaitUntil:
+    visible: 1 of 2 going · Connections only
+    timeout: 15000
+- tapOn: Point my tags at this gathering
+- extendedWaitUntil:
+    visible: Point my tags back to my profile
+    timeout: 15000
+- tapOn: Back
+- runFlow: steps/sign-out.yaml
+
+# --- Sid, a stranger: the tag shows Cora's card, and Discover has nothing ----
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${GC_STRANGER_EMAIL}
+      THEN: New gathering
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${GC_HOST_UID}
+- extendedWaitUntil:
+    visible: Connect
+    timeout: 15000
+- assertVisible: ${GC_HOST_NAME}
+- assertNotVisible: '.*${GC_TITLE}.*'
+- assertNotVisible: Join this gathering
+- tapOn: Close
+- runFlow:
+    file: steps/not-in-feed.yaml
+    env:
+      TITLE: ${GC_TITLE}
+- runFlow: steps/sign-out.yaml
+
+# --- Finn, a connection, finds it in Discover and takes the last spot -------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${GC_FRIEND_EMAIL}
+      THEN: New gathering
+- runFlow:
+    file: steps/reveal-in-feed.yaml
+    env:
+      TITLE: ${GC_TITLE}
+- assertVisible: '${GC_TITLE}, .*, 1 of 2 going · Connections only, With ${GC_HOST_NAME}'
+- tapOn: '${GC_TITLE}, .*'
+- tapOn: Join
+- extendedWaitUntil:
+    visible: 2 of 2 going · Connections only
+    timeout: 15000
+- assertVisible: Leave gathering
+- tapOn: Back
+- runFlow: steps/sign-out.yaml
+
+# --- Fay, another connection, taps the tag: the gathering, and Full ---------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${GC_LATE_EMAIL}
+      THEN: New gathering
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${GC_HOST_UID}
+- extendedWaitUntil:
+    visible: Join this gathering
+    timeout: 15000
+- tapOn: Join this gathering
+- extendedWaitUntil:
+    visible: 2 of 2 going · Connections only
+    timeout: 15000
+- assertVisible: Full
+- assertNotVisible: Join
+- tapOn: Back
+- tapOn: Close
+- runFlow: steps/sign-out.yaml

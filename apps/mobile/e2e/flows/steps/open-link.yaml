@@ -1,0 +1,9 @@
+# Opens a link in the app under test. iOS asks "Open in “Expo Go”?" when a
+# link comes from outside an app (as Maestro's does); accept it if it asks.
+# LINK: the full URL (${OPEN_URL}/--/t/<uid> in Expo Go).
+appId: ${APP_ID}
+---
+- openLink: ${LINK}
+- tapOn:
+    text: Open
+    optional: true

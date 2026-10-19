@@ -1,0 +1,59 @@
+# Blocks are absolute and invisible: blocking a connection ends it for
+# both, and the blocked side sees no sign of a block, only a tag that
+# reads as inactive, like any other.
+appId: ${APP_ID}
+name: Blocking a connection ends it for both, and the blocked side gets no signal
+---
+- runFlow: steps/open-signed-out.yaml
+
+# --- Bea blocks Ben from Connections ----------------------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${BL_BLOCKER_EMAIL}
+      THEN: New gathering
+- tapOn: Connections
+- extendedWaitUntil:
+    visible: ${BL_BLOCKED_NAME}
+    timeout: 15000
+- tapOn: Block
+- extendedWaitUntil:
+    visible: No connections yet. Tap someone's tag to start.
+    timeout: 15000
+- tapOn: Blocked
+- extendedWaitUntil:
+    visible: ${BL_BLOCKED_NAME}
+    timeout: 15000
+- assertVisible: Unblock
+- runFlow: steps/sign-out.yaml
+
+# --- Ben: the connection is gone, and nothing says why ----------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${BL_BLOCKED_EMAIL}
+      THEN: New gathering
+- tapOn: Connections
+- extendedWaitUntil:
+    visible: No connections yet. Tap someone's tag to start.
+    timeout: 15000
+- tapOn: Requests
+- extendedWaitUntil:
+    visible: No requests right now.
+    timeout: 15000
+- tapOn: Blocked
+- extendedWaitUntil:
+    visible: No one is blocked.
+    timeout: 15000
+# Bea's tag answers Ben as an inactive tag: the same card any disabled tag shows.
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${BL_BLOCKER_UID}
+- extendedWaitUntil:
+    visible: This tag is inactive
+    timeout: 15000
+- assertVisible: There's nothing connected to it right now.
+- assertNotVisible: ${BL_BLOCKER_NAME}
+- tapOn: Close
+- runFlow: steps/sign-out.yaml
