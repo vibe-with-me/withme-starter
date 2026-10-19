@@ -31,6 +31,39 @@ oRPC, Cloudflare Workers, Supabase, Bun. [Why those](docs/stack.md) is
 written down, and the choices are not up for substitution in this repo.
 Fork freely.
 
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/1-card-dark.png">
+        <img src="docs/images/readme/1-card-light.png" alt="Ada's card with her links locked, which is what a stranger sees after a tap" width="200">
+      </picture>
+      <br><sub>A tap opens their card</sub>
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/2-request-dark.png">
+        <img src="docs/images/readme/2-request-light.png" alt="Ada's Requests tab showing Lin's request with an Accept button" width="200">
+      </picture>
+      <br><sub>They accept your request</sub>
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/3-connected-dark.png">
+        <img src="docs/images/readme/3-connected-light.png" alt="Lin's Connections list showing Ada's Instagram, TikTok, X, YouTube, email and website" width="200">
+      </picture>
+      <br><sub>Connected: their links unlock</sub>
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/4-gathering-dark.png">
+        <img src="docs/images/readme/4-gathering-light.png" alt="A gathering's page with its time, place, headcount and who's going" width="200">
+      </picture>
+      <br><sub>Gatherings show only your people</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## What you get on day one
