@@ -90,7 +90,11 @@ Turn the design into tasks in slice order: contract → migration + RLS →
 RLS tests → API → web → mobile → e2e. Every task that adds or changes
 code names the test that pins it and the file the test goes in
 ([reference.md → Where each layer's tests live](reference.md#where-each-layers-tests-live)).
-A task with no test is a planning bug: fix the plan.
+A task with no test is a planning bug: fix the plan. RLS tests and e2e
+are the tests of the layer before them, not tasks of their own: the RLS
+tests go in the migration task, and a web flow's Playwright spec goes in
+the web task, written first like any other test. The last task only runs
+the whole e2e harness.
 (`superpowers:writing-plans` if installed; otherwise
 [reference.md → Plan](reference.md#plan).)
 

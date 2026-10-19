@@ -76,6 +76,11 @@ One task per layer the design touches, in slice order. Each task has:
 
 Tasks small enough to finish and commit in one sitting. If a task
 cannot name its test, the design is not settled: go back to step 1.
+"RLS tests" and "e2e" in the slice order are tests, not layers with
+code: the migration task carries its `packages/db/test` file, and the
+web task carries its `apps/web/e2e` spec, so each is written and seen
+failing before the code (step 4). A final e2e task runs the whole
+harness.
 
 ## Where each layer's tests live
 
@@ -191,6 +196,10 @@ The snippet sees only constraints with a name. Read the migration for
 unnamed inline ones too (`check (…)`, `unique`, `references`, `not
 null` on a new column) and give each a test the same way: a write that
 breaks it and the error it raises (`23514`, `23505`, `23503`, `23502`).
+Where a policy refuses the write before the constraint can fire (an
+insert policy that checks the referenced row exists, so a missing id
+answers `42501`, like one that is not yours), that refusal is the test:
+say so in the PR, and do not use `admin` to force the constraint's code.
 
 A count above `0` is not a verdict either. A function the migration
 redefines (`create or replace`, or a drop and create with a new
