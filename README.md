@@ -56,10 +56,10 @@ Fork freely.
     </td>
     <td align="center" width="25%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/4-gathering-dark.png">
-        <img src="docs/images/readme/4-gathering-light.png" alt="A gathering's page with its time, place, headcount and who's going" width="200">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/4-events-dark.png">
+        <img src="docs/images/readme/4-events-light.png" alt="The Events tab with Discover and Yours tabs, listing two gatherings with their times, places and headcounts" width="200">
       </picture>
-      <br><sub>Gatherings show only your people</sub>
+      <br><sub>Events: discover gatherings, or see yours</sub>
     </td>
   </tr>
 </table>
