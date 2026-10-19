@@ -64,7 +64,9 @@ seam ([docs/skills-roadmap.md](../../../docs/skills-roadmap.md),
 [docs/safety-model.md](../../../docs/safety-model.md),
 [docs/the-slice.md → The safety discipline](../../../docs/the-slice.md#the-safety-discipline)).
 A design that breaks one goes back to the owner as a question, not
-forward as a plan.
+forward as a plan. A written brief (a ticket, a handed-over task)
+answers what it covers; it does not approve the design
+([reference.md → Design](reference.md#design)).
 
 **Checkpoint:** a design doc in the plans folder, named
 `YYYY-MM-DD-<slug>-design.md`, that the owner has approved in words.
@@ -97,8 +99,9 @@ git fetch origin && git switch --no-track -c <prefix><slug> origin/<base>
 
 Use a worktree named after the slug if your agent works in worktrees
 (`git worktree add --no-track ../<slug> -b <prefix><slug> origin/<base>`). A fresh
-worktree needs its own `bun install`. Then commit the plans on their
-own, before any code:
+worktree needs its own `bun install`, and the two plan files are still
+untracked in the old checkout: move them into the worktree's plans
+folder. Then commit the plans on their own, before any code:
 
 ```sh
 git add <plans folder> && git commit -m "docs: plan <feature>"
@@ -122,6 +125,12 @@ card idiom, tokens only) are in
 demo accounts and the service-role key are in
 [docs/local-development.md](../../../docs/local-development.md).
 
+A migration is applied and its types regenerated as soon as it is
+written (`bun run db:reset && bun run db:types`, then `bun run db:seed`
+for the demo data), before its tests can pass and before the queries
+and API use it
+([reference.md → Notes](reference.md#where-each-layers-tests-live)).
+
 **Checkpoint, per layer:** that layer's test command from
 [reference.md → Where each layer's tests live](reference.md#where-each-layers-tests-live)
 passes, and the commit is made.
@@ -137,14 +146,17 @@ touched layer is tested:
    with source changes and no test changes fails the gate. Where no
    test can pin a change (a pure style change, say), ask the owner to
    waive this item and record the waiver in the PR.
-2. **Coverage on each touched TypeScript package.** Run
+2. **Coverage on each touched package with a unit suite.** Run
    `bun test --coverage` in it (scoped as its `test` script is) and
-   find every new or changed source file in the table. A new file at
+   find every new or changed source file in the table. Web routes,
+   components and mobile screens are gated by the e2e and step 6
+   instead. A new file at
    0%, or missing from the table, fails the gate: Bun lists only files
    a test loaded, so missing means untested.
    [reference.md → Coverage](reference.md#coverage) has the commands.
-3. **Every new SQL object is named in a test.** Each function, policy
-   and trigger in a new migration is exercised by a test in
+3. **Every new SQL object is named in a test.** Each function, policy,
+   trigger and constraint in a new migration, and each change to a
+   function it redefines, is exercised by a test in
    `packages/db/test`, negative space included (a stranger, a
    non-owner, a blocked user, anon), each with a positive control.
 4. **The verification gate is green.** `bun run lint && bun run

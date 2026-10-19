@@ -26,6 +26,12 @@ prefix, tracker, plans folder, verification, review, merge) are in
    fine; missing is not.
 5. Ask the owner to approve the doc as written. Their "yes" is the gate.
 
+**A written brief** (a ticket, a task handed over by another session)
+answers the questions it covers: ask only the ones it leaves open, and
+name the brief in the design doc. It does not approve the doc. That
+still takes the owner's "yes", unless the brief itself says to go
+ahead without one; then the doc and the PR say so, quoting it.
+
 A design that needs a ranked list, a people search, a "people near you"
 view, a count that reveals a hidden row, or a check done in UI instead
 of RLS breaks an invariant. Say which one and ask how the owner wants
@@ -56,7 +62,7 @@ service-role key exported in the shell
 | Layer | Source | Tests | Command |
 | --- | --- | --- | --- |
 | Contract | `packages/contract/src/` | `packages/contract/test/*.test.ts`, negative cases included (unknown variants fail to parse) | `bun run --cwd packages/contract test` |
-| Migration + RLS | `supabase/migrations/` | `packages/db/test/*.test.ts`, through per-user clients (`createTestUser`, `anonClient`); `admin` only for setup | `bun run --cwd packages/db test` |
+| Migration + RLS | `supabase/migrations/` | `packages/db/test/*.test.ts`, through per-user clients (`createTestUser`, `anonClient`); `admin` only for setup | `bun run db:reset && bun run db:types`, then `bun run --cwd packages/db test` |
 | DB queries | `packages/db/src/queries/` | the same suite, through the query helper | same |
 | API | `apps/api/src/` | `apps/api/test/*.test.ts`, on the harness in `apps/api/test/harness.ts` (stub bindings, a fake Supabase behind `fetch`, real JWT checks) | `bun run --cwd apps/api test` |
 | Web logic | `apps/web/src/lib/` | a `*.test.ts` beside the module | `cd apps/web && bun test src/lib` |
@@ -64,16 +70,24 @@ service-role key exported in the shell
 | Mobile logic | `apps/mobile/lib/` | a `*.test.ts` beside the module | `bun run --cwd apps/mobile test` |
 | Mobile screens | `apps/mobile/app/`, `components/` | none: move the logic into `lib/` and test it there; the screen is checked in step 6 | — |
 | SDK | `packages/nfc-sdk/src/` | `packages/nfc-sdk/test/` (Vitest), including type parity with the contract | `bun run --cwd packages/nfc-sdk test` |
-| SDK through the Worker | — | `apps/api/e2e/handshake.e2e.ts` | `bun run --cwd apps/api e2e`, with `cd apps/api && bun run dev` in another shell |
+| SDK through the Worker | — | `apps/api/e2e/handshake.e2e.ts` | `bunx turbo run build --filter=@vibewithme/nfc` once (the e2e imports the SDK's built `dist/`), then `bun run --cwd apps/api e2e`, with `cd apps/api && bun run dev` in another shell |
 
 Notes:
 
+- **Migrations, before the DB checkpoint.** A new migration reaches the
+  local database only through `bun run db:reset` (which also wipes the
+  demo data; `bun run db:seed` restores it), and the query helpers and
+  the API typecheck against a new column or argument only after
+  `bun run db:types`. Run both as soon as the migration is written,
+  before its tests go green and before the DB queries and API layers.
 - **No API harness yet?** If `apps/api/test/harness.ts` is not in your
-  checkout, your copy of the starter predates it. Merge the starter
+  checkout, there is no API unit suite to extend. If the starter's
+  `main` has it, merge the starter
   ([docs/staying-current.md](../../../docs/staying-current.md)) to get
   it. Until then, an API change is tested by extending
-  `apps/api/e2e/handshake.e2e.ts`, and the PR says the unit tests wait
-  on the harness.
+  `apps/api/e2e/handshake.e2e.ts` (build the SDK first, as in the table),
+  the API has no coverage step, and the PR says the unit tests wait on
+  the harness.
 - **No web unit tests yet?** `apps/web` has no `test` script. The first
   feature that adds a `src/lib` test adds `"test": "bun test src/lib"`
   to `apps/web/package.json`, so `bun run test` (turbo) runs it from
@@ -87,16 +101,21 @@ Notes:
 
 ## Coverage
 
-(Step 5.2.) In each touched TypeScript package, run its tests with an
-lcov report, then look up every source file the branch added or
+(Step 5.2.) In each touched package with a unit suite, run its tests
+with an lcov report, then look up every source file the branch added or
 changed. Example for the contract; swap the folder and the test scope
-for another package (`apps/api`: `bun test test`; `apps/mobile`:
-`bun test lib`; `packages/db`: `bun test --timeout 20000`, stack up):
+for another package (`apps/api`: `bun test test`, once the harness
+exists; `apps/mobile`: `bun test lib`; `apps/web`: `bun test src/lib`;
+`packages/db`: `bun test --timeout 20000`, stack up). Always pass the
+scope: a bare `bun test` in `apps/web` also picks up the Playwright
+specs and fails. Web routes and components, mobile screens, and an API
+covered only by the e2e fallback have no lcov step: the e2e harness and
+step 6 gate them.
 
 ```sh
 cd packages/contract
 bun test --coverage --coverage-reporter=lcov
-for f in $(git diff --name-only --diff-filter=AMR --relative origin/<base>...HEAD -- src | grep -E '\.tsx?$' | grep -v '\.test\.'); do
+for f in $(git diff --name-only --diff-filter=AMR --relative origin/<base>...HEAD -- src | grep -E '\.tsx?$' | grep -vE '\.test\.|\.d\.ts$|^src/types/'); do
   hit=$(awk -v f="SF:$f" '$0==f{on=1;next} on&&/^LH:/{print substr($0,4);exit} /^end_of_record/{on=0}' coverage/lcov.info)
   echo "${hit:-MISSING} lines hit  $f"
 done
@@ -104,18 +123,21 @@ rm -rf coverage
 ```
 
 `MISSING` means no test imported the file; `0` means a test imported it
-and ran none of it. Either fails the gate. For a number, plain
+and ran none of it. Either fails the gate. The loop skips type-only
+files (`src/types/supabase.ts`, which `db:types` rewrites on every
+migration, and `*.d.ts`): no test run ever loads them into lcov. For a number, plain
 `bun test --coverage` prints the per-file table; a changed file well
 below its neighbours deserves a look at its uncovered lines.
 
 The SDK uses Vitest: `bun run --cwd packages/nfc-sdk test -- --coverage`.
 
 **SQL is not in any coverage report.** List what a new migration
-creates and look for a test that names it:
+creates (functions, policies, triggers, and the constraints a new
+column brings) and look for a test that names it:
 
 ```sh
 for m in $(git diff --name-only --diff-filter=A origin/<base>...HEAD -- supabase/migrations); do
-  grep -oiE 'create (or replace )?(function|policy|trigger) +"?[a-z0-9_.]+' "$m" | awk '{print $NF}' | tr -d '"' | sed 's/.*\.//'
+  grep -oiE '(create (or replace )?(function|policy|trigger)|constraint) +"?[a-z0-9_.]+' "$m" | awk '{print $NF}' | tr -d '"' | sed 's/.*\.//'
 done | sort -u | while read -r n; do
   echo "$(grep -rlw "$n" packages/db/test | wc -l | tr -d ' ') test files  $n"
 done
@@ -123,8 +145,16 @@ done
 
 A `0` is a prompt, not a verdict: triggers and policies are often
 exercised by behavior rather than by name (a policy by a refused
-select, a trigger by the row it writes). For each `0`, find the test
-that exercises it and say which in the PR, or write one.
+select, a trigger by the row it writes, a CHECK by the `23514` it
+raises). For each `0`, find the test that exercises it and say which in
+the PR, or write one.
+
+A count above `0` is not a verdict either. A function the migration
+redefines (`create or replace`, or a drop and create with a new
+argument) is named by every older test of it, so the count says
+nothing about the change. For each redefined function, point to the
+test of what changed (the new argument, the new key), and the same for
+a column added to a grant.
 
 ## Verification
 
@@ -136,13 +166,34 @@ bun run db:reset && bun run db:seed     # clean demo data
 bun run dev                             # API on :8786, web on :3000
 ```
 
+**Ports taken?** Another worktree's servers often hold :3000 and :8786
+(check with `lsof -iTCP:3000 -iTCP:8786 -sTCP:LISTEN`); never stop
+another session's. Run yours on free ports instead, from `apps/api` and
+`apps/web`:
+
+```sh
+bunx wrangler dev --port <api> --inspector-port <free> --name withme-api-<slug> --var CORS_ORIGIN:http://localhost:<web>
+bunx vite dev --port <web> --strictPort   # VITE_API_URL=http://localhost:<api> in apps/web/.env
+```
+
+and, for the run only, point the `API` service in
+`apps/web/wrangler.jsonc` at `withme-api-<slug>` (server-side loaders
+find the API worker by name, and would reach another session's
+`withme-api`). `git checkout apps/web/wrangler.jsonc` afterwards. A
+Supabase stack on other ports needs the same care: its URL in
+`SUPABASE_URL` for the tests and the seed, and in `apps/api/.dev.vars`
+and `apps/web/.env` for the servers.
+
 Sign in as a demo user, or with the local phone number and code
 ([docs/local-development.md → The demo](../../../docs/local-development.md#the-demo)).
 A flow that starts at a tap uses a demo tag's `/t/<uid>` URL.
 
 **Web.** Drive `http://localhost:3000` with the agent's browser tools,
-do the changed flow, and screenshot the screen that proves it. With no
-browser tools, a throwaway script does the same:
+do the changed flow, and screenshot the screen that proves it. A
+browser tool's screenshot lands wherever the agent keeps tool output,
+not in the screenshots folder: copy the saved image there
+(`mkdir -p .verify-screenshots` first), or use the script below, which
+writes it in place. With no browser tools, the script does the same:
 
 ```ts
 // verify.ts in apps/web (delete it after) — run with: cd apps/web && bun run verify.ts
@@ -219,7 +270,7 @@ Start the body from `.github/PULL_REQUEST_TEMPLATE.md` and add:
 
 | Layer | Test files | New source files covered |
 | --- | --- | --- |
-| Contract | packages/contract/test/… | src/schemas/… (100%) |
+| Contract | packages/contract/test/… | src/schemas/… (125 lines hit) |
 | Migration + RLS | packages/db/test/… | new_function, new_policy: named in … |
 | … | | |
 
