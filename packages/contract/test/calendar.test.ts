@@ -109,6 +109,15 @@ describe('isGatheringOver', () => {
   });
 });
 
+describe('gatheringUrl', () => {
+  it('drops any trailing slashes from the origin, however many', () => {
+    expect(gatheringUrl('https://withme.example', ID)).toBe(`https://withme.example/gatherings/${ID}`);
+    expect(gatheringUrl(`https://withme.example${'/'.repeat(50_000)}`, ID)).toBe(
+      `https://withme.example/gatherings/${ID}`,
+    );
+  });
+});
+
 describe('gatheringIcsFilename', () => {
   it('slugs the title and falls back when nothing is left', () => {
     expect(gatheringIcsFilename('Rooftop drinks!')).toBe('rooftop-drinks.ics');

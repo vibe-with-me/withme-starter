@@ -10,7 +10,10 @@ export const GATHERING_CALENDAR_HOURS = 2;
 
 /** The gathering's page on the web app: what a calendar entry links back to. */
 export function gatheringUrl(origin: string, id: string): string {
-  return `${origin.replace(/\/+$/, '')}/gatherings/${id}`;
+  // A loop, not /\/+$/: that regex backtracks polynomially on a long run of slashes.
+  let end = origin.length;
+  while (end > 0 && origin[end - 1] === '/') end--;
+  return `${origin.slice(0, end)}/gatherings/${id}`;
 }
 
 /**
