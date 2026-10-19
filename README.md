@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml)
 
-**Tap a tag. Meet a person. Stay connected.**
+**Find your people in what you love to do.**
 
 withme-starter grew out of [Vibe With Me](https://vibewithme.co), an app
 for the people you meet at shows: tap a tag at a concert or a festival and

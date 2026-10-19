@@ -26,7 +26,7 @@ function Home() {
     <main className="page">
       <div className="card">
         <h1 className="wordmark">withme</h1>
-        <p className="bio">Tap a tag. Meet a person. Stay connected.</p>
+        <p className="bio">Find your people in what you love to do.</p>
         <p className="hint">
           This is the starter app — tags resolve at <code>/t/&lt;uid&gt;</code>.
         </p>
