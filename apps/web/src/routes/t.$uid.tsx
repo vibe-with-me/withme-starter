@@ -3,6 +3,7 @@ import { createFileRoute, Link, notFound, redirect, useHydrated, useNavigate } f
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { useEffect, useState } from 'react';
 import { GatheringMeta } from '../components/GatheringMeta.tsx';
+import { LockedLinks } from '../components/Links.tsx';
 import { ProfileCard } from '../components/ProfileCard.tsx';
 import { ReportButton } from '../components/ReportDialog.tsx';
 import { api } from '../lib/api.ts';
@@ -81,6 +82,11 @@ function ResolvePage() {
   return (
     <main className="page">
       <ProfileCard profile={result.profile} settle>
+        <LockedLinks
+          platforms={result.link_platforms}
+          name={result.profile.display_name}
+          ownerId={result.profile.id}
+        />
         <ConnectAction profileId={result.profile.id} uid={result.uid} />
         <CardReport profileId={result.profile.id} name={result.profile.display_name} uid={result.uid} />
       </ProfileCard>

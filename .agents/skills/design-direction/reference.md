@@ -13,9 +13,12 @@ Draw three artboards at 390×844, in light AND dark mode (six boards):
 1. The resolver card — what a stranger sees after tapping a tag
    (apps/web/src/routes/t.$uid.tsx): a centered card with a round
    avatar (one initial when there is no photo), the person's name, a
-   one-line bio, a muted line naming the gathering they host, ONE
-   primary button "Join this gathering" and no secondary action, and
-   the wordmark as a footer below the card.
+   one-line bio, then the platforms they can be reached on as locked
+   rows (a muted "Connect to unlock <name>'s links." line, then one
+   full-width row per platform: its icon in ink, its label, a muted lock
+   at the end; the seed's Ada has six), ONE primary button "Connect", a
+   quiet "Report" under it, and the wordmark as a footer below the card.
+   A person with no links has no rows and no line.
 2. The signed-in shell (apps/web/src/components/AppShell.tsx): a 56px
    header with the wordmark, a page title, two gathering cards, and a
    60px bottom tab bar (Events, Connections, Merch, Profile) with a
@@ -112,7 +115,7 @@ Display sizes (make-it-yours step 1): <"starter's" (web `--text-title` 2rem, `--
 
 | screen | file | line |
 | --- | --- | --- |
-| landing promise | apps/web/src/routes/index.tsx | <Tap a tag. …> |
+| landing promise | apps/web/src/routes/index.tsx | <Find your people …> |
 | Merch card | apps/web/src/routes/_app.merch.tsx, apps/mobile/app/(tabs)/merch.tsx | <Tags and gear from the store.> |
 | NFC permission | apps/mobile/app.json nfcPermission | <Read Acme tags to connect with people.> |
 | photo permission | apps/mobile/app.json photosPermission | <Choose a photo for your profile.> |
@@ -150,7 +153,7 @@ The script's verdict on its twelve pairs: accent 7.45:1 light and
 7.81:1 dark, ink-muted on surface 5.94:1 and 6.12:1, the input border
 3.22:1 and 4.48:1, all `ok`, exit 0. Fonts: `@fontsource-variable/bricolage-grotesque`
 5.3.0 and `@expo-google-fonts/bricolage-grotesque` 0.4.1 both exist.
-Copy: "Tap a tag. Meet a climber. Stay connected."; Merch "Chalk, tags
+Copy: "Find your people on the wall."; Merch "Chalk, tags
 and gear from the desk."; NFC "Read Crux tags to connect with people."
 Refused on the way: a second, orange accent for "hosting" badges (the
 one-accent rule), and a hold-shaped tinted card background (surfaces

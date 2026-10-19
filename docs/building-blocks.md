@@ -1,6 +1,6 @@
 # Building blocks
 
-What each part of the repo does, what a tap actually passes through, and
+What each part of the repo does, what a tap or a scan actually passes through, and
 the one pattern everything follows. Read this before the skills if you
 want to know *why* they touch the files they touch.
 
@@ -24,9 +24,9 @@ The practical effect: add a field to a schema and `bun run typecheck`
 tells you every place that has to change. That is the mechanism the
 skills lean on when they say "the typecheck fails until you do this".
 
-## A tap, start to finish
+## A tap or a scan, start to finish
 
-1. A phone taps a tag and opens `https://<your-domain>/t/04BBBBBBBBBBBB`.
+1. A phone taps a tag, or scans someone's code, and opens `https://<your-domain>/t/04BBBBBBBBBBBB`.
 2. The web Worker (`apps/web/src/routes/t.$uid.tsx`) renders server-side.
    Its loader normalizes the UID and calls `api.public.resolve({ uid })`
    through the typed client. In production that call goes over a service

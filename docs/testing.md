@@ -66,7 +66,7 @@ with no spec is a gap. Close it before you build on it.
 | `/me` | `shell` |
 | `/t/$uid` | `handshake`, `gatherings`, `reports`, `resolver`, `share`, `enumeration` (unknown and malformed UIDs) |
 | `/claim/$uid` | `handshake`, `enumeration` (someone else's tag refuses like a missing one), `signed-out` |
-| `/connections` | `handshake` (accept), `connections` (lists, decline, remove), `blocks` |
+| `/connections` | `handshake` (accept), `connections` (lists, decline, remove, where you met), `blocks` |
 | `/gatherings` (Discover, Yours) | `gatherings`, `gathering-controls`, `blocks` (a blocked host's gathering is gone from the whole Discover feed) |
 | `/gatherings/new` | `gatherings`, `gathering-controls`, and every spec that hosts one (`createGathering`) |
 | `/gatherings/$id` | `gatherings`, `gathering-controls`, `reports`, `blocks` |

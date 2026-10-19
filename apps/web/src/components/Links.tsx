@@ -11,11 +11,12 @@ import {
   type ProfileLink,
 } from '@withme/contract';
 import { useRouter } from '@tanstack/react-router';
-import { Globe, Link, Mail, Phone, type LucideIcon } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
+import { Globe, Link, Lock, Mail, Phone, type LucideIcon } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { api } from '../lib/api.ts';
 import type { Loaded } from '../lib/loaded.ts';
+import { getSessionUserId } from '../lib/supabase.ts';
 
 /** The keyboard a kind wants; the browser's own validation stays off (normalizeLinkValue is the judge). */
 const INPUT_MODE: Record<LinkKind, 'text' | 'tel' | 'email' | 'url'> = {
@@ -398,5 +399,56 @@ export function LinkList({ links, name }: { links: ProfileLink[]; name: string }
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * The card's locked rows: the platforms a tag's owner can be reached on,
+ * named but never valued (resolve_tag carries no value). Connect unlocks
+ * them; the owner reads a note instead of the invitation. The rows render
+ * at once; the line above waits for the session read so the owner never
+ * sees "Connect" first.
+ */
+export function LockedLinks({
+  platforms,
+  name,
+  ownerId,
+}: {
+  platforms: LinkPlatformId[];
+  name: string;
+  ownerId: string;
+}) {
+  const [viewer, setViewer] = useState<'loading' | 'self' | 'other'>('loading');
+  useEffect(() => {
+    let cancelled = false;
+    getSessionUserId()
+      .catch(() => null)
+      .then((userId) => {
+        if (!cancelled) setViewer(userId === ownerId ? 'self' : 'other');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerId]);
+  if (platforms.length === 0) return null;
+  return (
+    <>
+      <p className="hint" aria-hidden={viewer === 'loading' ? true : undefined}>
+        {viewer === 'self'
+          ? 'Only your connections see where these lead.'
+          : viewer === 'other'
+            ? `Connect to unlock ${name}’s links.`
+            : '\u00a0'}
+      </p>
+      <ul className="locked-links" aria-label={`${name}’s links, locked`}>
+        {platforms.map((platform) => (
+          <li key={platform} className="locked-link">
+            <PlatformIcon platform={platform} />
+            <span className="locked-link__platform">{LINK_PLATFORMS[platform].label}</span>
+            <Lock className="locked-link__lock" size={16} aria-hidden="true" focusable="false" />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

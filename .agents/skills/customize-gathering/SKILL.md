@@ -162,7 +162,7 @@ without containing "gathering"; rewrite it for your vertical too:
 - the seed's gathering, in `supabase/seed/index.ts`: its `p_title`
   (`'Rooftop listening session'`), its `p_location`
   (`'The roof, 14 Loom St'`), and the console text it prints
-  ("hosts a gathering Lin joined", "inviting you to her gathering"). §2
+  ("hosts a gathering Lin joined"). §2
   step 2 edits the same `create_gathering` call when a field is added,
   so the title and location can change there in the same edit.
 

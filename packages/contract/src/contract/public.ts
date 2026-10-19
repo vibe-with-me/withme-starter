@@ -2,6 +2,7 @@ import { oc } from '@orpc/contract';
 import { z } from 'zod';
 import { DestinationSchema } from '../schemas/destination.ts';
 import { GatheringSummarySchema } from '../schemas/gathering.ts';
+import { LinkPlatformSchema, MAX_PROFILE_LINKS } from '../schemas/link.ts';
 import { PublicProfileSchema } from '../schemas/profile.ts';
 import { ScanMethodSchema } from '../schemas/share-code.ts';
 import { TagSchema, TagUidSchema } from '../schemas/tag.ts';
@@ -11,6 +12,9 @@ import { TagSchema, TagUidSchema } from '../schemas/tag.ts';
  * 'disabled' — indistinguishable from a deactivated tag, by design.
  * `gathering` is a summary for gathering-destination tags (capability-based:
  * holding the tag is the invitation) and null for every other type.
+ * `link_platforms` names the platforms the owner can be reached on, in
+ * their order: the card shows them locked. The values never ride the card
+ * (connections tier); an empty list when there are none.
  */
 export const ResolveOutputSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('unclaimed'), uid: TagUidSchema }),
@@ -20,6 +24,8 @@ export const ResolveOutputSchema = z.discriminatedUnion('status', [
     destination: DestinationSchema,
     gathering: GatheringSummarySchema.nullable(),
     profile: PublicProfileSchema,
+    // Defaulted so a database not yet migrated still resolves.
+    link_platforms: z.array(LinkPlatformSchema).max(MAX_PROFILE_LINKS).default([]),
   }),
   z.object({ status: z.literal('disabled'), uid: TagUidSchema }),
 ]);
