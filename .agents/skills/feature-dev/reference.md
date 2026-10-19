@@ -20,8 +20,18 @@ prefix, tracker, plans folder, verification, review, merge) are in
    answers with a hand-built object a new column must join.
 
    With no recipe, find that yourself. For each contract schema the
-   feature changes, list every procedure that uses it
-   (for `TagSchema`: `grep -rnw TagSchema packages/contract/src/contract`), and for each RPC
+   feature changes, list every procedure that uses it, directly or
+   through a schema that embeds it (`ConnectionSchema` carries
+   `ProfileLinkSchema`, so `requests.accept` and `connections.list` use
+   the link schema without naming it):
+
+   ```sh
+   grep -rnw ProfileLinkSchema packages/contract/src
+   ```
+
+   A hit under `src/contract` is a procedure. A hit under `src/schemas`
+   in another schema's definition is an embedding schema: grep for that
+   one too, and repeat until no new schema turns up. Then, for each RPC
    behind those procedures, check whether it answers with a hand-built
    object (`jsonb_build_object`). A new key must join that object, or,
    for a field only the owner sees, stay out of a schema a public
