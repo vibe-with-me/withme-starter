@@ -8,6 +8,9 @@ build
 # Test coverage
 coverage
 
+# Verification screenshots (the feature-dev skill)
+.verify-screenshots/
+
 # Environment files
 .env
 .env.*

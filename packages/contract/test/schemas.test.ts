@@ -368,6 +368,13 @@ describe('gathering schemas', () => {
     expect(ListGatheringsInputSchema.safeParse({ limit: 51 }).success).toBe(false);
     expect(ListGatheringsInputSchema.safeParse({ limit: 0 }).success).toBe(false);
     expect(ListGatheringsInputSchema.safeParse({ cursor: 'x'.repeat(201) }).success).toBe(false);
+    const from = '2026-10-23T18:00:00.000Z';
+    const to = '2026-10-26T00:00:00.000Z';
+    expect(ListGatheringsInputSchema.safeParse({ from, to, cursor: 'abc' }).success).toBe(true);
+    expect(ListGatheringsInputSchema.safeParse({ from }).success).toBe(true);
+    expect(ListGatheringsInputSchema.safeParse({ from: to, to: from }).success).toBe(false);
+    expect(ListGatheringsInputSchema.safeParse({ from, to: from }).success).toBe(false);
+    expect(ListGatheringsInputSchema.safeParse({ from: 'friday' }).success).toBe(false);
     const lastPage = { gatherings: [], next_cursor: null };
     expect(GatheringsPageSchema.safeParse(lastPage).success).toBe(true);
     expect(GatheringsPageSchema.safeParse({ gatherings: [] }).success).toBe(false);

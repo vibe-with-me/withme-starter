@@ -127,9 +127,9 @@ Background the app first, then tap the banner.
 | `bun run test` | Contract schema tests, the RLS suite (`packages/db/test`), SDK tests | The local stack |
 | `bun run lint` | `oxlint --deny-warnings` | — |
 | `bun run typecheck` | Every workspace, including the e2e folders | — |
-| `bun run --cwd apps/api e2e` | The SDK through the API Worker into Supabase | The stack, and `cd apps/api && bun run dev` in another shell |
+| `bun run --cwd apps/api e2e` | The SDK through the API Worker into Supabase | The stack, the SDK built once (`bunx turbo run build --filter=@vibewithme/nfc`; the e2e imports its `dist/`), and `cd apps/api && bun run dev` in another shell |
 | `bun run --cwd apps/web test:e2e` | Playwright e2e against the production build: every page and safety flow ([Testing](testing.md#the-map) has the map) | The stack and the service-role key (below). Playwright starts the API Worker and the built web Worker itself. |
-| `bun run --cwd apps/mobile e2e` | Maestro flows for the Expo app: sign up, sign in, profile, connections. Local and opt-in. | The stack, the API Worker, Metro, a booted simulator and the Maestro CLI ([Testing](testing.md#mobile-e2e-local-and-opt-in)) |
+| `bun run --cwd apps/mobile e2e` | Maestro flows for the Expo app: every core flow (handshake, where you met, gatherings, blocks, reports, terms, signed-out taps). Local and opt-in. | The stack, the API Worker, Metro, a booted simulator and the Maestro CLI ([Testing](testing.md#mobile-e2e-local-and-opt-in)) |
 
 ### The service-role key
 
