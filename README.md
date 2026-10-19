@@ -2,11 +2,12 @@
 
 [![CI](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml)
 
-**Tap a tag. Meet a person. Stay connected.**
+**Find your people in what you love to do.**
 
-withme-starter grew out of [Vibe With Me](https://vibewithme.co), an app
-for the people you meet at shows: tap a tag at a concert or a festival and
-stay connected with the stranger who loved the same set you did. This repo
+withme-starter grew out of [Vibe With Me](https://vibewithme.co), made
+for the people you meet at shows: tap their tag or scan their code at a
+concert or a festival, no app needed, and stay connected with the stranger
+who loved the same set you did. This repo
 is a way to remix that idea for whatever you love. Live music is where it
 started. Golf is my other passion, so the first remix is
 [Golf With Me](https://github.com/vibe-with-me/golf-with-me): the same
@@ -30,6 +31,39 @@ The stack is opinionated and we like it that way: TanStack Start, Hono,
 oRPC, Cloudflare Workers, Supabase, Bun. [Why those](docs/stack.md) is
 written down, and the choices are not up for substitution in this repo.
 Fork freely.
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/1-card-dark.png">
+        <img src="docs/images/readme/1-card-light.png" alt="Ada's card with her links locked, which is what a stranger sees after a tap or scan" width="200">
+      </picture>
+      <br><sub>A tap or scan opens their card</sub>
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/2-request-dark.png">
+        <img src="docs/images/readme/2-request-light.png" alt="Ada's Requests tab showing Lin's request with an Accept button" width="200">
+      </picture>
+      <br><sub>They accept your request</sub>
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/3-connected-dark.png">
+        <img src="docs/images/readme/3-connected-light.png" alt="Lin's Connections list showing Ada's Instagram, TikTok, X, YouTube, email and website" width="200">
+      </picture>
+      <br><sub>Connected: their links unlock</sub>
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/4-events-dark.png">
+        <img src="docs/images/readme/4-events-light.png" alt="The Events tab with Discover and Yours tabs, listing two gatherings with their times, places and headcounts" width="200">
+      </picture>
+      <br><sub>Events: discover gatherings, or see yours</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -346,9 +380,11 @@ the no-enumeration promise above depends on not building one. Extensions that ra
 off-thesis for this repo; a fork can build them, but the skills will not.
 
 The commercial line, stated on day one: **the handshake layer is free and
-open, permanently.** Tag fulfillment (printed, encoded, locked hardware)
-and managed hosting are what Vibe With Me sells. The Merch tab in the app
-is a pointer to a store URL you configure, never a cart.
+open, permanently.** Vibe With Me sells printed, encoded, and locked tags
+for its own app at [vibewithme.co/shop](https://vibewithme.co/shop), which
+is a good reference store. A fork runs its own store and fulfillment. The
+Merch tab in the app is a pointer to a store URL you configure, never a
+cart.
 [docs/merch.md](docs/merch.md) shows a fork running its own: accessories
 for the vertical (ball markers, bib clips, collar tags), tags encoded by
 GoToTags from the starter's encode list, a Shopify store behind the tab.

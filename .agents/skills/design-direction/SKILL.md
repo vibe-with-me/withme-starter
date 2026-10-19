@@ -88,8 +88,9 @@ so the owner can keep what people already recognise.
     development build shows it as a setup card without one), and the
     boards always draw it;
   - the landing page, `apps/web/src/routes/index.tsx` — the wordmark,
-    the one-line promise under it ("Tap a tag. Meet a person. Stay
-    connected."), a neutral "Sign in" button (ink on surface, no
+    the one-line promise under it ("Find your people in what you love
+    to do."; a fork names its own thing: "Find your people on the
+    course"), a neutral "Sign in" button (ink on surface, no
     accent), and a quiet "Get tags" button only when a store URL is
     set. Its starter hints are make-it-yours' to rewrite or delete; do
     not draw them.
