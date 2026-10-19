@@ -157,9 +157,11 @@ touched layer is tested:
 1. **Every touched layer has tests in this branch.** Read
    `git diff --stat origin/<base>...HEAD` against the layer table in
    [reference.md](reference.md#where-each-layers-tests-live). A layer
-   with source changes and no test changes fails the gate. Where no
-   test can pin a change (a pure style change, say), ask the owner to
-   waive this item and record the waiver in the PR.
+   with source changes and no test changes fails the gate. The one
+   exception is a mobile screen with no logic left to move into
+   `lib/`: the layer table checks it in step 6, and the PR says so.
+   Where no other test can pin a change (a pure style change, say),
+   ask the owner to waive this item and record the waiver in the PR.
 2. **Coverage on each touched package with a unit suite.** Run
    `bun test --coverage` in it (scoped as its `test` script is) and
    find every new or changed source file in the table. Web routes,
