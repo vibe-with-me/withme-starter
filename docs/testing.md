@@ -11,7 +11,7 @@ service-role key) is in [Local development](local-development.md#tests).
 | Unit | `packages/contract`, `packages/nfc-sdk`, `apps/mobile/lib`, `apps/api` | Schemas, parsing, formatting, the Worker's routing and limits | Yes, `ci` |
 | Database (RLS) | `packages/db/test` | Every safety promise, against real per-user clients. [The safety model](safety-model.md) names the file for each. | Yes, `ci` |
 | API e2e | `apps/api/e2e` | The published SDK through the API Worker into Supabase | Yes, `ci` |
-| Web e2e | `apps/web/e2e` | The user flows in a real browser, against the production build in workerd | Yes, `e2e` |
+| Web e2e | `apps/web/e2e` | The user flows in a real browser, against the production build in workerd | Yes, `e2e`; on demand against the hosted demo ([staging](#staging-the-hosted-demo)) |
 | Mobile e2e | `apps/mobile/e2e` | Sign in, profile, connections in the Expo app | No: local and opt-in ([below](#mobile-e2e-local-and-opt-in)) |
 
 The database suite is the spec: a promise holds because the database
@@ -179,6 +179,59 @@ hold, but a user flow no longer works in the browser.
 
 There are no retries. A test that fails once is reported as failed,
 because a flake in a safety flow is a bug to find, not noise to hide.
+
+## Staging: the hosted demo
+
+CI runs the suite against a local stack. Before a risky change merges, the
+starter can also run it against a hosted one: [staging-e2e.yml](../.github/workflows/staging-e2e.yml)
+deploys the branch's Workers as `withme-api-staging` and `withme-web-staging`
+(beside the live demo Workers, which it never touches), points them at the
+hosted starter demo's database, and runs the same specs there.
+
+**Starting it.** Add the `staging-e2e` label to a pull request (it runs
+again on each push while the label stays), or run it from the Actions tab.
+Runs take turns: they share one database.
+
+**Startup and teardown.** Every spec seeds its own data, scoped to the run:
+accounts on `@rls.test` addresses, the tags it provisions, and what those
+accounts create. `apps/web/e2e/staging.ts` brackets the suite:
+
+- `setup` checks both Workers answer and the service role works, sweeps
+  any test accounts an earlier run left, signs in a canary account (so a
+  rate limit or a wrong key is one clear failure, not forty), and records
+  when the run started.
+- `teardown` runs whether the suite passed, failed or was cancelled. It
+  deletes every `@rls.test` account and what it made (profiles,
+  connections, gatherings, reports, photos, claimed tags), then the
+  unclaimed tags provisioned since the run started. It touches no account
+  on any other domain.
+
+**What differs from local.** The hosted project confirms email addresses,
+and its mailer sends only a few messages an hour, so on staging `signUp`
+creates the account already confirmed through the service role, and the
+person signs in on the same login page. The sign-up form itself is
+covered by the local run. The phone specs skip, because the fixed test code
+exists only in the local config. A branch with new migrations stops at the
+schema check: they reach the demo when they merge (demo-migrate.yml), never
+before, so staging tests code against the schema the demo already has.
+
+**What it needs** on the `demo` environment, besides the three secrets
+demo-migrate.yml already uses:
+
+| Name | Kind | Value |
+| --- | --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | secret | The demo project's service-role (secret) key. Setup, teardown and the specs' fixtures only. |
+| `CLOUDFLARE_API_TOKEN` | secret | A token with Workers Scripts: Edit on the account that hosts the demo Workers |
+| `CLOUDFLARE_ACCOUNT_ID` | variable | That account's id |
+| `SUPABASE_PUBLISHABLE_KEY` | variable | The demo project's publishable key (public) |
+
+The demo project's auth rate limit for sign-ups and sign-ins must allow a
+run's worth from one address (about 60 in three minutes). Raise it in the
+Supabase dashboard, Authentication → Rate Limits.
+
+A fork that wants the same has its own hosted project: copy the workflow,
+change the repository in its `if:` and the two `*-staging` URLs, and give
+it an environment with the values above.
 
 ## Mobile e2e: local and opt-in
 

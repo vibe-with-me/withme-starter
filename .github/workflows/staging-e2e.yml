@@ -1,0 +1,179 @@
+name: Staging e2e
+
+# The web e2e suite against a hosted stack, before a change merges: the
+# branch's API and web Workers deploy as `withme-api-staging` and
+# `withme-web-staging` (beside the live demo Workers, which this never
+# touches), pointed at the hosted starter demo's database. Startup checks
+# the stack and sweeps leftovers; teardown deletes everything the run made.
+# docs/testing.md#staging-the-hosted-demo has the why and the setup.
+#
+# Starts when a maintainer adds the `staging-e2e` label to a pull request
+# (and again on each push while the label stays), or by hand from the
+# Actions tab. Fork PRs never run it: they get no secrets.
+#
+# It needs the demo database to be on this branch's schema. A branch with
+# new migrations stops at the schema check: they reach the demo when they
+# merge (demo-migrate.yml), never before.
+on:
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+
+# One run at a time against the shared demo: teardown sweeps every test
+# account, which would pull the floor from under a second run.
+concurrency:
+  group: staging-e2e
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    # Upstream only (a fork points this at its own staging, or deletes it),
+    # and on a pull request only with the label and from this repository.
+    if: >-
+      github.repository == 'vibe-with-me/withme-starter' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (contains(github.event.pull_request.labels.*.name, 'staging-e2e') &&
+        github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-latest
+    # The secrets and variables below live on this environment.
+    environment: demo
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Pins the account, so a token that can see several never deploys to
+      # the wrong one.
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      E2E_API_URL: https://withme-api-staging.vibe-with-me.workers.dev
+      E2E_TARGET_URL: https://withme-web-staging.vibe-with-me.workers.dev
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the configuration
+        run: |
+          missing=0
+          for name in SUPABASE_PROJECT_REF SUPABASE_SERVICE_ROLE_KEY SUPABASE_PUBLISHABLE_KEY CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::The demo environment has no $name (docs/testing.md#staging-the-hosted-demo)"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      # Reads SUPABASE_DB_PASSWORD from the environment, keeping it off the
+      # command line.
+      - name: Link the demo project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      # The suite tests this branch's code against the demo's schema; they
+      # must agree. Nothing is pushed here.
+      - name: Check the demo is on this branch's schema
+        run: |
+          set -o pipefail
+          supabase db push --dry-run 2>&1 | tee dry-run.txt
+          if ! grep -q 'Remote database is up to date' dry-run.txt; then
+            echo "::error::This branch has migrations the demo does not. They reach the demo when they merge (demo-migrate.yml); staging cannot test this branch before then."
+            exit 1
+          fi
+
+      # Startup, part 1: the branch's Workers, under staging names. Plain
+      # vars, not secrets: the URL and the publishable key are public, and
+      # every deploy sets them again. Cloudflare's API intermittently
+      # returns 502/504/524, so retry (go-live section 2).
+      - name: Deploy the staging API worker
+        working-directory: apps/api
+        run: |
+          for attempt in 1 2 3 4; do
+            bunx wrangler deploy --name withme-api-staging \
+              --var "SUPABASE_URL:$SUPABASE_URL" \
+              --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY" \
+              --var "CORS_ORIGIN:$E2E_TARGET_URL" && exit 0
+            echo "wrangler deploy failed (attempt $attempt of 4)" >&2
+            [ "$attempt" -lt 4 ] && sleep 30
+          done
+          exit 1
+
+      # The web worker's name and its service binding to the API are in
+      # wrangler.jsonc, and the build bakes them in: rename both for this
+      # build only (the checkout is thrown away after the job). The VITE_
+      # values match the local suite's, which the specs assert.
+      - name: Build the staging web worker
+        env:
+          VITE_API_URL: ${{ env.E2E_API_URL }}
+          VITE_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ env.SUPABASE_PUBLISHABLE_KEY }}
+          VITE_TERMS_URL: https://example.com/terms
+          VITE_PRIVACY_URL: https://example.com/privacy
+          VITE_STORE_URL: ''
+        run: |
+          sed -i 's/"name": "withme-web"/"name": "withme-web-staging"/; s/"service": "withme-api"/"service": "withme-api-staging"/' apps/web/wrangler.jsonc
+          grep -q '"withme-web-staging"' apps/web/wrangler.jsonc
+          grep -q '"service": "withme-api-staging"' apps/web/wrangler.jsonc
+          bunx turbo run build --filter=@withme/web
+
+      - name: Deploy the staging web worker
+        working-directory: apps/web
+        run: |
+          for attempt in 1 2 3 4; do
+            bunx wrangler deploy && exit 0
+            echo "wrangler deploy failed (attempt $attempt of 4)" >&2
+            [ "$attempt" -lt 4 ] && sleep 30
+          done
+          exit 1
+
+      - name: Wait for both workers
+        run: |
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "$E2E_API_URL/health"
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors -o /dev/null "$E2E_TARGET_URL/"
+
+      # Startup, part 2: health, leftovers swept, a canary sign-in, and the
+      # run's start time (for teardown) written to $GITHUB_ENV.
+      - name: Set up the run
+        id: setup
+        working-directory: apps/web
+        run: bun e2e/staging.ts setup
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: bunx playwright install --with-deps chromium
+
+      - name: Web e2e against staging
+        run: bun run --cwd apps/web test:e2e
+
+      # Teardown, pass or fail (or cancelled), once setup has run: every
+      # test account and what it made, and the tags provisioned this run.
+      - name: Tear down the run
+        if: always() && steps.setup.outcome != 'skipped'
+        working-directory: apps/web
+        run: bun e2e/staging.ts teardown
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report-staging
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 14

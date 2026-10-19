@@ -7,6 +7,10 @@ const API_INSPECTOR_PORT = Number(process.env.E2E_API_INSPECTOR_PORT ?? 9456);
 const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 3010);
 const WEB_URL = `http://localhost:${WEB_PORT}`;
 const API_URL = `http://localhost:${API_PORT}`;
+// A deployed stack instead of local servers: the staging run sets this to
+// the staging web Worker's URL (.github/workflows/staging-e2e.yml), and
+// nothing is started here. docs/testing.md#staging-the-hosted-demo.
+const TARGET_URL = process.env.E2E_TARGET_URL;
 
 // Smoke tests need the Supabase local stack running first: `bun run db:start`.
 // The API worker (wrangler dev) and the built web worker (vite preview) are started here on dedicated ports.
@@ -21,11 +25,11 @@ export default defineConfig({
     ? [['list'], ['github'], ['html', { open: 'never' }]]
     : [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: WEB_URL,
+    baseURL: TARGET_URL ?? WEB_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  webServer: [
+  webServer: TARGET_URL ? [] : [
     {
       command: `bunx wrangler dev --port ${API_PORT} --inspector-port ${API_INSPECTOR_PORT} --var CORS_ORIGIN:${WEB_URL}`,
       cwd: '../api',
