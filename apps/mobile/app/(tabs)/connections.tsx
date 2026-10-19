@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LinkChips } from '../../components/Links';
 import { PushOffer } from '../../components/Push';
-import { AccessibilityInfo, RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Pressable, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import {
   Button,
   ErrorText,
@@ -14,7 +14,8 @@ import {
 } from '../../components/ui';
 import { api, type Api } from '../../lib/api';
 import { cardLine } from '../../lib/card-line';
-import { space, useTokens } from '../../lib/tokens';
+import { metAtLine } from '../../lib/format-time';
+import { fonts, space, useTokens } from '../../lib/tokens';
 
 type BlockRow = Awaited<ReturnType<Api['app']['blocks']['list']>>['blocks'][number];
 const SEGMENTS = ['connections', 'requests', 'blocked'] as const;
@@ -52,6 +53,29 @@ function report(id: string, name: string, canBlock = true) {
         router.push({ pathname: '/report/[id]', params: { id, name, block: canBlock ? '1' : '0' } })
       }
     />
+  );
+}
+
+/**
+ * Where a connection was made, as a link to the gathering. Ink-muted and
+ * underlined, not the accent; the hit slop brings it to a tap target
+ * without adding height to the row.
+ */
+function MetAt({ gathering }: { gathering: NonNullable<Connection['gathering']> }) {
+  const t = useTokens();
+  const label = metAtLine(gathering);
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      hitSlop={{ top: 12, bottom: 12 }}
+      onPress={() => router.push({ pathname: '/gathering/[id]', params: { id: gathering.id } })}
+      style={({ pressed }) => pressed && { opacity: 0.6 }}
+    >
+      <Text numberOfLines={2} style={[styles.metAt, { color: t.inkMuted }]}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -257,6 +281,7 @@ export default function ConnectionsScreen() {
                 path={connection.profile.avatar_path}
                 line={cardLine(connection.profile)}
                 sub={connection.profile.bio}
+                note={connection.gathering ? <MetAt gathering={connection.gathering} /> : null}
                 extra={<LinkChips links={connection.links} />}
               >
                 {quiet('Remove', connection.id, () => api.app.connections.remove({ id: connection.id }))}
@@ -277,5 +302,11 @@ const styles = StyleSheet.create({
   content: {
     padding: space.s5,
     gap: space.s3,
+  },
+  metAt: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+    textDecorationLine: 'underline',
   },
 });

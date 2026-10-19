@@ -135,6 +135,7 @@ const GATHERING_READERS: Record<string, 'asks sees_gathering' | string> = {
   'public.join_gathering': 'asks sees_gathering',
   'public.resolve_tag': 'asks sees_gathering',
   'public.report_gathering': 'asks sees_gathering',
+  'public.accept_connect_request': 'asks sees_gathering',
   'public.create_gathering': "the caller's own new row, and a count of their own upcoming ones",
   'private.on_block_created': 'deletes pair-hosted memberships; returns nothing',
   'private.on_gathering_member_joined': 'pushes the title and a count to the host only',

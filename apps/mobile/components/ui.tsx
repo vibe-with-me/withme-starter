@@ -333,6 +333,7 @@ export function PersonRow({
   path,
   line,
   sub,
+  note,
   extra,
   children,
 }: {
@@ -341,6 +342,8 @@ export function PersonRow({
   /** The card tier under the name: `cardLine(profile)` from lib/card-line.ts, on every list. */
   line?: string | null;
   sub?: string | null;
+  /** Last in the text column, under the sub: a connection's "Met at" link. */
+  note?: ReactNode;
   /** Under the name and sub, full width: a connection's link chips. */
   extra?: ReactNode;
   children?: ReactNode;
@@ -364,6 +367,7 @@ export function PersonRow({
               {sub}
             </Text>
           ) : null}
+          {note}
         </View>
       </View>
       {extra}

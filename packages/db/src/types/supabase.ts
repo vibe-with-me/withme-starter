@@ -126,6 +126,7 @@ export type Database = {
       connections: {
         Row: {
           created_at: string
+          gathering_id: string | null
           id: string
           tenant_id: string
           user_a: string
@@ -134,6 +135,7 @@ export type Database = {
         ComputedFields: never
         Insert: {
           created_at?: string
+          gathering_id?: string | null
           id?: string
           tenant_id?: string
           user_a: string
@@ -141,12 +143,20 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gathering_id?: string | null
           id?: string
           tenant_id?: string
           user_a?: string
           user_b?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "connections_gathering_id_fkey"
+            columns: ["gathering_id"]
+            isOneToOne: false
+            referencedRelation: "gatherings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "connections_user_a_fkey"
             columns: ["user_a"]

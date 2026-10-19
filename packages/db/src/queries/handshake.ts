@@ -119,12 +119,25 @@ export async function listPendingRequests(db: Db): Promise<PendingRequestRow[]> 
   );
 }
 
+/** The gathering a connection was made at, as the viewer sees it now. */
+export interface MetAtGathering {
+  id: string;
+  title: string;
+  starts_at: string;
+}
+
 export interface ConnectionRow {
   id: string;
   created_at: string;
   profile: ProfileCard;
   /** The other party's links: a connection is the one place they travel (RLS admits them here). */
   links: ProfileLinkRow[];
+  /**
+   * Where the two of them met: set by accept_connect_request, read through
+   * gatherings_select, so null when there was none or the viewer no longer
+   * sees it.
+   */
+  gathering: MetAtGathering | null;
 }
 
 /** The caller's connections, each carrying the OTHER party's card and links. */
@@ -133,6 +146,7 @@ export async function listConnections(db: Db, userId: string): Promise<Connectio
     .from('connections')
     .select(
       `id, created_at, user_a, user_b,
+       gathering:gatherings(id, title, starts_at),
        a:profiles!connections_user_a_fkey(${CARD_COLUMNS}, ${LINK_EMBED}),
        b:profiles!connections_user_b_fkey(${CARD_COLUMNS}, ${LINK_EMBED})`,
     )
@@ -142,7 +156,15 @@ export async function listConnections(db: Db, userId: string): Promise<Connectio
     const other = row.user_a === userId ? row.b : row.a;
     if (!other) return [];
     const { links, ...profile } = other;
-    return [{ id: row.id, created_at: row.created_at, profile, links: sortLinks(links) }];
+    return [
+      {
+        id: row.id,
+        created_at: row.created_at,
+        profile,
+        links: sortLinks(links),
+        gathering: row.gathering,
+      },
+    ];
   });
 }
 

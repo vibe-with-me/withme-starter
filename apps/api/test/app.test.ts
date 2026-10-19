@@ -394,6 +394,7 @@ describe('pass-through handlers', () => {
       id: GATHERING_ID,
       profile: card(OTHER_ID, 'Lin'),
       links: [],
+      gathering: null,
       created_at: NOW_ISO,
     };
     supabase
@@ -414,6 +415,7 @@ describe('pass-through handlers', () => {
           created_at: NOW_ISO,
           user_a: USER_ID,
           user_b: OTHER_ID,
+          gathering: { id: GATHERING_ID, title: 'Friday mixer', starts_at: NOW_ISO },
           a: { ...card(USER_ID, 'Ada'), links: [] },
           b: {
             ...card(OTHER_ID, 'Lin'),
@@ -423,8 +425,8 @@ describe('pass-through handlers', () => {
       ])
       .on('DELETE', '/rest/v1/connections', []);
     const { connections } = await api.app.connections.list();
-    expect(connections.map((c) => [c.profile.display_name, c.links])).toEqual([
-      ['Lin', [{ platform: 'instagram', value: 'lin' }]],
+    expect(connections.map((c) => [c.profile.display_name, c.links, c.gathering?.title])).toEqual([
+      ['Lin', [{ platform: 'instagram', value: 'lin' }], 'Friday mixer'],
     ]);
     expect(await api.app.connections.remove({ id: GATHERING_ID })).toEqual({ ok: true });
   });
