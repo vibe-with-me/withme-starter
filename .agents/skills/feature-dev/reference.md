@@ -21,7 +21,7 @@ prefix, tracker, plans folder, verification, review, merge) are in
 
    With no recipe, find that yourself. For each contract schema the
    feature changes, list every procedure that uses it
-   (`grep -rn <Schema> packages/contract/src/contract`), and for each RPC
+   (for `TagSchema`: `grep -rnw TagSchema packages/contract/src/contract`), and for each RPC
    behind those procedures, check whether it answers with a hand-built
    object (`jsonb_build_object`). A new key must join that object, or,
    for a field only the owner sees, stay out of a schema a public
