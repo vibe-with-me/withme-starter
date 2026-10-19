@@ -8,9 +8,21 @@ import type { contract } from '@withme/contract';
 import { configureSync } from '@logtape/logtape';
 import { SignJWT, exportJWK, generateKeyPair } from 'jose';
 import type { ApiEnv } from '../src/env.ts';
-import app from '../src/index.ts';
 
-// index.ts configures LogTape on import; quiet it for the run (the log calls still execute).
+// Through a non-literal specifier, so this bun-typed project does not
+// typecheck the Worker entry: there @types/node's and bun's ReadableStream
+// collide. `tsc --noEmit` checks src/index.ts under the Workers types.
+const ENTRY = '../src/index.ts';
+const app = (await import(ENTRY)).default as {
+  fetch: (request: Request, env: ApiEnv) => Response | Promise<Response>;
+  request: (
+    path: string,
+    init: RequestInit | undefined,
+    env: ApiEnv,
+  ) => Response | Promise<Response>;
+};
+
+// index.ts configured LogTape on import; quiet it for the run (the log calls still execute).
 configureSync({
   reset: true,
   sinks: {},

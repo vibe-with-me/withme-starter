@@ -405,9 +405,21 @@ describe('reports and account deletion', () => {
     expect((await bob.client.rpc('delete_my_account')).error).toBeNull();
 
     const longAgo = new Date(Date.now() - 91 * 24 * 3600 * 1000).toISOString();
-    await admin.from('reports').update({ reported_deleted_at: longAgo }).eq('id', aboutBob!.id);
+    const aged = await admin
+      .from('reports')
+      .update({ reported_deleted_at: longAgo })
+      .eq('id', aboutBob!.id)
+      .select('id');
+    expect(aged.error).toBeNull();
+    expect(aged.data).toHaveLength(1);
     // Carol still has her account: an old report about her has no clock at all.
-    await admin.from('reports').update({ created_at: longAgo }).eq('id', aboutCarol!.id);
+    const old = await admin
+      .from('reports')
+      .update({ created_at: longAgo })
+      .eq('id', aboutCarol!.id)
+      .select('id');
+    expect(old.error).toBeNull();
+    expect(old.data).toHaveLength(1);
 
     const dave = await createTestUser('Dave');
     expect((await dave.client.rpc('delete_my_account')).error).toBeNull();
