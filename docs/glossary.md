@@ -25,11 +25,16 @@ the database: `{ type: 'profile' }` (the owner's card) or
 `{ type: 'gathering', gathering_id }` today. The
 `add-destination-type` skill grows this union (a `link`, say).
 
-**Card.** A person's public profile as a stranger sees it after a tap:
-name, photo, bio, plus any card-tier fields a fork adds. The card is the
-only thing a tap reveals.
+**Card.** A person's public profile as a stranger sees it after a tap or
+a scan: name, photo, bio, plus any card-tier fields a fork adds. The card
+is the only thing a tap or a scan reveals.
 
-**Handshake.** Tap → "Connect" → accept → connected. The whole product
+**Your code.** A QR code on the Share screen (the raised button in the tab
+bar) that opens your card the same way a tap on your tag does, for phones
+without NFC or a tag left at home. Replacing it retires the old code, and
+every screenshot or print of it.
+
+**Handshake.** Tap or scan → "Connect" → accept → connected. The whole product
 the starter ships; everything else serves it.
 
 **Connect request.** The pending state between "Connect" and "Accept".
@@ -59,8 +64,10 @@ Instagram handle, a website); `extend-profile` adds fields of either tier.
 
 **Links.** Profile → Links: the places you can be reached, one per
 platform from the registry in `packages/contract/src/schemas/link.ts`.
-Connections tier, so they never ride the card; a connection's row shows
-them as chips, each with the platform's icon in ink. A fork adds a
+The values (the handle, the number) are connections tier, so they never
+ride the card; the platform names are card tier, so a tag's card lists
+them locked ("Connect to unlock"). A connection's row shows the links as
+chips, each with the platform's icon in ink. A fork adds a
 platform to the registry and to `private.is_link_value`; an icon is
 optional (its path goes in `link-icons.ts`), and without one the chip
 draws a plain glyph for the kind.

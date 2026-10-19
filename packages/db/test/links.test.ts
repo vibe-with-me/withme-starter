@@ -3,8 +3,8 @@
 // is the spec: every viewer profiles_select admits beyond a connection (the
 // pending-request recipient, a blocker), a gathering co-member (who is not
 // even admitted to the card), a stranger and anon read nothing — empty and
-// error-free — and resolve_tag never carries a link. Shape is checked at
-// the database boundary.
+// error-free — and resolve_tag carries the platform names (the card's
+// locked rows) but never a value. Shape is checked at the database boundary.
 import { beforeAll, describe, expect, it } from 'bun:test';
 import {
   ANON_KEY,
@@ -186,19 +186,37 @@ describe('visibility', () => {
     expect(await linksSeenBy(alice, bob)).toEqual([]);
   });
 
-  it('resolve_tag never carries a link, not even for a connection', async () => {
+  it('resolve_tag names the platforms, in order, and never a value', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');
-    await setLinks(alice, [{ platform: 'instagram', value: 'ada.private' }]);
+    await setLinks(alice, [
+      { platform: 'tiktok', value: 'ada.private' },
+      { platform: 'email', value: 'ada.private@example.com' },
+      { platform: 'instagram', value: 'ada.secret' },
+    ]);
     await connectUsers(alice, bob);
     const uid = await provisionTag();
     await alice.client.rpc('claim_tag', { p_uid: uid });
     for (const client of [anonClient(), bob.client]) {
       const { data, error } = await client.rpc('resolve_tag', { p_uid: uid });
       expect(error).toBeNull();
+      expect((data as { link_platforms: string[] }).link_platforms).toEqual([
+        'tiktok',
+        'email',
+        'instagram',
+      ]);
       expect(JSON.stringify(data)).not.toContain('ada.private');
-      expect(JSON.stringify(data)).not.toContain('links');
+      expect(JSON.stringify(data)).not.toContain('ada.secret');
     }
+  });
+
+  it('resolve_tag lists no platforms for an owner without links', async () => {
+    const alice = await createTestUser('Alice');
+    const uid = await provisionTag();
+    await alice.client.rpc('claim_tag', { p_uid: uid });
+    const { data, error } = await anonClient().rpc('resolve_tag', { p_uid: uid });
+    expect(error).toBeNull();
+    expect((data as { link_platforms: string[] }).link_platforms).toEqual([]);
   });
 
   it('accept hands the new connection the requester links, [] without any', async () => {

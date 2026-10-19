@@ -1,4 +1,4 @@
-import type { ProfileLink, PublicProfile } from '@withme/contract';
+import type { MetAtGathering, ProfileLink, PublicProfile } from '@withme/contract';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
@@ -9,6 +9,7 @@ import { ReportButton, reportThanks } from '../components/ReportDialog.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
 import { cardLine } from '../lib/card-line.ts';
+import { metAtLine } from '../lib/format-time.ts';
 import { settled } from '../lib/loaded.ts';
 
 type Tab = 'requests' | 'blocked';
@@ -191,6 +192,7 @@ function ConnectionsPage() {
                 key={connection.id}
                 profile={connection.profile}
                 sub={connection.profile.bio}
+                metAt={connection.gathering}
                 links={connection.links}
               >
                 <button
@@ -275,11 +277,14 @@ function SegmentLink({
 function PersonRow({
   profile,
   sub,
+  metAt,
   links,
   children,
 }: {
   profile: PublicProfile;
   sub?: string | null;
+  /** Connections only: the gathering it was made at, linked to its page. */
+  metAt?: MetAtGathering | null;
   /** Connections only: the one list that carries them. */
   links?: ProfileLink[];
   children: ReactNode;
@@ -293,6 +298,11 @@ function PersonRow({
         <span className="name">{profile.display_name}</span>
         {line ? <span className="sub">{line}</span> : null}
         {sub ? <span className="sub">{sub}</span> : null}
+        {metAt ? (
+          <Link className="sub met-at" to="/gatherings/$id" params={{ id: metAt.id }}>
+            {metAtLine(metAt)}
+          </Link>
+        ) : null}
       </div>
       <div className="row-actions">{children}</div>
       {/* On its own line under the row: the chips need the width. */}

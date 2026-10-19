@@ -411,6 +411,42 @@ a.link:hover {
   white-space: nowrap;
 }
 
+/* The card's locked rows (LockedLinks): one per platform the owner is on,
+   full width, the lock muted. Not a control: Connect below unlocks them,
+   so the accent stays on Connect alone. */
+.locked-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.locked-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+.locked-link__platform {
+  flex: 1;
+  min-width: 0;
+}
+
+.locked-link__lock {
+  flex-shrink: 0;
+  color: var(--color-ink-muted);
+}
+
 /* A gathering's location: a link in ink inside a muted line, never the
    accent (tokens.css). The pin is ink like the text beside it. */
 .maps-link {

@@ -421,7 +421,8 @@ account-deletion URL.
 A run club app with your brand, your nouns, your fields, and the same
 promises as the starter: nobody can list runners, blocks are invisible,
 connections are mutual, runs are listed to signed-in members while who
-is going stays connections-only, taps record nothing but a user agent,
+is going stays connections-only, taps and scans record nothing but a
+user agent, a time, and which of the two it was,
 and deleting an account releases its tags. None of the eight steps moved
 a boundary, and the seventy-plus RLS tests plus your new ones say so.
 

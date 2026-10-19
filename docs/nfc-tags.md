@@ -156,7 +156,7 @@ each. [Merch](merch.md) walks one complete path: accessories made for
 your vertical, encoded and locked by GoToTags from the starter's own
 encode list, sold through a Shopify store the app's Merch tab points at
 (`VITE_STORE_URL` / `EXPO_PUBLIC_STORE_URL`). Printed, encoded, and
-locked tags are also what Vibe With Me sells. The starter never touches
+locked tags are also what Vibe With Me sells, at [vibewithme.co/shop](https://vibewithme.co/shop). The starter never touches
 commerce itself.
 
 ## If you need tamper-proof taps

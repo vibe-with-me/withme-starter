@@ -2,6 +2,7 @@ import type { InferContractRouterInputs, InferContractRouterOutputs } from '@orp
 import { appContract } from './contract/app.ts';
 import { publicContract } from './contract/public.ts';
 
+export * from './schemas/calendar.ts';
 export * from './schemas/connection.ts';
 export * from './schemas/destination.ts';
 export * from './schemas/gathering.ts';

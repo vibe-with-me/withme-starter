@@ -54,7 +54,8 @@ and will not run here. JWT verification uses `jose` for the same reason.
 
 **What it buys.** Server-rendered pages with typed file routes, deployed
 as a Worker. The resolver page (`/t/$uid`) is the product, and it has to
-be fast and unbreakable on a phone that just tapped a sticker: SSR gets
+be fast and unbreakable on a phone that just tapped a sticker or scanned a
+code: SSR gets
 the card on screen before the JavaScript arrives. Loaders call the API
 through the typed client, so the web app owns no business logic and no
 data access.

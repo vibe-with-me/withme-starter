@@ -1,5 +1,6 @@
 import {
   isGatheringFull,
+  isGatheringOver,
   type Destination,
   type Gathering,
   type GatheringMember,
@@ -19,7 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GatheringControls } from '../../components/GatheringControls';
-import { GatheringMeta } from '../../components/GatheringMeta';
+import { AddToCalendar, GatheringMeta } from '../../components/GatheringMeta';
 import { Button, Card, ErrorText, Field, Muted, PersonRow, Title } from '../../components/ui';
 import { api } from '../../lib/api';
 import { cardLine } from '../../lib/card-line';
@@ -324,6 +325,8 @@ function GatheringDetail({
               instead of refetching. */}
           {isMember ? <TagPointer gatheringId={gathering.id} hidden={editing} /> : null}
           {actionError ? <ErrorText>{actionError}</ErrorText> : null}
+          {/* Anyone who can see the gathering may save it, until it is over. */}
+          {!editing && !isGatheringOver(gathering) ? <AddToCalendar gathering={gathering} /> : null}
           {!editing && isHost ? (
             <>
               <Button label="Edit" kind="quiet" disabled={busy} onPress={() => setEditing(true)} />

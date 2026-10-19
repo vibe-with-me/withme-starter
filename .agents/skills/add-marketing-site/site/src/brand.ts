@@ -7,7 +7,7 @@ export const WORDMARK = 'withme';
 /** The name in a sentence. */
 export const DISPLAY_NAME = 'withme';
 /** One line under the wordmark: the app's landing promise. */
-export const PROMISE = 'Tap a tag. Meet a person. Stay connected.';
+export const PROMISE = 'Find your people in what you love to do.';
 /** The meta description: one plain sentence of what the app does. */
 export const DESCRIPTION =
   'An NFC tag that opens your card. Tap it to meet someone, connect when you both say yes.';
