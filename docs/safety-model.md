@@ -13,8 +13,8 @@ moved a safety mechanism", this is what it means.
 ## Nobody can list your users
 
 **The promise.** There is no way to see a person you have not met. A card
-is reachable by tapping their tag (knowing the unguessable UID is the
-capability) or through a connection or a live incoming request. Sharing a
+is reachable by tapping their tag or scanning their code (knowing the
+unguessable UID is the capability) or through a connection or a live incoming request. Sharing a
 gathering reveals nothing.
 
 **How.** `profiles` has no anonymous select policy at all. `resolve_tag`
@@ -79,7 +79,19 @@ security-definer functions that take a pair lock (`private.lock_pair`)
 so two simultaneous requests cannot race into a duplicate. Connections
 are a single row per pair.
 
-**The test.** `packages/db/test/requests.test.ts`.
+**Where you met.** A connection remembers the gathering it was made at,
+and the Connections list shows it ("Met at Friday mixer · Thu, Oct 9").
+The database picks it at accept, never the client: a gathering both
+people are still going to, starting between 12 hours before and 2 hours
+after the request was sent. It tells neither person anything new: once
+connected, each already sees the other among that gathering's members. A
+pending request carries no gathering, so a stranger's request never says
+which event they are going to. The list reads it through
+`gatherings_select`, so a gathering the viewer no longer sees reads as
+none.
+
+**The test.** `packages/db/test/requests.test.ts`, and
+`packages/db/test/connection-met-at.test.ts` for where you met.
 
 ## Gatherings are listed; who's going is connections-only
 
@@ -248,7 +260,7 @@ them, as they can read `created_at`; they are not on the card.
 ## Two tiers of profile data
 
 **The promise.** A field on your card is visible to anyone who taps your
-tag. A field in the connections tier is visible only to you and the
+tag or scans your code. A field in the connections tier is visible only to you and the
 people you accepted, and never to someone who blocked you or whom you
 blocked.
 
@@ -274,7 +286,7 @@ platforms and never a value), and
 
 ## Scans are privacy-default
 
-**The promise.** A tap records a user-agent string, a timestamp, and
+**The promise.** A tap or a scan records a user-agent string, a timestamp, and
 whether it came by NFC or a QR code. Nothing else.
 
 **How.** The `tag_scans` table has no columns for location, IP, or

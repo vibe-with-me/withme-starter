@@ -25,11 +25,16 @@ the database: `{ type: 'profile' }` (the owner's card) or
 `{ type: 'gathering', gathering_id }` today. The
 `add-destination-type` skill grows this union (a `link`, say).
 
-**Card.** A person's public profile as a stranger sees it after a tap:
-name, photo, bio, plus any card-tier fields a fork adds. The card is the
-only thing a tap reveals.
+**Card.** A person's public profile as a stranger sees it after a tap or
+a scan: name, photo, bio, plus any card-tier fields a fork adds. The card
+is the only thing a tap or a scan reveals.
 
-**Handshake.** Tap → "Connect" → accept → connected. The whole product
+**Your code.** A QR code on the Share screen (the raised button in the tab
+bar) that opens your card the same way a tap on your tag does, for phones
+without NFC or a tag left at home. Replacing it retires the old code, and
+every screenshot or print of it.
+
+**Handshake.** Tap or scan → "Connect" → accept → connected. The whole product
 the starter ships; everything else serves it.
 
 **Connect request.** The pending state between "Connect" and "Accept".

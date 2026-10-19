@@ -1,5 +1,6 @@
 import {
   isGatheringFull,
+  isGatheringOver,
   type Destination,
   type Gathering,
   type GatheringMember,
@@ -10,7 +11,7 @@ import { createFileRoute, useLoaderData, useNavigate, useRouter } from '@tanstac
 import { useCallback, useEffect, useState } from 'react';
 import { shellStates } from '../components/CalmStates.tsx';
 import { GatheringControls } from '../components/GatheringControls.tsx';
-import { GatheringMeta } from '../components/GatheringMeta.tsx';
+import { AddToCalendar, GatheringMeta } from '../components/GatheringMeta.tsx';
 import { Avatar } from '../components/ProfileCard.tsx';
 import { ReportButton, reportThanks } from '../components/ReportDialog.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
@@ -290,6 +291,8 @@ function GatheringDetail({
             {actionError}
           </p>
         ) : null}
+        {/* Anyone who can see the gathering may save it, until it is over. */}
+        {mode === 'view' && !isGatheringOver(gathering) ? <AddToCalendar gathering={gathering} /> : null}
         {mode === 'view' && isHost ? (
           <div className="row-actions">
             <button

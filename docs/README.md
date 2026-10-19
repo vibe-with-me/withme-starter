@@ -6,9 +6,9 @@ longer version of something it mentions.
 ## For someone deciding whether to fork
 
 - [Building blocks](building-blocks.md): what each package and app does,
-  what a tap actually goes through, and the one pattern (contract first)
+  what a tap or a scan actually goes through, and the one pattern (contract first)
   that everything else follows.
-- [Glossary](glossary.md): tag, UID, destination, card, handshake,
+- [Glossary](glossary.md): tag, UID, destination, card, your code, handshake,
   gathering, block, RLS, contract, Worker, skill, slice.
 - [The stack, and why](stack.md): each technology choice, what it buys,
   what it costs, and the constraints it brings.

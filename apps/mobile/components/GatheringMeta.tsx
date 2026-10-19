@@ -1,9 +1,12 @@
-import { mapsSearchUrl } from '@withme/contract';
+import { gatheringCalendarEvent, gatheringUrl, mapsSearchUrl, type Gathering } from '@withme/contract';
 import { Feather } from '@expo/vector-icons';
+import { createEventInCalendarAsync } from 'expo-calendar/legacy';
+import { useState } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import type { MetaLine } from '../lib/format-time';
 import { fonts, space, TAP_TARGET, useTokens } from '../lib/tokens';
-import { Muted } from './ui';
+import { webUrl } from '../lib/web-url';
+import { Button, ErrorText, Muted } from './ui';
 
 /** What a screen reader says for a location link. */
 export const mapsLinkLabel = (location: string) => `${location}, opens in Maps`;
@@ -65,6 +68,41 @@ export function GatheringMeta({ line }: { line: MetaLine }) {
       {line.head ? <Muted>{line.head}</Muted> : null}
       {line.location ? <MapsLink location={line.location} /> : null}
       {line.tail ? <Muted>{line.tail}</Muted> : null}
+    </>
+  );
+}
+
+/**
+ * Opens the system's own new-event sheet, filled in: the viewer picks the
+ * calendar and saves, or cancels. No calendar permission: iOS 17+ and
+ * Android write through the sheet, not the app (app.json declares none).
+ * The event carries the title, time, location and a link back, never who
+ * is going (packages/contract/src/schemas/calendar.ts).
+ */
+export function AddToCalendar({ gathering }: { gathering: Gathering }) {
+  const [failed, setFailed] = useState(false);
+  async function open() {
+    setFailed(false);
+    const event = gatheringCalendarEvent(gathering, webUrl ? gatheringUrl(webUrl, gathering.id) : null);
+    try {
+      await createEventInCalendarAsync({
+        title: event.title,
+        startDate: event.start,
+        endDate: event.end,
+        location: event.location ?? undefined,
+        // url is iOS-only; the notes carry the link on Android too.
+        url: event.url ?? undefined,
+        notes: event.url ?? undefined,
+      });
+    } catch {
+      // iOS 16 wants calendar access before the sheet, which this app never asks for.
+      setFailed(true);
+    }
+  }
+  return (
+    <>
+      <Button label="Add to calendar" kind="quiet" onPress={() => void open()} />
+      {failed ? <ErrorText>Couldn't open your calendar.</ErrorText> : null}
     </>
   );
 }

@@ -16,8 +16,8 @@ that repo to see how a finished fork is structured.
 
 This repo is the open-source starter for apps where people meet in
 person around something they love. Someone taps an NFC tag (on a keychain,
-a bib, a table, a door) and a phone opens the other person's card. Two taps
-later, they are connected. A host can point a tag at a gathering so the tap
+a bib, a table, a door), or scans the QR code on the other person's phone,
+and the other person's card opens. Two taps later, they are connected. A host can point a tag at a gathering so the tap
 is the invitation.
 
 It ships as a working product: a web app, a mobile app, an API, a database
@@ -75,8 +75,8 @@ minutes ([Try it](#try-it-locally)).
 | Building block | What it does for your users |
 | --- | --- |
 | **Tags** | Each physical tag carries one permanent URL, `https://<your-domain>/t/{UID}`. Where a tap lands, the tag's **destination**, lives in the database: your card by default, or a gathering you're in, so the tap becomes the invitation. Re-point a tag forever without touching the sticker; a fork can add its own destination types (the `add-destination-type` skill). |
-| **The card** | A name, a photo, a short bio. The only thing a stranger sees after a tap. Reachable by tapping a tag or through an existing connection, never by browsing. |
-| **The handshake** | Tap → "Connect" → the other person accepts → you are connected. Requests expire after a week. Either side can remove a connection, quietly. |
+| **The card** | A name, a photo, a short bio. The only thing a stranger sees after a tap or a scan. Reachable by tapping a tag, scanning a code, or through an existing connection, never by browsing. |
+| **The handshake** | Tap or scan → "Connect" → the other person accepts → you are connected. Requests expire after a week. Either side can remove a connection, quietly. |
 | **Gatherings** | A host creates one ("Rooftop listening session") and everyone in the domain sees it in the Events tab: title, time, place, a headcount. Who's going shows only the people you have connected with. Point your tags at a gathering and a tap shows your card plus the invite. No browse surface for people, ever. |
 | **Blocks** | Absolute and invisible. A blocked person sees exactly what a stranger sees, and gets no signal that anything happened. |
 | **Notifications** | Three pushes on the phone, and nothing else, ever: someone sent you a request, someone accepted yours, people joined your gathering. Off until you turn them on; one switch in Profile turns them off. The database sends them, so no way of calling the app skips the block check. |
@@ -264,7 +264,7 @@ re-point it from the app for as long as the domain exists.
 | Where | What lives there |
 | --- | --- |
 | [`packages/contract`](packages/contract) | The single source of truth: oRPC contracts and Zod schemas. Two routers, `public` (resolve, claim, log a scan) and `app` (everything signed in). Every other package derives its types from here. |
-| [`apps/api`](apps/api) | The one backend. Verifies Supabase JWTs, runs every query under the caller's identity, rate-limits anonymous taps at the edge. |
+| [`apps/api`](apps/api) | The one backend. Verifies Supabase JWTs, runs every query under the caller's identity, rate-limits anonymous taps and scans at the edge. |
 | [`apps/web`](apps/web) | TanStack Start on Workers. Loaders call the API through the typed client; the web app owns no data access. `/t/$uid` is the product. |
 | [`apps/mobile`](apps/mobile) | Expo + Expo Router. Same tabs, same resolver, same contract. |
 | [`packages/db`](packages/db) | Supabase client, generated types, query helpers, and the RLS test suite. |
@@ -284,7 +284,7 @@ code. [docs/safety-model.md](docs/safety-model.md) explains each one and
 points at the test that proves it.
 
 - **Nobody can list your users.** A card is reachable only by tapping a
-  tag or through a connection. There is no search, no directory, no
+  tag, scanning a code, or through a connection. There is no search, no directory, no
   sequential id, and no error message that leaks whether a row exists.
 - **Blocks are absolute and invisible.** A blocked person gets the same
   response as a stranger, down to the rate limiter.
@@ -359,7 +359,7 @@ platform costs once it is real.
 | **Bun** workspaces + Turborepo | One install, one lockfile, one `bun run dev`. |
 | **TypeScript + Zod + oRPC** | Change a schema in `packages/contract` and every client fails to compile until it agrees. |
 | **Hono on Cloudflare Workers** | The API and the web app deploy to one account, start cold in milliseconds, and the free tier is generous. |
-| **TanStack Start** | Server-rendered resolver page (the tap must be fast and unbreakable) with typed file routes. |
+| **TanStack Start** | Server-rendered resolver page (a tap or a scan must land fast and unbreakable) with typed file routes. |
 | **Expo + Expo Router** | The mobile app mirrors the web routes file for file, and ships updates over the air. |
 | **Supabase** | Postgres with row-level security, auth, and storage, and a local stack in Docker so tests run against the real thing. |
 
@@ -371,7 +371,7 @@ make different choices, but the skills assume these.
 
 ## What this is not
 
-The starter's job is the moment after a physical tap. It deliberately has
+The starter's job is the moment after a tap or a scan. It deliberately has
 no matching, recommendations, people feeds, or aggregation of events from
 elsewhere; the Events tab is a time-ordered list of your own domain's
 gatherings, a bulletin board, not a recommendation. Software that decides
