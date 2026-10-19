@@ -1,21 +1,18 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { normalizePhone, OTP_CODE_LENGTH } from '@withme/contract';
 import { useState } from 'react';
-import { safeReturnTo } from '../lib/auth-guard.ts';
+import { returnToSearch, safeReturnTo } from '../lib/return-to.ts';
 import { getSupabase } from '../lib/supabase.ts';
 
 export const Route = createFileRoute('/login')({
   ssr: false,
   head: () => ({ meta: [{ title: 'Sign in — withme' }] }),
-  validateSearch: (search): { returnTo?: string } => {
-    const returnTo = safeReturnTo(search.returnTo);
-    return returnTo ? { returnTo } : {};
-  },
+  validateSearch: returnToSearch,
   component: LoginPage,
 });
 
 function LoginPage() {
-  const { returnTo } = Route.useSearch();
+  const returnTo = safeReturnTo(Route.useSearch().returnTo);
   const navigate = useNavigate();
   const [method, setMethod] = useState<'email' | 'phone'>('email');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');

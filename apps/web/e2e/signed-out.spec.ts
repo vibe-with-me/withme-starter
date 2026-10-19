@@ -2,7 +2,7 @@
 // visitor to sign in and remembers where they were going. Nothing signed-in
 // renders first. The landing page and the OAuth return are the other doors.
 import { expect, test } from '@playwright/test';
-import { returnToOf, signUp, signUpWithProfile, uniqueStamp } from './helpers.ts';
+import { agreeToTerms, returnToOf, signUp, signUpWithProfile, uniqueStamp } from './helpers.ts';
 
 const guarded = [
   '/gatherings',
@@ -28,16 +28,23 @@ test.describe('Signed-out redirects', () => {
     });
   }
 
-  // The promise is that sign-in never leaves the app. (Today the login page's
-  // validateSearch does not drop the bad value: TanStack Router merges the
-  // root's raw search back in, and the router then collapses `//evil…` to a
-  // same-origin path. Pinned here as "stays on our origin".)
-  test('a returnTo that points off-site never takes sign-in off the app', async ({ page }) => {
+  // validateSearch alone cannot drop the bad value (the router merges the
+  // raw search back in), so every use re-checks it with safeReturnTo. An
+  // off-site returnTo is ignored outright: sign-up goes where it would with
+  // none, through the new profile, to Events.
+  test('a returnTo that points off-site is ignored and sign-up lands on Events', async ({ page }) => {
     const stamp = uniqueStamp();
     await page.goto('/login?returnTo=//evil.example/steal');
     await signUp(page, `offsite-${stamp}@rls.test`);
-    await page.waitForURL((url) => url.pathname !== '/login');
-    expect(new URL(page.url()).origin).toBe(new URL(test.info().project.use.baseURL!).origin);
+    await page.waitForURL(/\/profile\?/);
+    expect(returnToOf(page)).toBe('/gatherings');
+    await page.getByLabel('Name').fill(`Offsite ${stamp}`);
+    await agreeToTerms(page);
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForURL((url) => url.pathname === '/gatherings');
+    await expect(
+      page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Events' }),
+    ).toHaveAttribute('aria-current', 'page');
   });
 });
 

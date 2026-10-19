@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { safeReturnTo } from '../lib/auth-guard.ts';
+import { returnToSearch, safeReturnTo } from '../lib/return-to.ts';
 import { getSupabase } from '../lib/supabase.ts';
 
 /** OAuth landing: exchanges the PKCE code for a session, then returns. */
 export const Route = createFileRoute('/auth/callback')({
   ssr: false,
   validateSearch: (search): { returnTo?: string; error_description?: string } => ({
-    ...(safeReturnTo(search.returnTo) ? { returnTo: safeReturnTo(search.returnTo) } : {}),
+    ...returnToSearch(search),
     ...(typeof search.error_description === 'string'
       ? { error_description: search.error_description }
       : {}),
@@ -16,7 +16,9 @@ export const Route = createFileRoute('/auth/callback')({
 });
 
 function AuthCallbackPage() {
-  const { returnTo, error_description } = Route.useSearch();
+  const search = Route.useSearch();
+  const returnTo = safeReturnTo(search.returnTo);
+  const { error_description } = search;
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(error_description ?? null);
 

@@ -5,7 +5,7 @@ import { AccountSection } from '../components/AccountSection.tsx';
 import { shellStates } from '../components/CalmStates.tsx';
 import { TermsSummary } from '../components/TermsAgreement.tsx';
 import { api } from '../lib/api.ts';
-import { safeReturnTo } from '../lib/auth-guard.ts';
+import { returnToSearch, safeReturnTo } from '../lib/return-to.ts';
 
 /**
  * The re-ask screen. The shell sends a profile here whenever it agreed to
@@ -16,16 +16,13 @@ import { safeReturnTo } from '../lib/auth-guard.ts';
 export const Route = createFileRoute('/_app/terms')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Updated terms — withme' }] }),
-  validateSearch: (search): { returnTo?: string } => {
-    const returnTo = safeReturnTo(search.returnTo);
-    return returnTo ? { returnTo } : {};
-  },
+  validateSearch: returnToSearch,
   component: TermsPage,
 });
 
 function TermsPage() {
   const { profile } = useLoaderData({ from: '/_app' });
-  const { returnTo } = Route.useSearch();
+  const returnTo = safeReturnTo(Route.useSearch().returnTo);
   const router = useRouter();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);

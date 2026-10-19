@@ -9,17 +9,14 @@ import { MyTags } from '../components/MyTags.tsx';
 import { TermsCheckbox } from '../components/TermsAgreement.tsx';
 import { asSignedInAccount } from '../lib/account-scope.ts';
 import { api } from '../lib/api.ts';
-import { safeReturnTo } from '../lib/auth-guard.ts';
+import { returnToSearch, safeReturnTo } from '../lib/return-to.ts';
 import { settled } from '../lib/loaded.ts';
 
 /** Profile: identity (photo, name, bio), Links, My tags, Account. */
 export const Route = createFileRoute('/_app/profile')({
   ...shellStates,
   head: () => ({ meta: [{ title: 'Your profile — withme' }] }),
-  validateSearch: (search): { returnTo?: string } => {
-    const returnTo = safeReturnTo(search.returnTo);
-    return returnTo ? { returnTo } : {};
-  },
+  validateSearch: returnToSearch,
   loader: async () => {
     // Each settles alone: a failed gatherings list only loses the labels.
     const [links, tags, gatherings] = await asSignedInAccount(() =>
@@ -51,7 +48,7 @@ function ProfilePage() {
 }
 
 function IdentityForm({ profile }: { profile: Profile | null }) {
-  const { returnTo } = Route.useSearch();
+  const returnTo = safeReturnTo(Route.useSearch().returnTo);
   const router = useRouter();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
