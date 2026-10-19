@@ -4,17 +4,14 @@
 
 **Tap a tag. Meet a person. Stay connected.**
 
-Everything is a remix, and this repo is the stems.
-
 withme-starter grew out of [Vibe With Me](https://vibewithme.co), an app
 for the people you meet at shows: tap a tag at a concert or a festival and
-stay connected with the stranger who loved the same set you did. Pull the
-vocals off that track and what is left is this starter: the beat, the
-bassline, and the handshake, waiting for you to lay your own scene over
-it. Live music is where it started. Golf is my other passion, so the first
-remix is [Golf With Me](https://github.com/vibe-with-me/golf-with-me):
-same groove, rounds instead of shows, a handicap on the card. Read that
-repo to hear how a finished remix is mixed down.
+stay connected with the stranger who loved the same set you did. This repo
+is a way to remix that idea for whatever you love. Live music is where it
+started. Golf is my other passion, so the first remix is
+[Golf With Me](https://github.com/vibe-with-me/golf-with-me): the same
+handshake, with rounds instead of shows and a handicap on the card. Read
+that repo to see how a finished fork is structured.
 
 This repo is the open-source starter for apps where people meet in
 person around something they love. Someone taps an NFC tag (on a keychain,
@@ -32,7 +29,7 @@ the vocabulary and the look need to change.
 The stack is opinionated and we like it that way: TanStack Start, Hono,
 oRPC, Cloudflare Workers, Supabase, Bun. [Why those](docs/stack.md) is
 written down, and the choices are not up for substitution in this repo.
-Fork freely. Sample generously.
+Fork freely.
 
 ---
 
@@ -62,12 +59,10 @@ is the tour; [the glossary](docs/glossary.md) defines the words.
 
 ## What you could build with it
 
-Pick your genre. The starter is the instrumental of
-[Vibe With Me](https://vibewithme.co), and every remix so far has made the
-same two moves: rename the gathering (the hook) and add a couple of
-profile fields (the verse). [Golf With Me](https://github.com/vibe-with-me/golf-with-me)
-made them first. The skills exist because those moves repeat, so your
-remix starts at the chorus.
+The starter is the generic version of [Vibe With Me](https://vibewithme.co).
+The first remix, [Golf With Me](https://github.com/vibe-with-me/golf-with-me),
+needed the same two moves every vertical needs: rename the gathering, add a couple of
+profile fields. The skills exist because those moves repeat.
 
 | Idea | The gathering becomes | Fields on the card | Fields only connections see | Where the tag lives |
 | --- | --- | --- | --- | --- |
@@ -134,8 +129,8 @@ wrong on a fresh machine are in [Local development](docs/local-development.md).
 
 ## Worked example: Run With Me, skill by skill
 
-Here is a full remix, track by track. Say you run a Saturday morning run
-club and want an app where a tap on someone's bib connects you, and a tap on the sign at the start line joins
+Say you run a Saturday morning run club and want an app where a tap on
+someone's bib connects you, and a tap on the sign at the start line joins
 you to today's run. Here is how you get there with the skills in
 [`.agents/skills/`](.agents/skills/). Each skill is a Markdown runbook an
 agent such as Claude Code can execute, with a checkpoint at the end of
