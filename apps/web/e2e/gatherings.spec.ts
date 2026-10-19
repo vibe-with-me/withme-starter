@@ -1,6 +1,7 @@
 // The gathering: tap the host's tag, join, see the headcount but not the
 // host; connect, and the host appears in who's going. The feed lists it to
 // the whole domain.
+import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator } from '@playwright/test';
 import { admin, agreeToTerms, freshUid, signUp } from './helpers.ts';
 
@@ -110,6 +111,22 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   // Joining revealed Bob's own row and nothing else: the host is not a connection yet.
   await expect(bob.getByText('Smoke Bob')).toBeVisible();
   await expect(bob.getByText('Smoke Ada')).toHaveCount(0);
+
+  // Add to calendar downloads an .ics built in the page: title, time, place
+  // and a link back, never who is going or how many.
+  const [download] = await Promise.all([
+    bob.waitForEvent('download'),
+    bob.getByRole('button', { name: 'Add to calendar' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe(`smoke-rooftop-${stamp}.ics`);
+  const ics = await readFile(await download.path(), 'utf8');
+  expect(ics).toContain(`SUMMARY:${title}`);
+  expect(ics).toContain('LOCATION:The roof');
+  expect(ics.replace(/\r\n /g, '')).toContain(`URL:${new URL(detailPath, bob.url()).href}`);
+  expect(ics).toMatch(/DTSTART:\d{8}T\d{6}Z/);
+  for (const secret of ['Smoke Ada', 'Smoke Bob', 'going', 'ATTENDEE', 'ORGANIZER']) {
+    expect(ics).not.toContain(secret);
+  }
 
   // Tapping the tag again as a member opens the gathering instead of inviting twice.
   await bob.goto(`/t/${uid}`);
