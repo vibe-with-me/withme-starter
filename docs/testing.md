@@ -188,9 +188,10 @@ deploys the branch's Workers as `withme-api-staging` and `withme-web-staging`
 (beside the live demo Workers, which it never touches), points them at the
 hosted starter demo's database, and runs the same specs there.
 
-**Starting it.** Add the `staging-e2e` label to a pull request (it runs
-again on each push while the label stays), or run it from the Actions tab.
-Runs take turns: they share one database.
+**Starting it.** Add the `staging-e2e` label to a pull request, or run it
+from the Actions tab. A push does not start another run: to stage new
+commits, remove the label and add it again. Runs take turns: they share
+one database.
 
 **Startup and teardown.** Every spec seeds its own data, scoped to the run:
 accounts on `@rls.test` addresses, the tags it provisions, and what those

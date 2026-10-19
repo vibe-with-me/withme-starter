@@ -69,9 +69,13 @@ async function sweep(): Promise<number> {
     if (tags.error) throw tags.error;
     for (const id of chunk) {
       // Photos live under the owner's folder; deleting the account leaves them.
-      const { data: files } = await admin.storage.from('avatars').list(id);
-      if (files && files.length > 0) {
-        await admin.storage.from('avatars').remove(files.map((f) => `${id}/${f.name}`));
+      const listed = await admin.storage.from('avatars').list(id);
+      if (listed.error) throw listed.error;
+      if (listed.data.length > 0) {
+        const removed = await admin.storage
+          .from('avatars')
+          .remove(listed.data.map((f) => `${id}/${f.name}`));
+        if (removed.error) throw removed.error;
       }
       // Cascades the profile, connections, requests, blocks, gatherings and
       // memberships, links, push tokens and scans of their tags.
