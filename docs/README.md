@@ -29,6 +29,9 @@ longer version of something it mentions.
 - [Local development](local-development.md): the stack on your machine,
   the demo accounts, the test suites, and the fixes for what goes wrong on
   a fresh install.
+- [Testing](testing.md): what each suite proves, the map of pages and
+  safety promises to the e2e specs, what CI runs, how to read a failure,
+  and how a fork adds a spec for its own feature.
 - [NFC tags](nfc-tags.md): the chip, the URL, random versus chip UIDs,
   encoding and locking, and why the domain you encode is forever.
 - [Merch](merch.md): the store pointer in the app, accessories per

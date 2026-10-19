@@ -91,16 +91,19 @@ bun run lint && bun run typecheck && bun run test
 ```
 
 All three must be green before you open a PR, and the e2e harness your
-slice touches must pass too. [Local development](docs/local-development.md)
-has the setup, the ports, and the fixes for what goes wrong on a fresh
-machine.
+slice touches must pass too: a change a person can see comes with a spec
+in `apps/web/e2e` ([Testing](docs/testing.md) has how, and the map of what
+is covered). [Local development](docs/local-development.md) has the setup,
+the ports, and the fixes for what goes wrong on a fresh machine.
 
 ## Review
 
 A PR merges when CI is green and CodeRabbit's review is clean, meaning its
-findings are either fixed or answered. CI runs lint, typecheck, build, the
-RLS suite against Supabase local, and the Playwright smoke; it is the same
-gate as above plus the production-build smoke. Keep PRs to one slice. A PR
+findings are either fixed or answered. CI has two checks: `ci` (lint,
+typecheck, build, and the unit, RLS and API suites against Supabase
+local; the same gate as above) and `e2e` (the Playwright suite against
+the production build). A red `e2e` means a user flow broke;
+[Testing](docs/testing.md#reading-a-failure) says how to find which. Keep PRs to one slice. A PR
 that bundles a refactor with a feature gets asked to split.
 
 ## Skills are recipes, not features

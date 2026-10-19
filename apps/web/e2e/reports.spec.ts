@@ -1,8 +1,16 @@
-// Guideline 1.2: report a person from their card (and block them in the same
-// step), and agree to the terms at sign-up and again when they change.
-import { expect, test, type Page } from '@playwright/test';
-import { TERMS_VERSION } from '@withme/contract';
-import { admin, claimFreshTag, signUp, signUpWithProfile } from './helpers.ts';
+// Reports are private (docs/safety-model.md, Guideline 1.2): report a person
+// from their card or a gathering from its page, and block in the same step.
+// Only the operator sees the report. The terms gate is in terms.spec.ts.
+import { expect, test } from '@playwright/test';
+import {
+  admin,
+  claimFreshTag,
+  createGathering,
+  newPerson,
+  profileIdByName,
+  signUpWithProfile,
+  uniqueStamp,
+} from './helpers.ts';
 
 async function ownerOf(uid: string): Promise<string> {
   const { data, error } = await admin.from('tags').select('claimed_by').eq('uid', uid).single();
@@ -56,86 +64,42 @@ test('a signed-out tapper is sent through login to report', async ({ browser }) 
   expect(new URL(tapper.url()).searchParams.get('returnTo')).toBe(`/t/${uid}`);
 });
 
-test('sign-up needs the terms agreement; a new version asks again before the app opens', async ({
-  page,
+test('a guest reports a gathering and blocks its host; the report names the gathering', async ({
+  browser,
 }) => {
-  const name = `Smoke Terms ${Date.now()}`;
-  await page.goto('/login');
-  await signUp(page, `smoke-terms-${Date.now()}@rls.test`);
-  await page.waitForURL(/\/profile\?/);
-  await page.getByLabel('Name').fill(name);
-  const save = page.getByRole('button', { name: 'Save' });
-  await expect(save).toBeDisabled();
-  await expect(page.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', 'https://example.com/terms');
-  await expect(page.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
-    'href',
-    'https://example.com/privacy',
-  );
-  await page.getByRole('checkbox', { name: /I agree to/ }).check();
-  await save.click();
-  await page.waitForURL('**/gatherings');
+  const stamp = uniqueStamp();
+  const title = `Report Picnic ${stamp}`;
+  const hostName = `Report Host ${stamp}`;
+  const host = await newPerson(browser);
+  await signUpWithProfile(host, `report-host-${stamp}@rls.test`, hostName);
+  const detailPath = await createGathering(host, title);
+  const gatheringId = detailPath.split('/').pop()!;
+  // The host never sees Report or Block on their own gathering.
+  await expect(host.getByRole('button', { name: 'Report' })).toHaveCount(0);
+  await expect(host.getByRole('button', { name: 'Block host' })).toHaveCount(0);
 
-  // The fork bumps TERMS_VERSION: this profile now holds an older one.
-  const { data: profile } = await admin
-    .from('profiles')
-    .update({ terms_version: 'smoke-old' })
-    .eq('display_name', name)
-    .select('id')
-    .single();
+  const guest = await newPerson(browser);
+  await signUpWithProfile(guest, `report-guest-${stamp}@rls.test`, `Report Guest ${stamp}`);
+  await guest.goto(detailPath);
+  await guest.getByRole('button', { name: 'Report' }).click();
+  const dialog = guest.getByRole('dialog', { name: 'Report this gathering' });
+  await dialog.getByRole('radio', { name: 'Spam or a scam' }).check();
+  await expect(dialog.getByRole('checkbox', { name: 'Also block the host' })).toBeChecked();
+  await dialog.getByRole('button', { name: 'Send report' }).click();
+  await expect(guest.getByText('Thanks. Your report is in and the host is blocked.', { exact: false })).toBeVisible();
 
-  await page.goto('/connections');
-  await page.waitForURL(/\/terms\?/);
-  expect(new URL(page.url()).searchParams.get('returnTo')).toBe('/connections');
-  await expect(page.getByRole('heading', { name: 'Updated terms' })).toBeVisible();
-  // Not agreeing means leaving: the account controls are on the page.
-  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  const hostId = await profileIdByName(hostName);
+  const { data: reports } = await admin.from('reports').select('*').eq('gathering_id', gatheringId);
+  expect(reports).toHaveLength(1);
+  expect(reports?.[0]).toMatchObject({ reported_id: hostId, reason: 'spam', status: 'open' });
+  const { data: blocks } = await admin
+    .from('blocks')
+    .select('blocked_id')
+    .eq('blocker_id', reports![0]!.reporter_id);
+  expect(blocks).toEqual([{ blocked_id: hostId }]);
 
-  // Every other tab sends them back here.
-  await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Events' }).click();
-  await expect(page.getByRole('heading', { name: 'Updated terms' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'I agree' }).click();
-  await page.waitForURL(/\/(connections|gatherings)$/);
-  const { data: after } = await admin.from('profiles').select('terms_version').eq('id', profile!.id).single();
-  expect(after?.terms_version).toBe(TERMS_VERSION);
-});
-
-/** Signs up with a profile, then moves it to an older terms version: the gate holds it on /terms. */
-async function stuckOnOldTerms(page: Page, label: string): Promise<{ email: string; id: string }> {
-  const email = `smoke-terms-${label}-${Date.now()}@rls.test`;
-  const name = `Smoke Terms ${label} ${Date.now()}`;
-  await signUpWithProfile(page, email, name);
-  const { data, error } = await admin
-    .from('profiles')
-    .update({ terms_version: 'smoke-old' })
-    .eq('display_name', name)
-    .select('id')
-    .single();
-  if (error || !data) throw error ?? new Error('profile not found');
-  await page.goto('/profile');
-  await page.waitForURL(/\/terms\?/);
-  await expect(page.getByRole('heading', { name: 'Updated terms' })).toBeVisible();
-  return { email, id: data.id as string };
-}
-
-// The gate must never trap anyone: leaving without agreeing has to work
-// (Apple requires account deletion to be reachable, and the profile gate
-// once had a redirect loop on the way out).
-test('someone held on the terms screen can sign out without agreeing', async ({ page }) => {
-  await stuckOnOldTerms(page, 'signout');
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await page.waitForURL((url) => url.pathname === '/', { timeout: 10_000 });
-  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
-  await page.goto('/profile');
-  await page.waitForURL(/\/login\?/);
-});
-
-test('someone held on the terms screen can delete their account without agreeing', async ({ page }) => {
-  const { id } = await stuckOnOldTerms(page, 'delete');
-  await page.getByRole('button', { name: 'Delete account', exact: true }).click();
-  await page.getByRole('button', { name: 'Delete my account', exact: true }).click();
-  await page.waitForURL((url) => url.pathname === '/', { timeout: 10_000 });
-  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
-  const { data } = await admin.auth.admin.getUserById(id);
-  expect(data.user).toBeNull();
+  // The block hides the gathering from the reporter from now on.
+  await guest.goto(detailPath);
+  await guest.getByRole('button', { name: 'Join', exact: true }).click();
+  await expect(guest.getByText("This gathering isn't available.")).toBeVisible();
 });

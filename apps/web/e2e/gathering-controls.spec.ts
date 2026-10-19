@@ -2,40 +2,17 @@
 // A stranger's tap on the host's tag shows the card and no gathering, and
 // the detail URL reads as unavailable; the host's connections see it, join
 // until it is full, and the next one sees Full instead of Join.
-import { expect, test, type Locator, type Page } from '@playwright/test';
-import { admin, claimFreshTag, signUpWithProfile } from './helpers.ts';
+import { expect, test, type Page } from '@playwright/test';
+import {
+  claimFreshTag,
+  connectByAdmin,
+  newPerson,
+  profileIdByName,
+  revealInFeed,
+  signUpWithProfile,
+} from './helpers.ts';
 
 test.setTimeout(180_000);
-
-async function profileId(name: string): Promise<string> {
-  const { data, error } = await admin.from('profiles').select('id').eq('display_name', name).single();
-  expect(error).toBeNull();
-  return data!.id as string;
-}
-
-/** Setup, not the path under test: an accepted connection, as accept_connect_request writes it. */
-async function connect(a: string, b: string): Promise<void> {
-  const [user_a, user_b] = a < b ? [a, b] : [b, a];
-  const { error } = await admin.from('connections').insert({ user_a, user_b });
-  expect(error).toBeNull();
-}
-
-/** The feed comes a page at a time (as in gatherings.spec.ts): Load more until the row shows. */
-async function revealInFeed(feed: Locator, title: string): Promise<void> {
-  const row = feed.getByText(title);
-  const more = feed.getByRole('button', { name: 'Load more' });
-  for (let page = 0; page < 50; page++) {
-    await expect(row.or(more).first()).toBeVisible();
-    if (await row.isVisible()) return;
-    await more.click();
-    await expect(feed.getByRole('button', { name: 'Loading…' })).toHaveCount(0);
-  }
-  await expect(row).toBeVisible();
-}
-
-async function newPage(browser: import('@playwright/test').Browser): Promise<Page> {
-  return (await browser.newContext()).newPage();
-}
 
 test('a connections-only gathering with three spots: hidden from a stranger, full after two connections', async ({
   browser,
@@ -45,7 +22,7 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   const title = `Cap Round ${stamp}`;
 
   // --- the host claims a tag, then creates the gathering ------------------------
-  const host = await newPage(browser);
+  const host = await newPerson(browser);
   const uid = await claimFreshTag(host, `cap-host-${stamp}@rls.test`, hostName);
   await host.goto('/gatherings');
   await host.getByLabel('Title').fill(title);
@@ -66,7 +43,7 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   await expect(host.getByRole('button', { name: 'Point my tags back to my profile' })).toBeVisible();
 
   // --- a stranger: the tap shows the card only, the URL reads as unavailable ----
-  const stranger = await newPage(browser);
+  const stranger = await newPerson(browser);
   await stranger.goto(`/t/${uid}`);
   await expect(stranger.getByRole('heading', { name: hostName })).toBeVisible();
   await expect(stranger.getByText(title)).toHaveCount(0);
@@ -81,10 +58,10 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   // --- three of the host's connections ------------------------------------------
   const friends: Page[] = [];
   for (const n of [1, 2, 3]) {
-    const page = await newPage(browser);
+    const page = await newPerson(browser);
     const name = `Cap Friend ${n} ${stamp}`;
     await signUpWithProfile(page, `cap-friend-${n}-${stamp}@rls.test`, name);
-    await connect(await profileId(hostName), await profileId(name));
+    await connectByAdmin(await profileIdByName(hostName), await profileIdByName(name));
     friends.push(page);
   }
   const [first, second, third] = friends as [Page, Page, Page];

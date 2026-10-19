@@ -1,0 +1,49 @@
+# Sign in -> profile -> connections: a returning person signs in, sees and
+# edits their profile, finds their connection, and signs out.
+appId: ${APP_ID}
+name: Sign in, edit the profile, see a connection
+---
+- runFlow: steps/open-signed-out.yaml
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Email
+    below: Email
+- inputText: ${EMAIL}
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Password
+    below: Password
+- inputText: ${PASSWORD}
+- tapOn:
+    text: Sign in
+    below: Password
+- runFlow: steps/past-password-sheet.yaml
+
+- tapOn: Profile
+- extendedWaitUntil:
+    visible: Your profile
+    timeout: 15000
+- assertVisible: ${NAME}
+# The input, not its label: both carry the name.
+# A multiline field reads as its label plus its placeholder.
+- tapOn:
+    text: Bio.*
+    below: Bio
+- inputText: Here from Maestro
+# The keyboard covers Save and the tab bar: a tap on the title closes it
+# (Maestro's hideKeyboard cannot on this screen).
+- tapOn: '(Create y|Y)our profile'
+- scrollUntilVisible:
+    element: Save
+    direction: DOWN
+- tapOn: Save
+- extendedWaitUntil:
+    visible: Saved.
+    timeout: 15000
+
+- tapOn: Connections
+- extendedWaitUntil:
+    visible: ${FRIEND}
+    timeout: 15000
+
+- runFlow: steps/sign-out.yaml

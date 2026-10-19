@@ -1,0 +1,25 @@
+# Opens the app on the sign-in screen, whatever state the last run left.
+appId: ${APP_ID}
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: true
+- openLink: ${OPEN_URL}
+# Expo Go's first-run dev-menu card; absent in a dev build.
+- tapOn:
+    text: Continue
+    optional: true
+# Signed in from a previous run, or signed out: wait for either.
+- extendedWaitUntil:
+    visible: 'Profile|New here\? Create an account'
+    timeout: 60000
+- tapOn:
+    text: Continue
+    optional: true
+- runFlow:
+    when:
+      visible: Profile
+    file: sign-out.yaml
+- extendedWaitUntil:
+    visible: 'New here\? Create an account'
+    timeout: 60000

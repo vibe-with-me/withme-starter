@@ -1,6 +1,6 @@
 // The shell: the signed-in chrome every tab lives in.
 import { expect, test } from '@playwright/test';
-import { agreeToTerms, returnToOf, signUp } from './helpers.ts';
+import { agreeToTerms, returnToOf, signUp, signUpWithProfile, uniqueStamp } from './helpers.ts';
 
 test('a signed-out visitor is sent to sign in, then lands in the shell', async ({ page }) => {
   await page.goto('/connections');
@@ -235,4 +235,14 @@ test('signing in without a destination lands on Events, the first tab', async ({
   await expect(
     page.getByRole('region', { name: 'Yours' }).getByText('Join one above, or create your own.'),
   ).toBeVisible();
+});
+
+test('with no store configured, /merch goes to Events and the tab is absent', async ({ page }) => {
+  const stamp = uniqueStamp();
+  await signUpWithProfile(page, `smoke-merch-${stamp}@rls.test`, `Smoke Merch ${stamp}`);
+  await page.goto('/merch');
+  await page.waitForURL((url) => url.pathname === '/gatherings');
+  const nav = page.getByRole('navigation', { name: 'Primary' });
+  await expect(nav.getByRole('link', { name: 'Events' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.getByRole('link', { name: 'Merch' })).toHaveCount(0);
 });

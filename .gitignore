@@ -66,3 +66,6 @@ provisioned-tags.*
 
 # The go-live skill's throwaway sign-in probe (it reads the demo credentials).
 apps/web/authed-check.ts
+
+# Maestro (mobile e2e) screenshots and reports
+apps/mobile/e2e/.maestro/

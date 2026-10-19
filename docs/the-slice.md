@@ -186,10 +186,12 @@ headcount and not the host, connect, see the host),
 `gathering-controls.spec.ts` (a connections-only gathering with three
 spots: hidden from a stranger, full after the host's connections join),
 `connections.spec.ts`
-(the list ladder),
-`profile.spec.ts` (photo, my tags, account deletion), and `reports.spec.ts`
-(report and block from a card; the terms agreement and its re-ask), all
-sharing `e2e/helpers.ts` (`agreeToTerms` ticks the sign-up box). Extend whichever
+(the list ladder; decline and remove),
+`profile.spec.ts` (photo, my tags, account deletion), `reports.spec.ts`
+(report and block from a card or a gathering), `terms.spec.ts` (the terms
+agreement and its re-ask), `blocks.spec.ts`, `enumeration.spec.ts` and
+`signed-out.spec.ts`, all sharing `e2e/helpers.ts` (`agreeToTerms` ticks
+the sign-up box). [testing.md](testing.md) has the map. Extend whichever
 one your slice touches; a slice nobody can walk end-to-end is not done.
 
 ## The safety discipline

@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Browser, type Locator, type Page } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321';
@@ -22,6 +22,78 @@ export function freshUid(): string {
     uid += '0123456789ABCDEF'[Math.floor(Math.random() * 16)];
   }
   return uid;
+}
+
+/**
+ * A suffix for this test's emails, names and titles. Date.now() alone can
+ * repeat across workers under --repeat-each; the random tail cannot.
+ */
+export function uniqueStamp(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** A page in a fresh browser context: a separate person, with no shared session. */
+export async function newPerson(browser: Browser): Promise<Page> {
+  return (await browser.newContext()).newPage();
+}
+
+/** Setup, not the path under test: the profile id behind a (stamped, so unique) display name. */
+export async function profileIdByName(name: string): Promise<string> {
+  const { data, error } = await admin.from('profiles').select('id').eq('display_name', name).single();
+  if (error || !data) throw error ?? new Error(`no profile named ${name}`);
+  return data.id as string;
+}
+
+/** Setup, not the path under test: an accepted connection, as accept_connect_request writes it. */
+export async function connectByAdmin(a: string, b: string): Promise<void> {
+  const [user_a, user_b] = a < b ? [a, b] : [b, a];
+  const { error } = await admin.from('connections').insert({ user_a, user_b });
+  if (error) throw error;
+}
+
+/**
+ * The feed comes a page at a time, and other tests fill the first page:
+ * press Load more until the row shows, as a person would.
+ */
+export async function revealInFeed(feed: Locator, title: string): Promise<void> {
+  const row = feed.getByText(title);
+  const more = feed.getByRole('button', { name: 'Load more' });
+  for (let page = 0; page < 50; page++) {
+    await expect(row.or(more).first()).toBeVisible();
+    if (await row.isVisible()) return;
+    await more.click();
+    await expect(feed.getByRole('button', { name: 'Loading…' })).toHaveCount(0);
+  }
+  await expect(row).toBeVisible();
+}
+
+/**
+ * The other half: load every page, then the row must be absent. A hidden
+ * gathering has to be missing from the whole feed, not just the first page.
+ */
+export async function expectNotInFeed(page: Page, title: string): Promise<void> {
+  const feed = page.getByRole('region', { name: 'Happening' });
+  const more = feed.getByRole('button', { name: 'Load more' });
+  // The feed has rendered once it shows a row or its empty line.
+  await expect(feed.locator('.row, .empty').first()).toBeVisible();
+  for (let n = 0; n < 200 && (await more.isVisible()); n++) {
+    await more.click();
+    await expect(feed.getByRole('button', { name: 'Loading…' })).toHaveCount(0);
+  }
+  await expect(more).toHaveCount(0);
+  await expect(feed.getByText(title)).toHaveCount(0);
+}
+
+/** Creates a gathering from the Events tab and opens it; returns the detail path. */
+export async function createGathering(page: Page, title: string): Promise<string> {
+  await page.goto('/gatherings');
+  await page.getByLabel('Title').fill(title);
+  await page.getByRole('button', { name: 'Create gathering' }).click();
+  const yours = page.getByRole('region', { name: 'Yours' });
+  await yours.locator('.row', { hasText: title }).getByRole('link', { name: 'Open', exact: true }).click();
+  await page.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole('heading', { name: title })).toBeVisible();
+  return new URL(page.url()).pathname;
 }
 
 /** Drives the login page's sign-up form. Local Supabase has confirmations off. */

@@ -1,0 +1,11 @@
+# From anywhere in the tabs: Profile, then Sign out, back on sign-in.
+appId: ${APP_ID}
+---
+- tapOn: Profile
+- scrollUntilVisible:
+    element: Sign out
+    direction: DOWN
+- tapOn: Sign out
+- extendedWaitUntil:
+    visible: 'New here\? Create an account'
+    timeout: 15000

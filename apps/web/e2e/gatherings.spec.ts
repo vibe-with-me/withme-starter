@@ -1,22 +1,8 @@
 // The gathering: tap the host's tag, join, see the headcount but not the
 // host; connect, and the host appears in who's going. The feed lists it to
 // the whole domain.
-import { expect, test, type Locator } from '@playwright/test';
-import { admin, agreeToTerms, freshUid, signUp } from './helpers.ts';
-
-/** The feed comes a page at a time, and other runs fill the first page:
- * press Load more until the row shows, as a person would. */
-async function revealInFeed(feed: Locator, title: string): Promise<void> {
-  const row = feed.getByText(title);
-  const more = feed.getByRole('button', { name: 'Load more' });
-  for (let page = 0; page < 50; page++) {
-    await expect(row.or(more).first()).toBeVisible();
-    if (await row.isVisible()) return;
-    await more.click();
-    await expect(feed.getByRole('button', { name: 'Loading…' })).toHaveCount(0);
-  }
-  await expect(row).toBeVisible();
-}
+import { expect, test } from '@playwright/test';
+import { admin, agreeToTerms, freshUid, revealInFeed, signUp } from './helpers.ts';
 
 test("tap a host's tag, join from the feed, and who's going shows only connections", async ({
   browser,

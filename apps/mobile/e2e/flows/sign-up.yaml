@@ -1,0 +1,51 @@
+# Sign up -> create the profile (the terms agreement is required) ->
+# an empty Connections list.
+appId: ${APP_ID}
+name: Sign up and create a profile
+---
+- runFlow: steps/open-signed-out.yaml
+# Filled in sign-in mode, then switched: in sign-up mode the field is a
+# new-password field, and iOS's strong-password autofill swallows typed
+# text there. The form keeps its values across the switch.
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Email
+    below: Email
+- inputText: ${NEW_EMAIL}
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Password
+    below: Password
+- inputText: ${PASSWORD}
+- tapOn: 'New here\? Create an account'
+- tapOn: Sign up
+- runFlow: steps/past-password-sheet.yaml
+
+- tapOn: Profile
+- extendedWaitUntil:
+    visible: Create your profile
+    timeout: 15000
+# The input, not its label: both carry the name.
+- tapOn:
+    text: Name
+    below: Name
+- inputText: ${NEW_NAME}
+# Save stays disabled until the terms are agreed to.
+- tapOn: I agree to.*
+# The keyboard covers Save and the tab bar: a tap on the title closes it
+# (Maestro's hideKeyboard cannot on this screen).
+- tapOn: '(Create y|Y)our profile'
+- scrollUntilVisible:
+    element: Save
+    direction: DOWN
+- tapOn: Save
+- extendedWaitUntil:
+    visible: Your profile
+    timeout: 15000
+
+- tapOn: Connections
+- extendedWaitUntil:
+    visible: No connections yet. Tap someone's tag to start.
+    timeout: 15000
+
+- runFlow: steps/sign-out.yaml

@@ -30,7 +30,8 @@ publishable key reaches PostgREST directly: the API Worker's per-IP and
 per-tag limits only see calls that go through it, so they are advisory,
 never the boundary.
 
-**The test.** `packages/db/test/enumeration.test.ts`.
+**The test.** `packages/db/test/enumeration.test.ts`, and through the
+browser `apps/web/e2e/enumeration.spec.ts`.
 
 **What this means for a fork.** Never add a browse, search, "nearby", or
 "members of" surface that reaches past the viewer's own relationships.
@@ -62,7 +63,8 @@ see the card at that moment (`private.sees_card`, the same rule
 whose id the feed lists, blocks them and reveals nothing.
 
 **The test.** `packages/db/test/blocks.test.ts`, plus the blocked-viewer
-assertions in `apps/api/e2e/handshake.e2e.ts`.
+assertions in `apps/api/e2e/handshake.e2e.ts` and, through the browser,
+`apps/web/e2e/blocks.spec.ts`.
 
 **What this means for a fork.** Every new read or write path must answer
 one question: what does the blocked party see? The answer has to be:
@@ -79,7 +81,8 @@ security-definer functions that take a pair lock (`private.lock_pair`)
 so two simultaneous requests cannot race into a duplicate. Connections
 are a single row per pair.
 
-**The test.** `packages/db/test/requests.test.ts`.
+**The test.** `packages/db/test/requests.test.ts`, and through the
+browser `apps/web/e2e/handshake.spec.ts` and `connections.spec.ts`.
 
 ## Gatherings are listed; who's going is connections-only
 
@@ -242,8 +245,8 @@ agreed once, at sign-up, which the database enforces. The two columns
 are on `profiles`, so anyone who can read your profile row can read
 them, as they can read `created_at`; they are not on the card.
 
-**The test.** `packages/db/test/terms.test.ts`, and the terms spec in
-`apps/web/e2e/reports.spec.ts`.
+**The test.** `packages/db/test/terms.test.ts`, and
+`apps/web/e2e/terms.spec.ts`.
 
 ## Two tiers of profile data
 

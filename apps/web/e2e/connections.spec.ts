@@ -1,6 +1,13 @@
 // Connections: three lists behind segments, each on its own ladder.
 import { expect, test } from '@playwright/test';
-import { signUpWithProfile } from './helpers.ts';
+import {
+  claimFreshTag,
+  connectByAdmin,
+  newPerson,
+  profileIdByName,
+  signUpWithProfile,
+  uniqueStamp,
+} from './helpers.ts';
 
 test('a failed list says so with a retry; the other lists still render', async ({ page }) => {
   await signUpWithProfile(page, `smoke-lists-${Date.now()}@rls.test`, 'Smoke Lists');
@@ -38,4 +45,57 @@ test('a failed list says so with a retry; the other lists still render', async (
   failing = false;
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByText('No one is blocked.')).toBeVisible();
+});
+
+// Connections are mutual (docs/safety-model.md): only an accept makes one,
+// and either side can end it without the other being told.
+test.describe('Connections are mutual', () => {
+  test('a declined request makes no connection, and the requester is not told', async ({
+    browser,
+  }) => {
+    const stamp = uniqueStamp();
+    const adaName = `Decline Ada ${stamp}`;
+    const bobName = `Decline Bob ${stamp}`;
+    const ada = await newPerson(browser);
+    const uid = await claimFreshTag(ada, `decline-ada-${stamp}@rls.test`, adaName);
+    const bob = await newPerson(browser);
+    await signUpWithProfile(bob, `decline-bob-${stamp}@rls.test`, bobName);
+    await bob.goto(`/t/${uid}`);
+    await bob.getByRole('button', { name: 'Connect' }).click();
+    await expect(bob.getByText(/request sent/i)).toBeVisible();
+
+    await ada.goto('/connections');
+    const segments = ada.getByRole('navigation', { name: 'Connections lists' });
+    await segments.getByRole('link', { name: 'Requests, 1 pending' }).click();
+    await ada.locator('.row', { hasText: bobName }).getByRole('button', { name: 'Decline' }).click();
+    await expect(ada.getByText('No requests right now.')).toBeVisible();
+    await segments.getByRole('link', { name: 'Connections' }).click();
+    await expect(ada.getByText("No connections yet. Tap someone's tag to start.")).toBeVisible();
+
+    // Bob's side shows nothing either way: no connection, no "declined".
+    await bob.goto('/connections');
+    await expect(bob.getByText("No connections yet. Tap someone's tag to start.")).toBeVisible();
+    await expect(bob.getByText(/declined/i)).toHaveCount(0);
+  });
+
+  test('removing a connection removes it for both', async ({ browser }) => {
+    const stamp = uniqueStamp();
+    const adaName = `Remove Ada ${stamp}`;
+    const bobName = `Remove Bob ${stamp}`;
+    const ada = await newPerson(browser);
+    await signUpWithProfile(ada, `remove-ada-${stamp}@rls.test`, adaName);
+    const bob = await newPerson(browser);
+    await signUpWithProfile(bob, `remove-bob-${stamp}@rls.test`, bobName);
+    await connectByAdmin(await profileIdByName(adaName), await profileIdByName(bobName));
+
+    await bob.goto('/connections');
+    await expect(bob.getByText(adaName)).toBeVisible();
+    await ada.goto('/connections');
+    await ada.locator('.row', { hasText: bobName }).getByRole('button', { name: 'Remove' }).click();
+    await expect(ada.getByText("No connections yet. Tap someone's tag to start.")).toBeVisible();
+
+    await bob.reload();
+    await expect(bob.getByText("No connections yet. Tap someone's tag to start.")).toBeVisible();
+    await expect(bob.getByText(adaName)).toHaveCount(0);
+  });
 });

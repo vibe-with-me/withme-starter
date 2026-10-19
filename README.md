@@ -126,6 +126,7 @@ has the commands).
 
 Mobile, tests, ports, and the fixes for the two or three things that go
 wrong on a fresh machine are in [Local development](docs/local-development.md).
+What the tests cover and how to add your own: [Testing](docs/testing.md).
 
 ## Worked example: Run With Me, skill by skill
 
@@ -353,7 +354,8 @@ GoToTags from the starter's encode list, a Shopify store behind the tab.
 - `apps/api` runs on Cloudflare Workers: Workers-compatible dependencies
   only.
 - Lint is `oxlint --deny-warnings`; CI runs lint, typecheck, build, the
-  RLS suite against Supabase local, and the Playwright smoke.
+  RLS suite against Supabase local (the `ci` check), and the Playwright
+  suite (the `e2e` check). See [docs/testing.md](docs/testing.md).
 - [docs/skills-roadmap.md](docs/skills-roadmap.md) records which skills
   exist, which were deliberately skipped, and why.
 
