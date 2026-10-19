@@ -528,6 +528,7 @@ describe('gathering destinations', () => {
   });
 });
 
+const isoAt = (ms: number) => new Date(ms).toISOString();
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString();
 
 describe('gathering limits', () => {
@@ -660,6 +661,73 @@ describe('the feed, a page at a time', () => {
       (g) => `${Date.parse(g.starts_at).toString().padStart(15, '0')}|${g.id}`,
     );
     expect(order).toEqual(order.toSorted());
+  });
+
+  it('a window keeps only its own starts, page by page, and never reaches before now', async () => {
+    const alice = await createTestUser('Alice');
+    // A three-day window of its own, far enough out that no other run's rows crowd it.
+    const day = 86_400_000;
+    const from = Date.now() + (220 + Math.floor(Math.random() * 100)) * day;
+    const to = from + 3 * day;
+    const inside = [from, from, from, from + day, to - 1000]; // ties on the open edge
+    const outside = [from - 1000, to, to + day];
+    const { data: seeded, error } = await admin
+      .from('gatherings')
+      .insert(
+        [...inside, ...outside].map((ms, i) => ({
+          host_id: alice.id,
+          title: `Windowed ${i}`,
+          starts_at: isoAt(ms),
+        })),
+      )
+      .select('id, title');
+    expect(error).toBeNull();
+    const ids = (titles: number[]) =>
+      (seeded ?? []).filter((g) => titles.includes(Number(g.title.split(' ')[1]))).map((g) => g.id);
+    const insideIds = new Set(ids([0, 1, 2, 3, 4]));
+    const outsideIds = new Set(ids([5, 6, 7]));
+
+    const seen: { id: string; starts_at: string }[] = [];
+    let cursor: FeedCursor | null = null;
+    let pages = 0;
+    do {
+      const page = await listUpcomingGatherings(alice.client, alice.id, {
+        cursor,
+        limit: 2,
+        from: isoAt(from),
+        to: isoAt(to),
+      });
+      seen.push(...page.gatherings.map(({ id, starts_at }) => ({ id, starts_at })));
+      cursor = page.nextCursor ? decodeFeedCursor(encodeFeedCursor(page.nextCursor)) : null;
+      pages++;
+    } while (cursor !== null && pages < 500);
+
+    const seenIds = seen.map((g) => g.id);
+    expect(new Set(seenIds).size).toBe(seenIds.length);
+    expect(seenIds.filter((id) => insideIds.has(id))).toHaveLength(insideIds.size);
+    expect(seenIds.filter((id) => outsideIds.has(id))).toEqual([]);
+    for (const g of seen) {
+      expect(Date.parse(g.starts_at)).toBeGreaterThanOrEqual(from);
+      expect(Date.parse(g.starts_at)).toBeLessThan(to);
+    }
+
+    // A window that began yesterday still starts at now: the past stays out.
+    const { data: past } = await admin
+      .from('gatherings')
+      .insert({
+        host_id: alice.id,
+        title: 'Windowed past',
+        starts_at: isoAt(Date.now() - 3_600_000),
+      })
+      .select('id')
+      .single();
+    const soon = await listUpcomingGatherings(alice.client, alice.id, {
+      limit: 50,
+      from: isoAt(Date.now() - day),
+      to: isoAt(Date.now() + 60_000),
+    });
+    expect(soon.gatherings.map((g) => g.id)).not.toContain(past!.id);
+    expect(soon.gatherings.every((g) => Date.parse(g.starts_at) >= Date.now() - 60_000)).toBe(true);
   });
 
   it('a cursor it did not write decodes to null', () => {

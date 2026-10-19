@@ -2,7 +2,8 @@
 // host; connect, and the host appears in who's going. The feed lists it to
 // the whole domain.
 import { expect, test, type Locator } from '@playwright/test';
-import { admin, agreeToTerms, freshUid, signUp } from './helpers.ts';
+import { whenWindow } from '@withme/contract';
+import { admin, agreeToTerms, freshUid, signUp, signUpWithProfile } from './helpers.ts';
 
 /** The feed comes a page at a time, and other runs fill the first page:
  * press Load more until the row shows, as a person would. */
@@ -17,6 +18,61 @@ async function revealInFeed(feed: Locator, title: string): Promise<void> {
   }
   await expect(row).toBeVisible();
 }
+
+test('Discover narrows to this weekend or later, and the URL keeps the window', async ({ page }) => {
+  const stamp = Date.now();
+  const name = `When Ada ${stamp}`;
+  await signUpWithProfile(page, `smoke-when-${stamp}@rls.test`, name);
+  const { data: host, error: hostError } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('display_name', name)
+    .single();
+  expect(hostError).toBeNull();
+
+  // One in the middle of this weekend's window, one after this week, worked
+  // out in this machine's zone, which the browser shares.
+  const weekend = whenWindow('weekend');
+  const middle = (Date.parse(weekend.from!) + Date.parse(weekend.to!)) / 2;
+  const later = Date.parse(whenWindow('later').from!) + 86_400_000;
+  const weekendTitle = `Weekend ${stamp}`;
+  const laterTitle = `Later ${stamp}`;
+  const { error } = await admin.from('gatherings').insert([
+    { host_id: host!.id, title: weekendTitle, starts_at: new Date(middle).toISOString() },
+    { host_id: host!.id, title: laterTitle, starts_at: new Date(later).toISOString() },
+  ]);
+  expect(error).toBeNull();
+
+  await page.goto('/gatherings');
+  const when = page.getByRole('navigation', { name: 'When' });
+  await expect(when.getByRole('link', { name: 'All' })).toHaveAttribute('aria-current', 'page');
+  const discover = page.getByRole('region', { name: 'Discover' });
+  /** Opens a window and waits out the previous one's rows. */
+  async function choose(label: string, search: string): Promise<void> {
+    await when.getByRole('link', { name: label }).click();
+    await page.waitForURL(`**/gatherings?when=${search}`);
+    await expect(discover).not.toHaveAttribute('aria-busy', 'true');
+  }
+
+  await choose('This weekend', 'weekend');
+  await revealInFeed(discover, weekendTitle);
+
+  // The feed runs in start order, so once the later one shows, the weekend
+  // one would already be above it had the window let it in.
+  await choose('Later', 'later');
+  await revealInFeed(discover, laterTitle);
+  await expect(discover.getByText(weekendTitle)).toHaveCount(0);
+
+  // A reload (or a shared link) opens the same window.
+  await page.reload();
+  await expect(when.getByRole('link', { name: 'Later' })).toHaveAttribute('aria-current', 'page');
+  await revealInFeed(discover, laterTitle);
+  await expect(discover.getByText(weekendTitle)).toHaveCount(0);
+
+  // An unknown window is the whole feed.
+  await page.goto('/gatherings?when=someday');
+  await expect(when.getByRole('link', { name: 'All' })).toHaveAttribute('aria-current', 'page');
+});
 
 test("tap a host's tag, join from the feed, and who's going shows only connections", async ({
   browser,

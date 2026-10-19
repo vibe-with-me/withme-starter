@@ -1,4 +1,12 @@
-import { isGatheringFull, type GatheringListItem } from '@withme/contract';
+import {
+  isGatheringFull,
+  WHEN_FILTER_EMPTY,
+  WHEN_FILTER_LABELS,
+  WHEN_FILTERS,
+  whenWindow,
+  type GatheringListItem,
+  type WhenFilter,
+} from '@withme/contract';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,7 +16,7 @@ import { api } from '../../lib/api';
 import { whenAndWhere } from '../../lib/format-time';
 import { FULL_LABEL, audienceMark, goingLine, withLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
-import { displaySize, fonts, space, useTokens } from '../../lib/tokens';
+import { displaySize, fonts, radius, space, TAP_TARGET, useTokens } from '../../lib/tokens';
 
 type Segment = 'discover' | 'yours';
 
@@ -20,10 +28,15 @@ type Segment = 'discover' | 'yours';
  * connections among the members. "Yours" is what you host or are going to,
  * then what is past. The tap is still how people meet; the list is how they
  * find out where. Creating one is its own screen (app/gathering/new.tsx).
+ * Discover narrows to a "when" window worked out on the device, in its time
+ * zone (`whenWindow`); the window resets with the tab, unlike web's URL.
  */
 export default function GatheringsScreen() {
   const t = useTokens();
   const [segment, setSegment] = useState<Segment>('discover');
+  const [when, setWhen] = useState<WhenFilter>('all');
+  // The window the first page was asked for: Load more pages through the same one.
+  const feedBounds = useRef<{ from?: string; to?: string }>({});
   const [happening, setHappening] = useState<GatheringListItem[]>([]);
   // The feed comes a page at a time; null once the last page is in.
   const [cursor, setCursor] = useState<string | null>(null);
@@ -40,13 +53,17 @@ export default function GatheringsScreen() {
   const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
-    feedGeneration.current += 1;
+    const generation = ++feedGeneration.current;
+    const bounds = whenWindow(when);
     try {
       const [feed, { gatherings: mine }, { data }] = await Promise.all([
-        api.app.gatherings.list(),
+        api.app.gatherings.list(bounds),
         api.app.gatherings.listMine(),
         supabase.auth.getSession(),
       ]);
+      // A quick change of window: only the latest load lands.
+      if (generation !== feedGeneration.current) return;
+      feedBounds.current = bounds;
       // A re-load starts the feed over from its first page.
       setHappening(feed.gatherings);
       setCursor(feed.next_cursor);
@@ -55,11 +72,11 @@ export default function GatheringsScreen() {
       setViewerId(data.session?.user.id ?? null);
       setLoadError(false);
     } catch {
-      setLoadError(true);
+      if (generation === feedGeneration.current) setLoadError(true);
     } finally {
       setLoaded(true);
     }
-  }, []);
+  }, [when]);
 
   // Re-load whenever the tab regains focus: a detail screen may have left,
   // edited, or deleted a gathering underneath this list, and the create
@@ -76,7 +93,7 @@ export default function GatheringsScreen() {
     setLoadingMore(true);
     setMoreError(false);
     try {
-      const page = await api.app.gatherings.list({ cursor });
+      const page = await api.app.gatherings.list({ ...feedBounds.current, cursor });
       if (generation !== feedGeneration.current) return;
       setHappening((rows) => [...rows, ...page.gatherings]);
       setCursor(page.next_cursor);
@@ -212,8 +229,32 @@ export default function GatheringsScreen() {
         </>
       ) : (
         <>
+          <View style={styles.when}>
+            {WHEN_FILTERS.map((filter) => {
+              const selected = filter === when;
+              return (
+                <Pressable
+                  key={filter}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => setWhen(filter)}
+                  style={({ pressed }) => [
+                    styles.whenItem,
+                    {
+                      backgroundColor: t.bg,
+                      borderColor: selected || pressed ? t.ink : t.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.whenLabel, { color: t.ink }]}>
+                    {WHEN_FILTER_LABELS[filter]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
           {happening.length === 0 ? (
-            <Muted>Nothing happening yet. Create the first one.</Muted>
+            <Muted>{WHEN_FILTER_EMPTY[when]}</Muted>
           ) : (
             happening.map(row)
           )}
@@ -237,6 +278,24 @@ const styles = StyleSheet.create({
     padding: space.s5,
     paddingTop: space.s5,
     gap: space.s3,
+  },
+  // Discover's "when" filter: quiet pills, the current one ringed in ink
+  // (mirrors web's .when), never the accent.
+  when: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: space.s2,
+  },
+  whenItem: {
+    justifyContent: 'center',
+    minHeight: TAP_TARGET,
+    paddingHorizontal: space.s3,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+  },
+  whenLabel: {
+    fontFamily: fonts.body,
+    fontSize: 15,
   },
   sectionTitle: {
     fontFamily: fonts.display,
