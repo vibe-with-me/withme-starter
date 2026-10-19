@@ -35,6 +35,10 @@ export default function GatheringsScreen() {
   const t = useTokens();
   const [segment, setSegment] = useState<Segment>('discover');
   const [when, setWhen] = useState<WhenFilter>('all');
+  // The window the rows on screen belong to. Until a new window's first page
+  // is in, the old rows stay dimmed and cannot page.
+  const [feedWhen, setFeedWhen] = useState<WhenFilter>('all');
+  const switching = feedWhen !== when;
   // The window the first page was asked for: Load more pages through the same one.
   const feedBounds = useRef<{ from?: string; to?: string }>({});
   const [happening, setHappening] = useState<GatheringListItem[]>([]);
@@ -64,6 +68,7 @@ export default function GatheringsScreen() {
       // A quick change of window: only the latest load lands.
       if (generation !== feedGeneration.current) return;
       feedBounds.current = bounds;
+      setFeedWhen(when);
       // A re-load starts the feed over from its first page.
       setHappening(feed.gatherings);
       setCursor(feed.next_cursor);
@@ -88,7 +93,7 @@ export default function GatheringsScreen() {
   );
 
   async function loadMore() {
-    if (cursor === null || loadingMore) return;
+    if (cursor === null || loadingMore || switching) return;
     const generation = feedGeneration.current;
     setLoadingMore(true);
     setMoreError(false);
@@ -254,12 +259,19 @@ export default function GatheringsScreen() {
             })}
           </View>
           {happening.length === 0 ? (
-            <Muted>{WHEN_FILTER_EMPTY[when]}</Muted>
+            switching ? null : (
+              <Muted>{WHEN_FILTER_EMPTY[feedWhen]}</Muted>
+            )
           ) : (
-            happening.map(row)
+            <View
+              accessibilityState={{ busy: switching }}
+              style={[styles.feed, switching && styles.stale]}
+            >
+              {happening.map(row)}
+            </View>
           )}
           {moreError ? <ErrorText>Could not load more. Try again.</ErrorText> : null}
-          {cursor !== null ? (
+          {cursor !== null && !switching ? (
             <Button
               kind="quiet"
               label={loadingMore ? 'Loading…' : 'Load more'}
@@ -297,6 +309,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 15,
   },
+  // The rows keep the screen's spacing inside their wrapper.
+  feed: { gap: space.s3 },
+  // The previous window's rows, while the new one loads (mirrors web).
+  stale: { opacity: 0.5 },
   sectionTitle: {
     fontFamily: fonts.display,
     fontSize: displaySize.section,
