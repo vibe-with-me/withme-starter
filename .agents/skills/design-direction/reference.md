@@ -13,9 +13,8 @@ Draw three artboards at 390×844, in light AND dark mode (six boards):
 1. The resolver card — what a stranger sees after tapping a tag
    (apps/web/src/routes/t.$uid.tsx): a centered card with a round
    avatar (one initial when there is no photo), the person's name, a
-   one-line bio, a muted line naming the gathering they host, ONE
-   primary button "Join this gathering" and no secondary action, and
-   the wordmark as a footer below the card.
+   one-line bio, ONE primary button "Connect", a quiet "Report" under
+   it, and the wordmark as a footer below the card.
 2. The signed-in shell (apps/web/src/components/AppShell.tsx): a 56px
    header with the wordmark, a page title, two gathering cards, and a
    60px bottom tab bar (Events, Connections, Merch, Profile) with a

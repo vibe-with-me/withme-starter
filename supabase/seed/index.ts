@@ -110,8 +110,9 @@ const { error: requestError } = await lin.client.rpc('send_connect_request', {
 });
 if (requestError) throw requestError;
 
-// Ada hosts a gathering, Lin has joined, and Ada's live tag points at it:
-// a tap on 04BBBBBBBBBBBB shows her card as the invitation.
+// Ada hosts a gathering and Lin has joined. Ada's live tag keeps the
+// profile destination claim_tag gave it: a tap on 04BBBBBBBBBBBB shows her
+// card with Connect.
 const startsAt = new Date();
 startsAt.setDate(startsAt.getDate() + 2);
 startsAt.setHours(19, 0, 0, 0);
@@ -126,12 +127,6 @@ const { error: joinError } = await lin.client.rpc('join_gathering', {
   p_gathering_id: gatheringId,
 });
 if (joinError) throw joinError;
-// The owner's column-granted update — the same path app.tags.update takes.
-const { error: pointError } = await ada.client
-  .from('tags')
-  .update({ destination: { type: 'gathering', gathering_id: gatheringId } })
-  .eq('uid', TAGS.claimed);
-if (pointError) throw pointError;
 
 // Lin hosts one too, which Ada has not joined: her Events tab shows the
 // domain's feed working, not just her own calendar.
@@ -151,7 +146,7 @@ console.log(`
 Seeded.
   Users     ${DEMO_USERS.ada} / ${DEMO_PASSWORD}   (has 1 pending request from Lin; hosts a gathering Lin joined; two links)
             ${DEMO_USERS.lin} / ${DEMO_PASSWORD}   (hosts a second gathering, listed to the domain)
-  Tags      /t/${TAGS.claimed}  -> Ada's card, inviting you to her gathering
+  Tags      /t/${TAGS.claimed}  -> Ada's card, with Connect
             /t/${TAGS.unclaimed}  -> claim flow
             /t/${TAGS.disabled}  -> inactive
 `);
