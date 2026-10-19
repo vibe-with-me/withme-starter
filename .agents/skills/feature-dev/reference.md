@@ -8,10 +8,16 @@ prefix, tracker, plans folder, verification, review, merge) are in
 
 (Step 1, when `superpowers:brainstorming` is not installed.)
 
-1. Read what exists first: the files the feature would touch, the
-   nearest shipped example in [docs/the-slice.md](../../../docs/the-slice.md),
-   and the safety-model sections it comes near
-   ([docs/safety-model.md](../../../docs/safety-model.md)).
+1. Read what exists first: a recipe in `.agents/skills/` that covers the
+   change (`customize-gathering` for a gathering field,
+   `extend-profile` for a profile field, `add-destination-type` for a tag
+   destination; its steps become the plan's build steps), the files the
+   feature would touch, the nearest shipped example in
+   [docs/the-slice.md](../../../docs/the-slice.md), and the safety-model
+   sections it comes near
+   ([docs/safety-model.md](../../../docs/safety-model.md)). A recipe
+   knows what the code does not show at a glance, such as an RPC that
+   answers with a hand-built object a new column must join.
 2. Ask the owner one question at a time, each with your recommended
    answer, and wait. The questions that always apply: who sees it (the
    owner, connections, everyone signed in, anon), what a blocked user
@@ -80,6 +86,14 @@ Notes:
   the API typecheck against a new column or argument only after
   `bun run db:types`. Run both as soon as the migration is written,
   before its tests go green and before the DB queries and API layers.
+- **"Something didn't load" in the web e2e or the dev app?** A Worker
+  that was killed (Playwright stops its servers that way) leaves its
+  entry in wrangler's dev registry (`~/Library/Preferences/.wrangler/registry/`
+  on macOS), and a server-side loader started soon after can reach the
+  dead `withme-api` instead of a live one. Delete a `withme-*` entry
+  whose `debugPortAddress` has no listener
+  (`lsof -iTCP:<port> -sTCP:LISTEN` prints nothing), never a live one,
+  and rerun.
 - **No API harness yet?** If `apps/api/test/harness.ts` is not in your
   checkout, there is no API unit suite to extend. If the starter's
   `main` has it, merge the starter
@@ -103,10 +117,14 @@ Notes:
 
 (Step 5.2.) In each touched package with a unit suite, run its tests
 with an lcov report, then look up every source file the branch added or
-changed. Example for the contract; swap the folder and the test scope
-for another package (`apps/api`: `bun test test`, once the harness
-exists; `apps/mobile`: `bun test lib`; `apps/web`: `bun test src/lib`;
-`packages/db`: `bun test --timeout 20000`, stack up). Always pass the
+changed under the folder its unit tests cover. Example for the
+contract; for another package swap the folder, the test scope and
+`dir` (`apps/api`: `bun test test`, `dir=src`; `apps/mobile`:
+`bun test lib`, `dir=lib`; `apps/web`: `bun test src/lib`,
+`dir=src/lib`; `packages/db`: `bun test --timeout 20000`, `dir=src`,
+stack up). `dir` matters: mobile has no `src/`, so the contract's value
+there checks nothing, and web's `src` would list routes no unit test
+loads. Always pass the
 scope: a bare `bun test` in `apps/web` also picks up the Playwright
 specs and fails. Web routes and components, mobile screens, and an API
 covered only by the e2e fallback have no lcov step: the e2e harness and
@@ -114,8 +132,9 @@ step 6 gate them.
 
 ```sh
 cd packages/contract
+dir=src
 bun test --coverage --coverage-reporter=lcov
-for f in $(git diff --name-only --diff-filter=AMR --relative origin/<base>...HEAD -- src | grep -E '\.tsx?$' | grep -vE '\.test\.|\.d\.ts$|^src/types/'); do
+for f in $(git diff --name-only --diff-filter=AMR --relative origin/<base>...HEAD -- "$dir" | grep -E '\.tsx?$' | grep -vE '\.test\.|\.d\.ts$|^src/types/'); do
   hit=$(awk -v f="SF:$f" '$0==f{on=1;next} on&&/^LH:/{print substr($0,4);exit} /^end_of_record/{on=0}' coverage/lcov.info)
   echo "${hit:-MISSING} lines hit  $f"
 done
@@ -187,7 +206,13 @@ find the API worker by name, and would reach another session's
 `withme-api`). `git checkout apps/web/wrangler.jsonc` afterwards. A
 Supabase stack on other ports needs the same care: its URL in
 `SUPABASE_URL` for the tests and the seed, and in `apps/api/.dev.vars`
-and `apps/web/.env` for the servers.
+and `apps/web/.env` for the servers. Mobile too: Metro on a free port
+(`cd apps/mobile && bunx expo start --port <metro>`, then
+`exp://127.0.0.1:<metro>` in Expo Go), the API, stack and web URLs in
+`apps/mobile/.env`, and, when another session's simulator is booted, a
+second one of your own (`xcrun simctl boot <udid>`, Expo Go installed
+from the first's `simctl get_app_container … host.exp.Exponent app`),
+with `<udid>` in place of `booted` in every `simctl` command.
 
 Sign in as a demo user, or with the local phone number and code
 ([docs/local-development.md → The demo](../../../docs/local-development.md#the-demo)).

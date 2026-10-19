@@ -1,6 +1,6 @@
 ---
 name: feature-dev
-description: Use when starting a new feature, an enhancement, or any change to app behavior that will end in a pull request, in a withme-starter app or fork. Not for a typo, a docs-only change, or running one of the other skills in .agents/skills/, which carry their own steps.
+description: Use when starting a new feature, an enhancement, or any change to app behavior that will end in a pull request, in a withme-starter app or fork. Not for a typo, a docs-only change, or a whole-app skill in .agents/skills/ (make-it-yours, go-live, provision-tags), which carries its own steps.
 ---
 
 # feature-dev — from idea to pull request, with gates
@@ -54,6 +54,14 @@ states, and what a stranger, a blocked user and anon see. Ask one
 question at a time and wait for each answer.
 (`superpowers:brainstorming` if installed; otherwise
 [reference.md → Design](reference.md#design).)
+
+Before the questions, look in `.agents/skills/` for a recipe that
+covers the change: a field or a new noun on a gathering is
+`customize-gathering`, a profile field is `extend-profile`, a new tag
+destination is `add-destination-type`. When one does, its steps are the
+build steps for step 4 (the files, the functions to redefine, the tests
+to extend), and this skill's gates still apply around them. Name the
+recipe in the design doc.
 
 Hold the design against the starter's invariants before writing it
 down. Nothing ranks, recommends, aggregates or monetizes; there is no
@@ -115,8 +123,11 @@ the plan commit, and `git status` is clean.
 Work the plan in order. For each layer: write its test first and watch
 it fail for the stated reason, then write the code, then watch the test
 pass (`superpowers:test-driven-development` if installed). Commit when
-a layer is green, not at the end. Independent tasks can go to
-subagents (`superpowers:subagent-driven-development`); coupled ones run
+a layer is green, not at the end. A layer with no code of its own for
+the feature (an API handler that forwards the contract's patch) still
+gets tests: they pin the earlier layer's behaviour through this one,
+may pass on their first run, and say which layer they pin. Independent
+tasks can go to subagents (`superpowers:subagent-driven-development`); coupled ones run
 in sequence.
 
 The layer rules (tenant seam, per-command policies, thin handlers, the

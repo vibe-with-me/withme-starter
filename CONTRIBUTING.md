@@ -152,7 +152,9 @@ How a skill change is validated. Reading it is not enough: an agent runs
 the changed skill literally, word by word, on a fresh clone of the
 starter (or a throwaway fork) with the skill's branch checked out, so
 the work branches from it rather than from `main`, the way Golf With
-Me's rebuild did. Where
+Me's rebuild did. Merge the latest `main` into the skill's branch
+before each run: a branch behind `main` validates the skill against
+code a fork no longer gets. Where
 the skill is missing a step, has steps out of order, or says something
 the code contradicts, the agent writes it down in an `UPSTREAM-SNAGS.md`
 kept outside the PR: what the skill said, what happened, and what it did
