@@ -236,6 +236,10 @@ with `<udid>` in place of `booted` in every `simctl` command.
 Sign in as a demo user, or with the local phone number and code
 ([docs/local-development.md → The demo](../../../docs/local-development.md#the-demo)).
 A flow that starts at a tap uses a demo tag's `/t/<uid>` URL.
+`db:reset` deletes every account, but a browser or Expo Go signed in
+before it keeps a token for a user that is gone: pages load, yet
+Profile asks you to create a profile and Join sends you there. Sign out
+first (Profile → Sign out), then sign in.
 
 **Web.** Drive `http://localhost:3000` with the agent's browser tools,
 do the changed flow, and screenshot the screen that proves it. A
