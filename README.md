@@ -82,7 +82,8 @@ A working product, not a template:
   stranger sees only your card: name, photo, bio, and which platforms
   you're on.
 - **The handshake.** Connect, accept, connected. Your links unlock for
-  connections only, and your connections list remembers where you met.
+  connections only. Connect at a gathering you both joined and your
+  connections list shows which one.
 - **Gatherings.** An Events tab to discover gatherings or see yours, a
   headcount, Add to calendar, and a who's-going list that shows only
   people you know.
@@ -143,10 +144,11 @@ in its [`settings.md`](.agents/skills/feature-dev/settings.md).
 
 ## The promises your users get
 
-The hard part is done: forking means changing the vocabulary and the
-look, not rebuilding trust and safety. These are enforced in Postgres
-row-level security and proven by 70+ policy tests, so they hold in every
-fork that extends through the skills. [The safety model](docs/safety-model.md)
+The hard part is done: renaming and restyling a fork moves no boundary,
+so you don't rebuild trust and safety. A feature you add brings its own
+policies and tests, which the skills walk you through. The promises below
+are enforced in Postgres row-level security and proven by 70+ policy
+tests. [The safety model](docs/safety-model.md)
 explains each one.
 
 - **Nobody can list your users.** A card is reachable only by a tap, a
