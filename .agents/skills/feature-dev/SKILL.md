@@ -21,6 +21,12 @@ chooses: base branch, branch prefix, issue tracker, where plans go, how
 the app is verified, what reviews the PR, and who merges. This file
 says "the base branch", "the plans folder" and so on for those values.
 
+**How to run it.** In any agent that reads `.agents/skills/` (Claude
+Code, Codex, Cursor and others): "Run `.agents/skills/feature-dev/SKILL.md`
+for <the feature>". To get `/feature-dev` in Claude Code, link it into
+`.claude/skills/` once per clone
+([reference.md → Running it](reference.md#running-it)).
+
 **Other skills are optional.** Where a step names a skill (for example
 `superpowers:brainstorming`), use it if your agent has it installed. If
 not, the plain steps in [reference.md](reference.md) do the same job.

@@ -239,12 +239,13 @@ it. A fork with an image host it trusts can upload there and embed the
 URLs instead; never put a screenshot that shows a real person's data
 somewhere public.
 
-## Using it from Claude Code
+## Running it
 
-Like every skill in `.agents/skills/`, this one runs by path: "Run
-`.agents/skills/feature-dev/SKILL.md` for <the feature>". To have Claude
-Code offer it on its own, link it into the per-machine `.claude/`
-folder (gitignored, so each clone does this once):
+Like every skill in `.agents/skills/`, this one runs by path in any
+agent: "Run `.agents/skills/feature-dev/SKILL.md` for <the feature>".
+Claude Code loads skills from `.claude/skills/`, so to have it offer
+the skill on its own and answer `/feature-dev`, link it into that
+per-machine folder (gitignored, so each clone does this once):
 
 ```sh
 mkdir -p .claude/skills && ln -s ../../.agents/skills/feature-dev .claude/skills/feature-dev

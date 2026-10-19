@@ -88,6 +88,10 @@ a secret value in chat. When a skill needs one, the owner puts it where
 that skill says (an env file, a CLI login, a provider dashboard) and
 tells you it is there.
 
+**After the skills,** build each new feature with
+`.agents/skills/feature-dev/SKILL.md`, using the choices in its
+`settings.md`. A layer's tests ship in the same PR as the layer.
+
 **Done for this pass:** `[local stack green and both apps running on the
 new brand / deployed to the accounts above / tags provisioned and the
 site up]`. Report what you shipped, what you skipped, and the snag list.

@@ -204,6 +204,13 @@ none of the steps above moved a boundary. The verification gate
 (`bun run lint && bun run typecheck && bun run test`) is green after every
 skill.
 
+**Features no skill covers** go through the
+[`feature-dev`](.agents/skills/feature-dev/SKILL.md) skill: tell your agent
+"Run `.agents/skills/feature-dev/SKILL.md` for <the feature>". It gates
+design, plan, tests per layer and a look at the running app before the PR.
+Your fork's choices (branch prefix, tracker, who merges) go in its
+[`settings.md`](.agents/skills/feature-dev/settings.md).
+
 ## How it fits together
 
 ```

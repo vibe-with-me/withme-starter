@@ -36,6 +36,10 @@ plays each role today. Read it before you open a PR; the review will ask
 where each layer of your slice is, and a slice nobody can walk end to end
 is not done.
 
+To have an agent drive a feature through the slice, run the
+[`feature-dev`](.agents/skills/feature-dev/SKILL.md) skill. It blocks the PR
+until every touched layer has its tests.
+
 Docs-only changes are the exception: they need no slice. Check that every
 link and file name you cite still exists.
 

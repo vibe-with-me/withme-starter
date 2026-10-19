@@ -423,6 +423,12 @@ is going stays connections-only, taps record nothing but a user agent,
 and deleting an account releases its tags. None of the eight steps moved
 a boundary, and the seventy-plus RLS tests plus your new ones say so.
 
+The next feature, the one no skill covers, goes through
+[`feature-dev`](../.agents/skills/feature-dev/SKILL.md): "Run
+`.agents/skills/feature-dev/SKILL.md` for <the feature>". Set your fork's
+branch prefix, tracker and merge policy in its
+[`settings.md`](../.agents/skills/feature-dev/settings.md) first.
+
 ## Variations
 
 The same eight steps, different inputs:

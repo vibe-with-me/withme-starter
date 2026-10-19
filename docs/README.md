@@ -45,9 +45,12 @@ longer version of something it mentions.
 - [The skills](../.agents/skills/): `design-direction`, `make-it-yours`,
   `customize-gathering`, `extend-profile`, `add-destination-type`,
   `provision-tags`, `go-live`, `add-marketing-site`. Each is a runbook
-  with a checkpoint per step. `feature-dev` is the process for every
-  feature after those: design, plan, tests with each layer, a test
-  gate, a look at the running app, then the PR.
+  with a checkpoint per step.
+- [feature-dev](../.agents/skills/feature-dev/SKILL.md): the process for
+  every feature after those, with design, plan, tests per layer, a test
+  gate, and a look at the running app before the PR. Tell any agent "Run
+  `.agents/skills/feature-dev/SKILL.md`"; a fork edits only its
+  [settings.md](../.agents/skills/feature-dev/settings.md).
 
 ## For someone curious how the starter is built
 
