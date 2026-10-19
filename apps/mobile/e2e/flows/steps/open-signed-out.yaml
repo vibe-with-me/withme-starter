@@ -12,10 +12,11 @@ appId: ${APP_ID}
 - tapOn:
     text: Continue
     optional: true
-# Signed in from a previous run, or signed out: wait for either.
+# Signed in from a previous run, or signed out: wait for either. The first
+# open after Metro starts waits for the whole bundle.
 - extendedWaitUntil:
     visible: 'Profile|New here\? Create an account'
-    timeout: 60000
+    timeout: 120000
 - tapOn:
     text: Continue
     optional: true
