@@ -1,0 +1,80 @@
+# Where you met: a connection made at a gathering both people are going to
+# says so on the Connections list, for both of them, and links to it. One
+# made at none says nothing.
+appId: ${APP_ID}
+name: A connection made at a gathering both are going to says so, and links to it
+---
+- runFlow: steps/open-signed-out.yaml
+
+# --- Max taps Mae's tag and asks ---------------------------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MA_GUEST_EMAIL}
+      THEN: New gathering
+- runFlow:
+    file: steps/open-link.yaml
+    env:
+      LINK: ${OPEN_URL}/--/t/${MA_HOST_UID}
+- extendedWaitUntil:
+    visible: ${MA_HOST_NAME}
+    timeout: 15000
+- tapOn: Connect
+- extendedWaitUntil:
+    visible: Request sent. They'll see it when they check in.
+    timeout: 15000
+- tapOn: Close
+- runFlow: steps/sign-out.yaml
+
+# --- Mae accepts: the row says where they met, and opens the gathering -------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MA_HOST_EMAIL}
+      THEN: New gathering
+- tapOn: Connections
+- tapOn: Requests, 1 pending
+- extendedWaitUntil:
+    visible: ${MA_GUEST_NAME}
+    timeout: 15000
+- tapOn: Accept
+- extendedWaitUntil:
+    visible: No requests right now.
+    timeout: 15000
+# The segment, not the tab bar's Connections.
+- tapOn:
+    text: Connections
+    leftOf: Requests
+- extendedWaitUntil:
+    visible: 'Met at ${MA_TITLE} · .*'
+    timeout: 15000
+# Nia's row, below (the newest connection is first), says nothing: with
+# its actions on screen, a Met at line would be too.
+- scrollUntilVisible:
+    element: Report ${MA_OTHER_NAME}
+    direction: DOWN
+- assertNotVisible:
+    text: 'Met at .*'
+    below: ${MA_OTHER_NAME}
+- scrollUntilVisible:
+    element: 'Met at ${MA_TITLE} · .*'
+    direction: UP
+- tapOn: 'Met at ${MA_TITLE} · .*'
+- extendedWaitUntil:
+    visible: ${MA_TITLE}
+    timeout: 15000
+- assertVisible: 2 going
+- tapOn: Back
+- runFlow: steps/sign-out.yaml
+
+# --- Max sees it too ------------------------------------------------------------
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MA_GUEST_EMAIL}
+      THEN: New gathering
+- tapOn: Connections
+- extendedWaitUntil:
+    visible: 'Met at ${MA_TITLE} · .*'
+    timeout: 15000
+- runFlow: steps/sign-out.yaml

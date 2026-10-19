@@ -77,9 +77,13 @@ async function tag(owner?: { id: string }, gatheringId?: string): Promise<string
   return uid;
 }
 
-/** A gathering tomorrow, its host already going, as create_gathering leaves it. */
-async function gathering(host: { id: string }, title: string): Promise<string> {
-  const starts_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+/** A gathering (tomorrow unless told), its host already going, as create_gathering leaves it. */
+async function gathering(
+  host: { id: string },
+  title: string,
+  startsAt = new Date(Date.now() + 24 * 60 * 60 * 1000),
+): Promise<string> {
+  const starts_at = startsAt.toISOString();
   const { data, error } = await admin
     .from('gatherings')
     .insert({ host_id: host.id, title, starts_at })
@@ -143,6 +147,20 @@ const oliUid = await tag(oli);
 const oliGatheringTitle = `Maestro Picnic ${stamp}`;
 const oliGatheringUid = await tag(oli, await gathering(oli, oliGatheringTitle));
 
+// met-at.yaml: Max asks Mae, at a gathering they're both going to, starting
+// within the hour; her older connection with Nia was made at none.
+const mae = await person('mae');
+const max = await person('max');
+const nia = await person('nia');
+await connect(mae, nia);
+const maeUid = await tag(mae);
+const metAtTitle = `Maestro Mixer ${stamp}`;
+const metAtId = await gathering(mae, metAtTitle, new Date(Date.now() + 30 * 60 * 1000));
+const { error: metAtMemberError } = await admin
+  .from('gathering_members')
+  .insert({ gathering_id: metAtId, profile_id: max.id });
+if (metAtMemberError) throw metAtMemberError;
+
 const env: Record<string, string> = {
   APP_ID: process.env.MAESTRO_APP_ID ?? 'host.exp.Exponent',
   OPEN_URL: process.env.MAESTRO_OPEN_URL ?? 'exp://127.0.0.1:8081',
@@ -183,6 +201,13 @@ const env: Record<string, string> = {
   SO_OWNER_UID: oliUid,
   SO_GATHERING_UID: oliGatheringUid,
   SO_GATHERING_TITLE: oliGatheringTitle,
+  MA_HOST_EMAIL: mae.email,
+  MA_HOST_NAME: mae.name,
+  MA_HOST_UID: maeUid,
+  MA_GUEST_EMAIL: max.email,
+  MA_GUEST_NAME: max.name,
+  MA_OTHER_NAME: nia.name,
+  MA_TITLE: metAtTitle,
 };
 
 const flows = process.argv.slice(2);

@@ -12,7 +12,7 @@ service-role key) is in [Local development](local-development.md#tests).
 | Database (RLS) | `packages/db/test` | Every safety promise, against real per-user clients. [The safety model](safety-model.md) names the file for each. | Yes, `ci` |
 | API e2e | `apps/api/e2e` | The published SDK through the API Worker into Supabase | Yes, `ci` |
 | Web e2e | `apps/web/e2e` | The user flows in a real browser, against the production build in workerd | Yes, `e2e` |
-| Mobile e2e | `apps/mobile/e2e` | The core flows in the Expo app: handshake, gatherings, blocks, reports, terms, signed-out taps | No: local and opt-in ([below](#mobile-e2e-local-and-opt-in)) |
+| Mobile e2e | `apps/mobile/e2e` | The core flows in the Expo app: handshake, where you met, gatherings, blocks, reports, terms, signed-out taps | No: local and opt-in ([below](#mobile-e2e-local-and-opt-in)) |
 
 The database suite is the spec: a promise holds because the database
 refuses the alternative. The browser suite proves the screens still walk a
@@ -240,8 +240,8 @@ Worker go on other ports, as for the web suite: point `SUPABASE_URL`,
 | `claim/[uid]` | `handshake` |
 | `(tabs)/gatherings` (Discover, Yours) | `gatherings`, `gathering-controls` |
 | `gathering/new` | `gatherings`, `gathering-controls` |
-| `gathering/[id]` | `gatherings`, `gathering-controls`, `signed-out` |
-| `(tabs)/connections` (Connections, Requests, Blocked) | `handshake`, `blocks`, `reports`, `sign-in` |
+| `gathering/[id]` | `gatherings`, `gathering-controls`, `signed-out`, `met-at` (opened from a connection's Met at line) |
+| `(tabs)/connections` (Connections, Requests, Blocked) | `handshake`, `met-at` (where you met), `blocks`, `reports`, `sign-in` |
 | `(tabs)/profile` | `sign-up`, `sign-in` |
 | `report/[id]` | `reports` |
 | `terms-update` | `terms` |
@@ -251,7 +251,7 @@ Worker go on other ports, as for the web suite: point `SUPABASE_URL`,
 | Promise ([safety-model.md](safety-model.md)) | Flow |
 | --- | --- |
 | Blocks are absolute and invisible | `blocks` (the blocked side's tag tap reads as inactive), `reports` |
-| Connections are mutual | `handshake` |
+| Connections are mutual | `handshake`, `met-at` (where you met shows on both sides) |
 | Who's going is connections-only | `gatherings` (a row names only connections) |
 | Gathering visibility and capacity | `gathering-controls` (hidden from a stranger's tap and whole feed; Full) |
 | Reports are private | `reports` (the reporter is told the person isn't; the stored row is checked by the web spec and the database suite) |
