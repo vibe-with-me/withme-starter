@@ -51,7 +51,7 @@ secrets; copying them is all the configuration local work needs.
 | --- | --- |
 | Ada | `ada@demo.withme.local` / `withme-demo-1`. Hosts "Rooftop listening session"; has a pending request from Lin. |
 | Lin | `lin@demo.withme.local` / `withme-demo-1`. Joined Ada's gathering; hosts a second one, "Vinyl swap in the park", listed to the domain. |
-| `04BBBBBBBBBBBB` | Ada's claimed tag, pointed at her gathering. Tap it: `/t/04BBBBBBBBBBBB`. |
+| `04BBBBBBBBBBBB` | Ada's claimed tag, pointed at her profile. Tap it: `/t/04BBBBBBBBBBBB`. |
 | `04AAAAAAAAAAAA` | Unclaimed. Tap it to walk the claim flow. |
 | `04CCCCCCCCCCCC` | Disabled. Tap it to see the inactive card. |
 

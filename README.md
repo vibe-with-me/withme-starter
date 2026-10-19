@@ -105,8 +105,8 @@ bun run dev             # api on :8786, web on :3000
 
 Then play the demo:
 
-- `http://localhost:3000/t/04BBBBBBBBBBBB` is Ada's tag. Her card invites
-  you to the gathering she hosts.
+- `http://localhost:3000/t/04BBBBBBBBBBBB` is Ada's tag. It opens her
+  profile card, with Connect.
 - `http://localhost:3000/t/04AAAAAAAAAAAA` is an unclaimed tag. Sign up
   and claim it.
 - Sign in as `ada@demo.withme.local` / `withme-demo-1` to see her

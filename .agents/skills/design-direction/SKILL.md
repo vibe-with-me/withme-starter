@@ -247,7 +247,7 @@ rows, step 3 the Copy rows, step 7 the store, step 8 the Artwork.
 Commit the sheet with the rebrand.
 
 **Checkpoint:** make-it-yours' final visual check (its step 8) shows the
-resolver card with the sheet's accent on "Join this gathering" and
+resolver card with the sheet's accent on "Connect" and
 nowhere else, in the sheet's display face. Differences from the
 artboard are token values and copy, never layout: if a layout
 difference shows, the artboard drifted from the rules and the app is

@@ -81,10 +81,11 @@ function LoginPage() {
     );
   }
 
-  // The tapper arrives here mid-handshake; keep the thread visible.
+  // The tapper arrives here mid-handshake; keep the thread visible. The
+  // create page shares the detail's prefix but is nobody's invitation.
   const context = returnTo?.startsWith('/t/')
     ? 'to connect with the person whose tag you tapped'
-    : returnTo?.startsWith('/gatherings/')
+    : returnTo?.startsWith('/gatherings/') && returnTo !== '/gatherings/new'
       ? 'to join the gathering you were invited to'
       : null;
 

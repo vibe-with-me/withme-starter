@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    // bun only: with @cloudflare/workers-types alongside, the two ReadableStream
+    // types collide. worker-globals.d.ts declares what the source needs instead.
+    "types": ["bun"]
+  },
+  "include": ["."]
+}

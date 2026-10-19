@@ -47,17 +47,19 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   // --- the host claims a tag, then creates the gathering ------------------------
   const host = await newPage(browser);
   const uid = await claimFreshTag(host, `cap-host-${stamp}@rls.test`, hostName);
-  await host.goto('/gatherings');
+  await host.goto('/gatherings/new');
   await host.getByLabel('Title').fill(title);
   await host.getByRole('radio', { name: /My connections/ }).check();
   await host.getByLabel('Spots (optional)').fill('3');
   await host.getByRole('button', { name: 'Create gathering' }).click();
+  await host.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
+  const detailPath = new URL(host.url()).pathname;
+  await host.goto('/gatherings?view=yours');
   const yours = host.getByRole('region', { name: 'Yours' });
   await expect(yours.getByText(title)).toBeVisible();
   await expect(yours.getByText(/Hosting · .* · 1 of 3 going · Connections only/)).toBeVisible();
   await yours.getByRole('link', { name: 'Open', exact: true }).click();
-  await host.waitForURL(/\/gatherings\/[0-9a-f-]{36}$/);
-  const detailPath = new URL(host.url()).pathname;
+  await host.waitForURL(`**${detailPath}`);
   // The list can still be on screen for a moment after the URL changes:
   // wait for the detail, and match its line exactly (a row's line contains it).
   await expect(host.getByRole('heading', { name: title })).toBeVisible();
@@ -93,7 +95,7 @@ test('a connections-only gathering with three spots: hidden from a stranger, ful
   // (Not from the tap: the web resolver runs before the session is known, so
   // a tap shows a connections-only gathering to nobody. safety-model.md.)
   await first.goto('/gatherings');
-  const feed = first.getByRole('region', { name: 'Happening' });
+  const feed = first.getByRole('region', { name: 'Discover' });
   await revealInFeed(feed, title);
   const row = feed.locator('.row', { hasText: title });
   await expect(row.getByText(/1 of 3 going · Connections only/)).toBeVisible();

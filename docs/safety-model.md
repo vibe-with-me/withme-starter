@@ -263,7 +263,13 @@ connections with no block in either direction. `extend-profile` builds a
 second one, `profile_details`, and explains the mistake it prevents,
 because a real build made that mistake first.
 
-**The test.** `packages/db/test/links.test.ts`, and
+One part of a link is card tier on purpose: its platform name.
+`resolve_tag` lists which platforms you are on, in your order, so a
+stranger's card shows them locked behind Connect. The handle, number or
+address reaches only you and your connections.
+
+**The test.** `packages/db/test/links.test.ts` (the card names the
+platforms and never a value), and
 `profile-fields.test.ts` once a fork runs `extend-profile`.
 
 ## Scans are privacy-default

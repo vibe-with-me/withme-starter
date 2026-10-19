@@ -1,34 +1,29 @@
-import { isGatheringFull, type GatheringListItem, type GatheringVisibility } from '@withme/contract';
+import { isGatheringFull, type GatheringListItem } from '@withme/contract';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { GatheringControls } from '../../components/GatheringControls';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { mapsLinkLabel, openInMaps } from '../../components/GatheringMeta';
-import { Button, Card, ErrorText, Field, Muted, Title } from '../../components/ui';
+import { Button, ErrorText, Muted, SegmentedTabs } from '../../components/ui';
 import { api } from '../../lib/api';
-import { parseLocalDateTime, tomorrowEvening, whenAndWhere } from '../../lib/format-time';
-import { FULL_LABEL, audienceMark, goingLine, parseSpots, withLine } from '../../lib/going';
+import { whenAndWhere } from '../../lib/format-time';
+import { FULL_LABEL, audienceMark, goingLine, withLine } from '../../lib/going';
 import { supabase } from '../../lib/supabase';
 import { displaySize, fonts, space, useTokens } from '../../lib/tokens';
 
+type Segment = 'discover' | 'yours';
+
 /**
- * The Events tab: what is happening in the domain, and your own calendar.
- * "Happening" is every upcoming gathering the viewer may see — a bulletin
- * board, not a directory: a row carries the headcount and names only the
- * viewer's connections among the members. The tap is still how people
- * meet; the list is how they find out where.
+ * The Events tab: what is happening in the domain, and your own calendar,
+ * behind two in-page segments (mirroring the web tab). "Discover" is every
+ * upcoming gathering the viewer may see — a bulletin board, not a
+ * directory: a row carries the headcount and names only the viewer's
+ * connections among the members. "Yours" is what you host or are going to,
+ * then what is past. The tap is still how people meet; the list is how they
+ * find out where. Creating one is its own screen (app/gathering/new.tsx).
  */
 export default function GatheringsScreen() {
   const t = useTokens();
+  const [segment, setSegment] = useState<Segment>('discover');
   const [happening, setHappening] = useState<GatheringListItem[]>([]);
   // The feed comes a page at a time; null once the last page is in.
   const [cursor, setCursor] = useState<string | null>(null);
@@ -41,15 +36,7 @@ export default function GatheringsScreen() {
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [title, setTitle] = useState('');
-  const [when, setWhen] = useState(tomorrowEvening);
-  const [location, setLocation] = useState('');
-  const [visibility, setVisibility] = useState<GatheringVisibility>('everyone');
-  const [spots, setSpots] = useState('');
-  const [busy, setBusy] = useState(false);
-  // The form's error (create/validation) and the list's are separate: a
-  // failed load must not read as an empty list, nor show up inside the form.
-  const [error, setError] = useState<string | null>(null);
+  // A failed load must not read as an empty list.
   const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
@@ -75,7 +62,8 @@ export default function GatheringsScreen() {
   }, []);
 
   // Re-load whenever the tab regains focus: a detail screen may have left,
-  // edited, or deleted a gathering underneath this list.
+  // edited, or deleted a gathering underneath this list, and the create
+  // screen may have added one.
   useFocusEffect(
     useCallback(() => {
       load();
@@ -96,36 +84,6 @@ export default function GatheringsScreen() {
       if (generation === feedGeneration.current) setMoreError(true);
     } finally {
       setLoadingMore(false);
-    }
-  }
-
-  async function create() {
-    if (busy) return;
-    const startsAt = parseLocalDateTime(when.date, when.time);
-    if (!startsAt) {
-      setError('Enter the date as YYYY-MM-DD and the time as HH:MM.');
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      await api.app.gatherings.create({
-        title: title.trim(),
-        starts_at: startsAt,
-        location: location.trim() === '' ? null : location.trim(),
-        visibility,
-        capacity: parseSpots(spots) ?? null,
-      });
-      setTitle('');
-      setLocation('');
-      setVisibility('everyone');
-      setSpots('');
-      setWhen(tomorrowEvening());
-      await load();
-    } catch {
-      setError('Could not create the gathering. Check the fields and try again.');
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -208,112 +166,69 @@ export default function GatheringsScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <ScrollView
+      style={{ backgroundColor: t.bg }}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={async () => {
+            setRefreshing(true);
+            await load();
+            setRefreshing(false);
+          }}
+        />
+      }
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await load();
-              setRefreshing(false);
-            }}
-          />
-        }
-      >
-        <Card>
-          <Title>Create a gathering</Title>
-          <Field
-            label="Title"
-            value={title}
-            onChangeText={setTitle}
-            maxLength={120}
-            placeholder="e.g. Rooftop listening session"
-          />
-          <Field
-            label="Date"
-            value={when.date}
-            onChangeText={(date) => setWhen((w) => ({ ...w, date }))}
-            autoCapitalize="none"
-            keyboardType="numbers-and-punctuation"
-            placeholder="2026-10-09"
-          />
-          <Field
-            label="Time"
-            value={when.time}
-            onChangeText={(time) => setWhen((w) => ({ ...w, time }))}
-            autoCapitalize="none"
-            keyboardType="numbers-and-punctuation"
-            placeholder="18:00"
-          />
-          <Field
-            label="Location (optional)"
-            value={location}
-            onChangeText={setLocation}
-            maxLength={160}
-            placeholder="Where to find it"
-          />
-          <GatheringControls
-            visibility={visibility}
-            onVisibility={setVisibility}
-            spots={spots}
-            onSpots={setSpots}
-          />
-          {error ? <ErrorText>{error}</ErrorText> : null}
-          <Button
-            label={busy ? 'Creating…' : 'Create gathering'}
-            onPress={create}
-            disabled={
-              busy ||
-              !title.trim() ||
-              !when.date.trim() ||
-              !when.time.trim() ||
-              parseSpots(spots) === undefined
-            }
-          />
-        </Card>
+      <Button label="New gathering" onPress={() => router.push('/gathering/new')} />
+      <SegmentedTabs
+        items={[
+          { key: 'discover', label: 'Discover' },
+          { key: 'yours', label: 'Yours' },
+        ]}
+        active={segment}
+        onChange={setSegment}
+      />
 
-        <Text style={[styles.sectionTitle, { color: t.ink }]}>Happening</Text>
-        {!loaded ? null : loadError ? (
-          <ErrorText>Could not load gatherings. Pull to retry.</ErrorText>
-        ) : happening.length === 0 ? (
-          <Muted>Nothing happening yet. Create the first one.</Muted>
-        ) : (
-          happening.map(row)
-        )}
-        {loaded && !loadError && moreError ? (
-          <ErrorText>Could not load more. Try again.</ErrorText>
-        ) : null}
-        {loaded && !loadError && cursor !== null ? (
-          <Button
-            kind="quiet"
-            label={loadingMore ? 'Loading…' : 'Load more'}
-            onPress={loadMore}
-            disabled={loadingMore}
-          />
-        ) : null}
-
-        <Text style={[styles.sectionTitle, { color: t.ink }]}>Yours</Text>
-        {!loaded || loadError ? null : gatherings.length === 0 ? (
-          <Muted>Join one above, or create your own.</Muted>
-        ) : upcoming.length === 0 ? (
-          <Muted>Nothing coming up.</Muted>
-        ) : (
-          upcoming.map(row)
-        )}
-        {!loadError && past.length > 0 ? (
-          <>
-            <Text style={[styles.sectionTitle, { color: t.ink }]}>Past</Text>
-            {past.map(row)}
-          </>
-        ) : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+      {!loaded ? null : loadError ? (
+        <ErrorText>Could not load gatherings. Pull to retry.</ErrorText>
+      ) : segment === 'yours' ? (
+        <>
+          {gatherings.length === 0 ? (
+            <Muted>Join one from Discover, or create your own.</Muted>
+          ) : upcoming.length === 0 ? (
+            <Muted>Nothing coming up.</Muted>
+          ) : (
+            upcoming.map(row)
+          )}
+          {past.length > 0 ? (
+            <>
+              <Text accessibilityRole="header" style={[styles.sectionTitle, { color: t.ink }]}>
+                Past
+              </Text>
+              {past.map(row)}
+            </>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {happening.length === 0 ? (
+            <Muted>Nothing happening yet. Create the first one.</Muted>
+          ) : (
+            happening.map(row)
+          )}
+          {moreError ? <ErrorText>Could not load more. Try again.</ErrorText> : null}
+          {cursor !== null ? (
+            <Button
+              kind="quiet"
+              label={loadingMore ? 'Loading…' : 'Load more'}
+              onPress={loadMore}
+              disabled={loadingMore}
+            />
+          ) : null}
+        </>
+      )}
+    </ScrollView>
   );
 }
 
