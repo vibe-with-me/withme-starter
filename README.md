@@ -373,10 +373,11 @@ the no-enumeration promise above depends on not building one. Extensions that ra
 off-thesis for this repo; a fork can build them, but the skills will not.
 
 The commercial line, stated on day one: **the handshake layer is free and
-open, permanently.** Tag fulfillment (printed, encoded, locked hardware)
-and managed hosting are what Vibe With Me sells; [vibewithme.co/shop](https://vibewithme.co/shop) is the
-reference store. The Merch tab in the app is a pointer to a store URL you
-configure, never a cart.
+open, permanently.** Vibe With Me sells printed, encoded, and locked tags
+for its own app at [vibewithme.co/shop](https://vibewithme.co/shop), which
+is a good reference store. A fork runs its own store and fulfillment. The
+Merch tab in the app is a pointer to a store URL you configure, never a
+cart.
 [docs/merch.md](docs/merch.md) shows a fork running its own: accessories
 for the vertical (ball markers, bib clips, collar tags), tags encoded by
 GoToTags from the starter's encode list, a Shopify store behind the tab.
