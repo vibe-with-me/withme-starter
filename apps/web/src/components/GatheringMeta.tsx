@@ -1,4 +1,10 @@
-import { mapsSearchUrl } from '@withme/contract';
+import {
+  gatheringIcs,
+  gatheringIcsFilename,
+  gatheringUrl,
+  mapsSearchUrl,
+  type Gathering,
+} from '@withme/contract';
 import { MapPin } from 'lucide-react';
 import type { MetaLine } from '../lib/format-time.ts';
 
@@ -33,4 +39,28 @@ export function GatheringMeta({ line }: { line: MetaLine }) {
     line.tail || null,
   ].filter((part) => part !== null);
   return <>{parts.flatMap((part, i) => (i === 0 ? [part] : [' · ', part]))}</>;
+}
+
+/**
+ * Saves the gathering to the viewer's own calendar as an .ics file, built in
+ * the page: no endpoint, and nothing leaves the browser until the viewer
+ * opens the file. The file carries the title, time, location and a link
+ * back, never who is going (packages/contract/src/schemas/calendar.ts).
+ */
+export function AddToCalendar({ gathering }: { gathering: Gathering }) {
+  function download() {
+    const ics = gatheringIcs(gathering, gatheringUrl(window.location.origin, gathering.id));
+    const href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = gatheringIcsFilename(gathering.title);
+    a.click();
+    // After the click has started the download; revoking at once can cancel it in Safari.
+    setTimeout(() => URL.revokeObjectURL(href), 0);
+  }
+  return (
+    <button type="button" className="btn btn--quiet" onClick={download}>
+      Add to calendar
+    </button>
+  );
 }
