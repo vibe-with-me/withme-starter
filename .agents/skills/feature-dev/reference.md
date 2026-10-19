@@ -232,9 +232,13 @@ and, for the run only, point the `API` service in
 `apps/web/wrangler.jsonc` at `withme-api-<slug>` (server-side loaders
 find the API worker by name, and would reach another session's
 `withme-api`). `git checkout apps/web/wrangler.jsonc` afterwards. A
-Supabase stack on other ports needs the same care: its URL in
-`SUPABASE_URL` for the tests and the seed, and in `apps/api/.dev.vars`
-and `apps/web/.env` for the servers. Mobile too: Metro on a free port
+Supabase stack on other ports needs the same care: its API URL in
+`SUPABASE_URL` for the tests and the seed, its database URL in
+`SUPABASE_DB_URL` for the DB suite (the grants, push, reports and SDK
+schema tests talk to Postgres directly and default to whatever stack holds
+55322), and the API URL in `apps/api/.dev.vars` and `apps/web/.env` for
+the servers ([docs/local-development.md](../../../docs/local-development.md)
+has both exports). Mobile too: Metro on a free port
 (`cd apps/mobile && bunx expo start --port <metro>`, then
 `exp://127.0.0.1:<metro>` in Expo Go), the API, stack and web URLs in
 `apps/mobile/.env`, and, when another session's simulator is booted, a
