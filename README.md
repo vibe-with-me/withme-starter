@@ -96,18 +96,6 @@ A working product, not a template:
 [Building blocks](docs/building-blocks.md) tours the code;
 [the glossary](docs/glossary.md) defines the words.
 
-## Try it on your phone
-
-<img src="docs/images/readme/expo-go-qr.png" alt="QR code that opens the starter demo in Expo Go" width="160" align="right">
-
-Install [Expo Go](https://expo.dev/go) for SDK 56, then scan this code
-with your camera (iPhone) or from Expo Go (Android). The app runs against
-the public starter demo. Expo Go can't read NFC tags, so on the scan
-screen type a tag's ID instead: `04BBBBBBBBBBBB` opens Ada's card. You
-can open cards without an account; connecting needs one.
-
-<br clear="right">
-
 ## Try it locally
 
 Needs [Bun](https://bun.sh), [Docker](https://www.docker.com/products/docker-desktop/)
