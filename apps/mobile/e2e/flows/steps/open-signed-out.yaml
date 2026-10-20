@@ -12,10 +12,11 @@ appId: ${APP_ID}
 - tapOn:
     text: Continue
     optional: true
-# Signed in from a previous run, or signed out: wait for either. The first
-# open after Metro starts waits for the whole bundle.
+# Signed in from a previous run (in the app, or held on the terms re-ask
+# screen), or signed out: wait for any. The first open after Metro starts
+# waits for the whole bundle.
 - extendedWaitUntil:
-    visible: 'Profile|New here\? Create an account'
+    visible: 'Profile|Updated terms|New here\? Create an account'
     timeout: 120000
 - tapOn:
     text: Continue
@@ -24,6 +25,15 @@ appId: ${APP_ID}
     when:
       visible: Profile
     file: sign-out.yaml
+# The re-ask screen has no tabs; its own Account section signs out.
+- runFlow:
+    when:
+      visible: Updated terms
+    commands:
+      - scrollUntilVisible:
+          element: Sign out
+          direction: DOWN
+      - tapOn: Sign out
 - extendedWaitUntil:
     visible: 'New here\? Create an account'
     timeout: 60000

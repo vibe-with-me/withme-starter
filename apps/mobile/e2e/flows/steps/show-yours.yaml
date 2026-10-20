@@ -1,0 +1,27 @@
+# On the Events tab: switch to Yours, and make sure it took. Discover rows
+# carry the same Hosting and Going marks, so a row alone does not prove
+# which list is showing; the selected segment does.
+# Back from a gathering, Discover is still scrolled down. Maestro counts an
+# element under the app's header as visible, so scrolling up stops with the
+# segments still behind it: a short pull after the scroll brings them clear.
+# Tried at most three times, until Yours is the selected segment.
+appId: ${APP_ID}
+---
+- repeat:
+    times: 3
+    while:
+      notVisible:
+        text: Yours
+        selected: true
+    commands:
+      - scrollUntilVisible:
+          element: New gathering
+          direction: UP
+      - swipe:
+          start: 50%, 35%
+          end: 50%, 50%
+          duration: 400
+      - tapOn: Yours
+- assertVisible:
+    text: Yours
+    selected: true

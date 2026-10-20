@@ -33,7 +33,7 @@ name: A host creates a gathering, a connection finds it in Discover and joins
     timeout: 15000
 - assertVisible: 1 going
 - tapOn: Back
-- tapOn: Yours
+- runFlow: steps/show-yours.yaml
 # A row reads as one element: title, when, who's going.
 - extendedWaitUntil:
     visible: '${GA_TITLE}, Hosting · .*, 1 going'
@@ -65,22 +65,7 @@ name: A host creates a gathering, a connection finds it in Discover and joins
 - assertVisible: ${GA_HOST_NAME}
 - assertVisible: Host
 - tapOn: Back
-# Discover is still scrolled to the row: back up to the top and switch to
-# Yours. Discover reloads on focus and its list can shift under a tap, so
-# the tap is tried again (at most three times) until Yours shows the row.
-- repeat:
-    times: 3
-    while:
-      notVisible: '${GA_TITLE}, Going · .*'
-    commands:
-      - scrollUntilVisible:
-          element: New gathering
-          direction: UP
-      - tapOn: Yours
-      - extendedWaitUntil:
-          visible: '${GA_TITLE}, Going · .*'
-          timeout: 5000
-          optional: true
+- runFlow: steps/show-yours.yaml
 - extendedWaitUntil:
     visible: '${GA_TITLE}, Going · .*, 2 going, With ${GA_HOST_NAME}'
     timeout: 15000

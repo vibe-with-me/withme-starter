@@ -298,6 +298,10 @@ around, each commented where it happens:
   typed text: fill the form in sign-in mode, then switch.
 - The keyboard covers buttons, and Maestro's `hideKeyboard` cannot close
   it on every screen: tap a heading, or press Return in a one-line field.
-- The tab bar's raised share button sits over the bottom of the screen:
-  a row or Load more scrolled into view is pushed up clear of it before
-  it is tapped.
+- Maestro counts an element behind the header or the tab bar (and its
+  raised share button) as visible, and a tap on it lands on what covers
+  it. A row or Load more found by scrolling is pushed up clear of the tab
+  bar before it is tapped, and scrolling back up ends with a short pull
+  so the segments clear the header (`steps/show-yours.yaml`).
+- Discover rows carry the same Hosting and Going marks as Yours, so a row
+  never proves which segment is showing: check the segment is selected.
