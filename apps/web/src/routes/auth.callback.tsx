@@ -22,9 +22,15 @@ function AuthCallbackPage() {
 
   useEffect(() => {
     if (error_description) return;
+    // The exchange takes the code alone; the whole URL is no flow the server knows.
+    const code = new URLSearchParams(window.location.search).get('code');
+    if (!code) {
+      setError('This sign-in link is missing its code. Try signing in again.');
+      return;
+    }
     let cancelled = false;
     getSupabase()
-      .auth.exchangeCodeForSession(window.location.href)
+      .auth.exchangeCodeForSession(code)
       .then(({ error: exchangeError }) => {
         if (cancelled) return;
         if (exchangeError) {
