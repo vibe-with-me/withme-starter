@@ -31,12 +31,20 @@ test('the callback sends the code from its URL, not the URL itself', async ({ pa
 });
 
 test('a callback without a code says so instead of trying an exchange', async ({ page }) => {
+  // Through the login page, so a verifier is stored and only the guard can stop the exchange.
+  await page.route('**/auth/v1/authorize?**', (route) =>
+    route.fulfill({
+      status: 302,
+      headers: { location: new URL('/auth/callback?returnTo=%2Fgatherings', page.url()).href },
+    }),
+  );
   let exchanged = false;
   page.on('request', (request) => {
     if (request.url().includes('grant_type=pkce')) exchanged = true;
   });
 
-  await page.goto('/auth/callback?returnTo=%2Fgatherings');
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
 
   await expect(page.getByRole('heading', { name: 'Sign-in failed' })).toBeVisible();
   await expect(page.getByText('missing its code')).toBeVisible();
