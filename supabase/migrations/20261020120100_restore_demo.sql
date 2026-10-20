@@ -14,6 +14,9 @@
 --   * Ada's and Lin's memberships in strangers' gatherings, and every
 --     gathering they host (recreated: new ids each run).
 --   * Their push tokens, push throttle and rate-limit ledgers.
+--   * Their sessions idle for more than a day. GoTrue can't delete a demo
+--     session (20261020120000_demo_account_guard), so this is what ends
+--     signed-out ones; a visitor active in the last day stays signed in.
 -- Reports filed as Ada stay: they are for the moderator.
 --
 -- A photo a visitor uploads as Ada loses its pointer here; the file stays in
@@ -59,6 +62,9 @@ begin
   -- Quiet first: nothing below should push to a visitor's phone.
   delete from public.push_tokens where user_id in (v_ada, v_lin);
   delete from private.push_throttle where recipient_id in (v_ada, v_lin);
+  delete from auth.sessions
+   where user_id in (v_ada, v_lin)
+     and coalesce(refreshed_at, updated_at, created_at) < now() - interval '1 day';
 
   update public.profiles
      set display_name = 'Ada', bio = 'Brings the good playlists.', avatar_path = null

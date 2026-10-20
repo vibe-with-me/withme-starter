@@ -387,6 +387,26 @@ describe('restore_demo', () => {
     expect(blocks.data).toEqual([{ blocked_id: lin.id }]);
   });
 
+  it('prunes demo sessions idle for a day, and keeps active ones', async () => {
+    const idle = await signInAgain(ada.email);
+    const active = await signInAgain(ada.email);
+    const [row] = await sql`
+      select id from auth.sessions where user_id = ${ada.id} order by created_at desc limit 2`;
+    await sql`update auth.sessions
+                 set created_at = now() - interval '2 days', updated_at = now() - interval '2 days',
+                     refreshed_at = now() - interval '2 days'
+               where user_id = ${ada.id} and id <> ${row.id}`;
+    expect(await restore()).toBe('restored');
+    const left = await sql`select id from auth.sessions where user_id = ${ada.id}`;
+    expect(left.map((r: { id: string }) => r.id)).toEqual([row.id]);
+    expect(
+      (await active.client.auth.refreshSession({ refresh_token: active.refreshToken })).error,
+    ).toBeNull();
+    expect(
+      (await idle.client.auth.refreshSession({ refresh_token: idle.refreshToken })).error,
+    ).not.toBeNull();
+  });
+
   it('runs again cleanly (hourly)', async () => {
     expect(await restore()).toBe('restored');
     const gatherings = await admin.from('gatherings').select('id').in('host_id', [ada.id, lin.id]);

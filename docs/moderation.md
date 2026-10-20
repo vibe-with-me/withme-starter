@@ -200,7 +200,8 @@ From then on, for any account at that domain:
   the visitor and for the service-role admin API alike. To change the demo
   password yourself, set the row back to `null` first, or change it in SQL.
 - Signing out ends only the visitor's own copy: no other visitor is
-  signed out, whatever scope the client asks for.
+  signed out, whatever scope the client asks for. The server keeps the
+  session until the restore below prunes it (idle for a day).
 - Card edits, links, tags, gatherings and requests stay open. That is the
   demo.
 

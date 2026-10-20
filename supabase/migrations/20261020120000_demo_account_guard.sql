@@ -26,7 +26,10 @@
 --   * (c) Signing out never ends anyone else's session: GoTrue's sign-out
 --     (whose default scope is every session of the account) deletes no
 --     sessions of a demo account. The signing-out client still drops its
---     own tokens; the session it held expires with its refresh token.
+--     own tokens, but the session stays valid on the server: Supabase's
+--     refresh tokens do not expire by default, and GoTrue's own cleanup is
+--     skipped too. private.restore_demo prunes the demo sessions idle for
+--     a day, so the rows don't pile up.
 --     Deleting the account still removes its sessions (the cascade).
 --   * Card edits, links, tags, gatherings and requests stay open: the
 --     scheduled restore (private.restore_demo) puts them back.
