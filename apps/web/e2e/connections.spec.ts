@@ -102,7 +102,7 @@ test.describe('Connections are mutual', () => {
 });
 
 test('a connection made at a gathering both are going to says so, and links to it', async ({ browser }) => {
-  const stamp = Date.now();
+  const stamp = uniqueStamp();
   const ada = await (await browser.newContext()).newPage();
   const uid = await claimFreshTag(ada, `smoke-metat-ada-${stamp}@rls.test`, `MetAt Ada ${stamp}`);
   const bob = await (await browser.newContext()).newPage();

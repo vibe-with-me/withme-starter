@@ -94,7 +94,7 @@ none.
 
 **The test.** `packages/db/test/requests.test.ts`, and
 `packages/db/test/connection-met-at.test.ts` for where you met; through
-the browser `apps/web/e2e/handshake.spec.ts` and `connections.spec.ts`;
+the browser, `apps/web/e2e/handshake.spec.ts` and `connections.spec.ts`;
 on mobile, `apps/mobile/e2e/flows/handshake.yaml` and `met-at.yaml`.
 
 ## Gatherings are listed; who's going is connections-only

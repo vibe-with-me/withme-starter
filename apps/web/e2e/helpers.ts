@@ -94,11 +94,31 @@ export async function createGathering(page: Page, title: string): Promise<string
   return new URL(page.url()).pathname;
 }
 
-/** Drives the login page's sign-up form. Local Supabase has confirmations off. */
+/** True when the suite runs against a deployed stack (the staging run), not local servers. */
+export const isStaging = Boolean(process.env.E2E_TARGET_URL);
+
+const PASSWORD = 'smoke-pass-1!';
+
+/**
+ * A new account, signed in from the login page. Locally this drives the
+ * sign-up form (local Supabase has confirmations off). On staging the hosted
+ * project confirms email addresses, and its mailer allows a few messages an
+ * hour, so the account is created already confirmed through the service role
+ * and the person signs in through the same page instead. Either way the
+ * browser ends up where a fresh sign-up does: signed in, with no profile.
+ */
 export async function signUp(page: Page, email: string): Promise<void> {
+  if (isStaging) {
+    const { error } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
+    if (error) throw error;
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    return;
+  }
   await page.getByRole('button', { name: /create an account/i }).click();
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill('smoke-pass-1!');
+  await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign up' }).click();
 }
 

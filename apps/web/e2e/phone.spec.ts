@@ -1,13 +1,17 @@
 // Phone sign-in: number, texted code, signed in. The test number takes a fixed
 // code from [auth.sms.test_otp] in supabase/config.toml and never reaches Twilio.
 import { expect, type Page, test } from '@playwright/test';
-import { admin, freshUid } from './helpers.ts';
+import { admin, freshUid, isStaging } from './helpers.ts';
 
 const TEST_PHONE = '+1 (555) 555-0100';
 const TEST_CODE = '123456';
 
 // Every test signs in as the one test number, so they take turns.
 test.describe.configure({ mode: 'serial' });
+
+// The fixed code exists only in the local config: a hosted project would
+// text a real number through Twilio. Phone sign-in is checked locally and in CI.
+test.skip(isStaging, 'phone sign-in needs the local test OTP');
 
 /** Deletes the test number's auth user, so each test starts as a new phone. */
 async function forgetTestPhone(): Promise<void> {
