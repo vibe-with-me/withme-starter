@@ -96,6 +96,11 @@ A working product, not a template:
 [Building blocks](docs/building-blocks.md) tours the code;
 [the glossary](docs/glossary.md) defines the words.
 
+## Try the live demo
+
+Open [starter-demo.vibewithme.co/t/04BBBBBBBBBBBB](https://starter-demo.vibewithme.co/t/04BBBBBBBBBBBB)
+on any phone: it's what a tap on Ada's tag shows, no app needed.
+
 ## Try it locally
 
 Needs [Bun](https://bun.sh), [Docker](https://www.docker.com/products/docker-desktop/)
