@@ -70,6 +70,18 @@ In the order a new fork usually runs them:
   on its own Worker. The working pages ship in the skill's `site/` folder;
   a fork copies them and rewrites the words.
 
+One skill is a process rather than a recipe, and a fork uses it for
+every feature it builds after the ones above:
+
+- **feature-dev.** Runs a feature from idea to pull request through
+  gates: an approved design, a plan, a branch with the plan committed,
+  the slice built with each layer's tests, a test gate (every touched
+  layer tested, coverage on new files, every new SQL object named in a
+  test), the change seen working in the app, review, and the PR. A
+  fork's own choices (branch prefix, issue tracker, verification,
+  review, who merges) live in its `settings.md`. Rule 2 does not apply:
+  it scaffolds no feature, so there is nothing to distill.
+
 ## Decisions a fork inherits
 
 - **The gathering is core, not a skill.** Every early fork hand-built the

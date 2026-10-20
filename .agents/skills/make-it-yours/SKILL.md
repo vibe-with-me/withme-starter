@@ -636,7 +636,7 @@ users' gatherings fill the Events feed), so after the gate run
 port 8786 — without it the resolver page errors), in another
 `cd apps/web && bun run dev`. The landing page shows your wordmark in
 your fonts, and the resolver card (`/t/04BBBBBBBBBBBB` after
-`bun run db:seed`: Ada's card, inviting you to her gathering) settles
-with your accent on its one primary action, "Join this gathering", and
-nowhere else. That tag shows no Connect button; Connect and Accept carry
-the same accent (step 1).
+`bun run db:seed`: Ada's profile card) settles with your accent on its
+one primary action, "Connect", and nowhere else; "Report" under it stays
+quiet. Accept and a gathering tag's "Join this gathering" carry the same
+accent (step 1).

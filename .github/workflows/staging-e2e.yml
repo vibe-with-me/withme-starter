@@ -7,16 +7,20 @@ name: Staging e2e
 # the stack and sweeps leftovers; teardown deletes everything the run made.
 # docs/testing.md#staging-the-hosted-demo has the why and the setup.
 #
-# Starts when a maintainer adds the `staging-e2e` label to a pull request
-# (and again on each push while the label stays), or by hand from the
-# Actions tab. Fork PRs never run it: they get no secrets.
+# Starts when a maintainer adds the `staging-e2e` label to a pull request,
+# or by hand from the Actions tab. Each run is one deliberate act: a push
+# to a labelled PR does not start another (remove and re-add the label to
+# run the new commits). Fork PRs never run it: they get no secrets. Anyone
+# who can label or dispatch already has write access; a required reviewer
+# on the `demo` environment would add an approval to every run (and to
+# demo-migrate.yml's).
 #
 # It needs the demo database to be on this branch's schema. A branch with
 # new migrations stops at the schema check: they reach the demo when they
 # merge (demo-migrate.yml), never before.
 on:
   pull_request:
-    types: [labeled, synchronize]
+    types: [labeled]
   workflow_dispatch:
 
 # One run at a time against the shared demo: teardown sweeps every test
@@ -35,7 +39,7 @@ jobs:
     if: >-
       github.repository == 'vibe-with-me/withme-starter' &&
       (github.event_name == 'workflow_dispatch' ||
-       (contains(github.event.pull_request.labels.*.name, 'staging-e2e') &&
+       (github.event.label.name == 'staging-e2e' &&
         github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ubuntu-latest
     # The secrets and variables below live on this environment.

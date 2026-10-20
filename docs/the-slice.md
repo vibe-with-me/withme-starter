@@ -5,6 +5,10 @@ Every feature this starter grows — by hand or via a skill in `.agents/skills/`
 is the worked example: each layer cites the real file that plays that role
 today. This is a map, not a tutorial; read the cited files when you build.
 
+**To drive a feature through this map,** run the
+[`feature-dev`](../.agents/skills/feature-dev/SKILL.md) skill. It covers
+design, the plan, each layer's tests, the test gate, verification, and the PR.
+
 The V1 invariant still binds extensions: nothing that ranks, recommends,
 aggregates, or monetizes. Dormant seams (tenant, theming) stay dormant —
 extend through them, never around them.
@@ -238,7 +242,9 @@ test, not promised by UI code.
   and the blocker would read it.
   `.agents/skills/extend-profile/` is the recipe; `public.profile_links`
   (`20261014190000_profile_links.sql`, Profile → Links) is the shipped
-  example of the connections tier.
+  example of the connections tier. Its platform names alone are card
+  tier: `resolve_tag` lists them so the card shows them locked
+  (`20261018120000_card_link_platforms.sql`).
 - **Security-definer RPCs for multi-step writes.** Anything involving a
   check-then-write, two tables, or a privacy-sensitive branch is a
   `security definer` function (`set search_path = ''`, `private.lock_pair`

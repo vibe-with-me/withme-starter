@@ -123,13 +123,23 @@ export const GATHERINGS_PAGE_SIZE = 20;
 
 /**
  * The feed's page request. `cursor` is the previous page's `next_cursor`,
- * opaque to clients; omit it for the first page.
+ * opaque to clients; omit it for the first page. `from` (inclusive) and `to`
+ * (exclusive) narrow it to a window of start times, as absolute instants the
+ * client worked out in its own time zone (`whenWindow`); the feed never
+ * reaches back before now whatever `from` says. Send the same window with
+ * every page of one feed.
  */
 export const ListGatheringsInputSchema = z
   .object({
     cursor: z.string().max(200).optional(),
     limit: z.number().int().min(1).max(50).optional(),
+    from: z.iso.datetime({ offset: true }).optional(),
+    to: z.iso.datetime({ offset: true }).optional(),
   })
+  .refine(
+    (input) => !input.from || !input.to || Date.parse(input.from) < Date.parse(input.to),
+    { message: 'from must be before to' },
+  )
   .optional();
 
 export const GatheringsPageSchema = z.object({
@@ -137,6 +147,62 @@ export const GatheringsPageSchema = z.object({
   /** Pass it back for the next page; null on the last one. */
   next_cursor: z.string().nullable(),
 });
+
+/**
+ * Discover's "when" filter. `all` is the whole feed; the rest narrow it to a
+ * window of start times (`whenWindow`). Nothing counts per window: a window
+ * is the same feed, cut shorter.
+ */
+export const WHEN_FILTERS = ['all', 'week', 'weekend', 'later'] as const;
+export type WhenFilter = (typeof WHEN_FILTERS)[number];
+
+export const WHEN_FILTER_LABELS: Record<WhenFilter, string> = {
+  all: 'All',
+  week: 'This week',
+  weekend: 'This weekend',
+  later: 'Later',
+};
+
+/** What an empty window says. `all` keeps the feed's own invitation to create one. */
+export const WHEN_FILTER_EMPTY: Record<WhenFilter, string> = {
+  all: 'Nothing happening yet. Create the first one.',
+  week: 'Nothing this week.',
+  weekend: 'Nothing this weekend.',
+  later: 'Nothing after this week yet.',
+};
+
+/** The weekend starts Friday at this hour, local time. */
+export const WEEKEND_STARTS_FRIDAY_HOUR = 18;
+
+/**
+ * A filter's window as absolute ISO instants, worked out in the time zone of
+ * `now`'s runtime (the viewer's device), so the server never needs one.
+ * `from` is inclusive, `to` exclusive; a missing side is open.
+ *
+ * - week: now until the end of Sunday (weeks run Monday to Sunday).
+ * - weekend: Friday 18:00 until the end of Sunday; once it has begun, now
+ *   until the end of Sunday. Monday to Friday afternoon, the coming one.
+ * - later: from Monday 00:00, after this week.
+ *
+ * Days are stepped with local calendar fields, so a DST change inside the
+ * window moves its end with the clock rather than by a fixed 24 hours.
+ */
+export function whenWindow(filter: WhenFilter, now: Date = new Date()): { from?: string; to?: string } {
+  if (filter === 'all') return {};
+  // Days to the next Monday 00:00: getDay() is 0 on Sunday, 1 on Monday.
+  const toMonday = ((8 - now.getDay()) % 7) || 7;
+  const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + toMonday);
+  if (filter === 'later') return { from: endOfWeek.toISOString() };
+  if (filter === 'week') return { from: now.toISOString(), to: endOfWeek.toISOString() };
+  const weekendStart = new Date(
+    endOfWeek.getFullYear(),
+    endOfWeek.getMonth(),
+    endOfWeek.getDate() - 3,
+    WEEKEND_STARTS_FRIDAY_HOUR,
+  );
+  const from = now > weekendStart ? now : weekendStart;
+  return { from: from.toISOString(), to: endOfWeek.toISOString() };
+}
 
 export type Gathering = z.infer<typeof GatheringSchema>;
 export type GatheringVisibility = z.infer<typeof GatheringVisibilitySchema>;

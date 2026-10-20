@@ -1,11 +1,25 @@
-/** "Thu, Oct 9 · 7:00 PM" in the device locale and timezone; null when unparseable. */
-export function formatStartsAt(iso: string): string | null {
+/** "Thu, Oct 9" in the device locale and timezone; null when unparseable. */
+export function formatDay(iso: string): string | null {
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) return null;
-  const when = new Date(ms);
-  const day = when.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  const time = when.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+/** "Thu, Oct 9 · 7:00 PM" in the device locale and timezone; null when unparseable. */
+export function formatStartsAt(iso: string): string | null {
+  const day = formatDay(iso);
+  if (!day) return null;
+  const time = new Date(iso).toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' });
   return `${day} · ${time}`;
+}
+
+/**
+ * Where a connection was made, under the person's name on the Connections
+ * list: "Met at Friday mixer · Thu, Oct 9". The day only: the row says
+ * where you met, the gathering's own page has the rest.
+ */
+export function metAtLine(g: { title: string; starts_at: string }): string {
+  return [`Met at ${g.title}`, formatDay(g.starts_at)].filter(Boolean).join(' · ');
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');

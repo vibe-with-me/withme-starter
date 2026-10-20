@@ -66,6 +66,11 @@ describe('input validation runs before any query', () => {
     ],
     ['a non-uuid gathering', (a) => a.app.gatherings.get({ id: 'nope' })],
     ['a page size over 50', (a) => a.app.gatherings.list({ limit: 51 })],
+    [
+      'a feed window that ends before it starts',
+      (a) =>
+        a.app.gatherings.list({ from: '2099-01-02T00:00:00Z', to: '2099-01-01T00:00:00Z' }),
+    ],
     ['a malformed tag uid', (a) => a.app.tags.update({ uid: 'nope', status: 'disabled' })],
   ];
 
@@ -394,6 +399,7 @@ describe('pass-through handlers', () => {
       id: GATHERING_ID,
       profile: card(OTHER_ID, 'Lin'),
       links: [],
+      gathering: null,
       created_at: NOW_ISO,
     };
     supabase
@@ -414,6 +420,7 @@ describe('pass-through handlers', () => {
           created_at: NOW_ISO,
           user_a: USER_ID,
           user_b: OTHER_ID,
+          gathering: { id: GATHERING_ID, title: 'Friday mixer', starts_at: NOW_ISO },
           a: { ...card(USER_ID, 'Ada'), links: [] },
           b: {
             ...card(OTHER_ID, 'Lin'),
@@ -423,8 +430,8 @@ describe('pass-through handlers', () => {
       ])
       .on('DELETE', '/rest/v1/connections', []);
     const { connections } = await api.app.connections.list();
-    expect(connections.map((c) => [c.profile.display_name, c.links])).toEqual([
-      ['Lin', [{ platform: 'instagram', value: 'lin' }]],
+    expect(connections.map((c) => [c.profile.display_name, c.links, c.gathering?.title])).toEqual([
+      ['Lin', [{ platform: 'instagram', value: 'lin' }], 'Friday mixer'],
     ]);
     expect(await api.app.connections.remove({ id: GATHERING_ID })).toEqual({ ok: true });
   });
@@ -503,6 +510,22 @@ describe('pass-through handlers', () => {
     const query = supabase.to('GET', '/rest/v1/gatherings').at(-1)!;
     expect(query.search.get('or')).toContain(GATHERING_ID);
     expect(query.search.get('limit')).toBe('2');
+  });
+
+  test('gatherings.list narrows to a window of start times, never before now', async () => {
+    supabase.on('GET', '/rest/v1/gatherings', []);
+    const from = '2099-01-02T18:00:00.000Z';
+    const to = '2099-01-05T00:00:00.000Z';
+    await api.app.gatherings.list({ from, to });
+    let query = supabase.to('GET', '/rest/v1/gatherings').at(-1)!;
+    expect(query.search.getAll('starts_at')).toEqual([`gte.${from}`, `lt.${to}`]);
+
+    // A window reaching back is floored at now: the feed stays upcoming-only.
+    await api.app.gatherings.list({ from: '2000-01-01T00:00:00Z' });
+    query = supabase.to('GET', '/rest/v1/gatherings').at(-1)!;
+    const [floor, ...rest] = query.search.getAll('starts_at');
+    expect(rest).toEqual([]);
+    expect(Date.parse(floor!.slice('gte.'.length))).toBeGreaterThan(Date.parse('2020-01-01'));
   });
 
   test('gatherings.listMine, update, leave and remove', async () => {

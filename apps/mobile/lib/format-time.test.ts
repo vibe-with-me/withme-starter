@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   formatStartsAt,
   gatheringLine,
+  metAtLine,
   parseLocalDateTime,
   toDateAndTime,
   tomorrowEvening,
@@ -27,6 +28,22 @@ describe('formatStartsAt', () => {
   test('null when unparseable', () => {
     expect(formatStartsAt('not a date')).toBeNull();
     expect(formatStartsAt('')).toBeNull();
+  });
+});
+
+describe('metAtLine', () => {
+  test('the title and the day, no time', () => {
+    const iso = new Date(2026, 9, 9, 19, 0).toISOString();
+    const day = new Date(iso).toLocaleString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    expect(metAtLine({ title: 'Friday mixer', starts_at: iso })).toBe(`Met at Friday mixer · ${day}`);
+  });
+
+  test('just the title when the start is unparseable', () => {
+    expect(metAtLine({ title: 'Friday mixer', starts_at: 'nope' })).toBe('Met at Friday mixer');
   });
 });
 

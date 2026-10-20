@@ -464,15 +464,15 @@ then `bun run db:reset && bun run db:seed`.
   on the next tabs mount;
 - two connected accounts see each other's contact in Connections;
 - a tag resolve shows the affiliation and no contact;
-- cold, Connect returns to the tag. The seed has no tag that shows
-  Connect, so first sign in as Lin and claim `04AAAAAAAAAAAA`
-  (`/t/04AAAAAAAAAAAA` opens the claim flow), then sign out. Open
-  `/t/04AAAAAAAAAAAA`, tap Connect, sign up, tap Connect again on the
-  tag: Profile opens, and Save lands on the tag again, not on Profile;
-- the same through Join: `04BBBBBBBBBBBB` points at Ada's gathering, so
-  sign-up lands on the gathering's page (its title, "Who's going", and a
-  Join button: gatherings are listed to every signed-in user), Join opens
-  Profile, and Save returns to that page (your vertical's word after
+- cold, Connect returns to the tag. Signed out, open
+  `/t/04BBBBBBBBBBBB` (Ada's tag shows Connect), tap Connect, sign up,
+  tap Connect again on the tag: Profile opens, and Save lands on the tag
+  again, not on Profile;
+- the same through Join: sign in as Ada, point `04BBBBBBBBBBBB` at her
+  gathering from her tags, and sign out. Sign-up now lands on the
+  gathering's page (its title, "Who's going", and a Join button:
+  gatherings are listed to every signed-in user), Join opens Profile, and
+  Save returns to that page (your vertical's word after
   customize-gathering's URL step). The "Join this gathering?" card shows
   only when the gathering is not found (blocked or missing).
 

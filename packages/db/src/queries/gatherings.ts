@@ -155,19 +155,27 @@ export interface GatheringsPage {
 
 /** What is happening in the domain: the upcoming gatherings the viewer may
  * see, in start-time order, one page at a time. A bare RLS-scoped select —
- * nothing ranks, recommends, or filters beyond "has not started yet". Keyset
- * paging on (starts_at, id), so a gathering created between two pages never
- * shifts or repeats a row, and the enrichment (one members select, one counts
- * RPC) only ever covers one page's ids. */
+ * nothing ranks, recommends, or filters beyond "has not started yet" and an
+ * optional window of start times (`from` inclusive, `to` exclusive, absolute
+ * instants: the time zone is the client's business). Keyset paging on
+ * (starts_at, id), so a gathering created between two pages never shifts or
+ * repeats a row, and the enrichment (one members select, one counts RPC) only
+ * ever covers one page's ids. The window only ever narrows the same rows. */
 export async function listUpcomingGatherings(
   db: Db,
   userId: string,
-  { cursor = null, limit }: { cursor?: FeedCursor | null; limit: number },
+  {
+    cursor = null,
+    limit,
+    from,
+    to,
+  }: { cursor?: FeedCursor | null; limit: number; from?: string; to?: string },
 ): Promise<GatheringsPage> {
-  let query = db
-    .from('gatherings')
-    .select('*')
-    .gte('starts_at', new Date().toISOString());
+  const now = new Date().toISOString();
+  // Never before now: a window reaching back still lists only what is upcoming.
+  const floor = from !== undefined && Date.parse(from) > Date.parse(now) ? from : now;
+  let query = db.from('gatherings').select('*').gte('starts_at', floor);
+  if (to !== undefined) query = query.lt('starts_at', to);
   if (cursor) {
     // Quoted: a timestamp holds PostgREST's reserved ':' and '.'.
     query = query.or(

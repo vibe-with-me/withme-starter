@@ -1,8 +1,69 @@
 // The gathering: tap the host's tag, join, see the headcount but not the
 // host; connect, and the host appears in who's going. The feed lists it to
 // the whole domain.
+import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { admin, agreeToTerms, freshUid, revealInFeed, signUp } from './helpers.ts';
+import { whenWindow } from '@withme/contract';
+import { admin, agreeToTerms, freshUid, revealInFeed, signUp, signUpWithProfile } from './helpers.ts';
+
+test('Discover narrows to this weekend or later, and the URL keeps the window', async ({ page }) => {
+  const stamp = Date.now();
+  const name = `When Ada ${stamp}`;
+  await signUpWithProfile(page, `smoke-when-${stamp}@rls.test`, name);
+  const { data: host, error: hostError } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('display_name', name)
+    .single();
+  expect(hostError).toBeNull();
+
+  // One in the middle of this weekend's window, one after this week, worked
+  // out in this machine's zone, which the browser shares. The browser's clock
+  // is held at the same instant, so a run across midnight on Sunday cannot
+  // put the seeds and the page's windows in different weeks.
+  const reference = new Date();
+  await page.clock.setFixedTime(reference);
+  const weekend = whenWindow('weekend', reference);
+  const middle = (Date.parse(weekend.from!) + Date.parse(weekend.to!)) / 2;
+  const later = Date.parse(whenWindow('later', reference).from!) + 86_400_000;
+  const weekendTitle = `Weekend ${stamp}`;
+  const laterTitle = `Later ${stamp}`;
+  const { error } = await admin.from('gatherings').insert([
+    { host_id: host!.id, title: weekendTitle, starts_at: new Date(middle).toISOString() },
+    { host_id: host!.id, title: laterTitle, starts_at: new Date(later).toISOString() },
+  ]);
+  expect(error).toBeNull();
+
+  await page.goto('/gatherings');
+  const when = page.getByRole('navigation', { name: 'When' });
+  await expect(when.getByRole('link', { name: 'All' })).toHaveAttribute('aria-current', 'page');
+  const discover = page.getByRole('region', { name: 'Discover' });
+  /** Opens a window and waits out the previous one's rows. */
+  async function choose(label: string, search: string): Promise<void> {
+    await when.getByRole('link', { name: label }).click();
+    await page.waitForURL(`**/gatherings?when=${search}`);
+    await expect(discover).not.toHaveAttribute('aria-busy', 'true');
+  }
+
+  await choose('This weekend', 'weekend');
+  await revealInFeed(discover, weekendTitle);
+
+  // The feed runs in start order, so once the later one shows, the weekend
+  // one would already be above it had the window let it in.
+  await choose('Later', 'later');
+  await revealInFeed(discover, laterTitle);
+  await expect(discover.getByText(weekendTitle)).toHaveCount(0);
+
+  // A reload (or a shared link) opens the same window.
+  await page.reload();
+  await expect(when.getByRole('link', { name: 'Later' })).toHaveAttribute('aria-current', 'page');
+  await revealInFeed(discover, laterTitle);
+  await expect(discover.getByText(weekendTitle)).toHaveCount(0);
+
+  // An unknown window is the whole feed.
+  await page.goto('/gatherings?when=someday');
+  await expect(when.getByRole('link', { name: 'All' })).toHaveAttribute('aria-current', 'page');
+});
 
 test("tap a host's tag, join from the feed, and who's going shows only connections", async ({
   browser,
@@ -96,6 +157,22 @@ test("tap a host's tag, join from the feed, and who's going shows only connectio
   // Joining revealed Bob's own row and nothing else: the host is not a connection yet.
   await expect(bob.getByText('Smoke Bob')).toBeVisible();
   await expect(bob.getByText('Smoke Ada')).toHaveCount(0);
+
+  // Add to calendar downloads an .ics built in the page: title, time, place
+  // and a link back, never who is going or how many.
+  const [download] = await Promise.all([
+    bob.waitForEvent('download'),
+    bob.getByRole('button', { name: 'Add to calendar' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe(`smoke-rooftop-${stamp}.ics`);
+  const ics = await readFile(await download.path(), 'utf8');
+  expect(ics).toContain(`SUMMARY:${title}`);
+  expect(ics).toContain('LOCATION:The roof');
+  expect(ics.replace(/\r\n /g, '')).toContain(`URL:${new URL(detailPath, bob.url()).href}`);
+  expect(ics).toMatch(/DTSTART:\d{8}T\d{6}Z/);
+  for (const secret of ['Smoke Ada', 'Smoke Bob', 'going', 'ATTENDEE', 'ORGANIZER']) {
+    expect(ics).not.toContain(secret);
+  }
 
   // Tapping the tag again as a member opens the gathering instead of inviting twice.
   await bob.goto(`/t/${uid}`);

@@ -368,6 +368,13 @@ describe('gathering schemas', () => {
     expect(ListGatheringsInputSchema.safeParse({ limit: 51 }).success).toBe(false);
     expect(ListGatheringsInputSchema.safeParse({ limit: 0 }).success).toBe(false);
     expect(ListGatheringsInputSchema.safeParse({ cursor: 'x'.repeat(201) }).success).toBe(false);
+    const from = '2026-10-23T18:00:00.000Z';
+    const to = '2026-10-26T00:00:00.000Z';
+    expect(ListGatheringsInputSchema.safeParse({ from, to, cursor: 'abc' }).success).toBe(true);
+    expect(ListGatheringsInputSchema.safeParse({ from }).success).toBe(true);
+    expect(ListGatheringsInputSchema.safeParse({ from: to, to: from }).success).toBe(false);
+    expect(ListGatheringsInputSchema.safeParse({ from, to: from }).success).toBe(false);
+    expect(ListGatheringsInputSchema.safeParse({ from: 'friday' }).success).toBe(false);
     const lastPage = { gatherings: [], next_cursor: null };
     expect(GatheringsPageSchema.safeParse(lastPage).success).toBe(true);
     expect(GatheringsPageSchema.safeParse({ gatherings: [] }).success).toBe(false);
@@ -585,14 +592,38 @@ describe('profile links', () => {
     );
   });
 
+  it('a connection always says where it was made: a gathering or null', () => {
+    const connection = {
+      id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+      created_at: '2026-10-11T00:00:00Z',
+      profile: card,
+      links: [],
+    };
+    const gathering = {
+      id: '9b2e6679-7425-40de-944b-e07fc1f90ae7',
+      title: 'Friday mixer',
+      starts_at: '2026-10-10T19:00:00Z',
+    };
+    expect(ConnectionSchema.safeParse(connection).success).toBe(false);
+    expect(ConnectionSchema.safeParse({ ...connection, gathering: null }).success).toBe(true);
+    expect(ConnectionSchema.safeParse({ ...connection, gathering }).success).toBe(true);
+    expect(ConnectionSchema.safeParse({ ...connection, gathering: { ...gathering, id: 'x' } }).success).toBe(
+      false,
+    );
+    // only the line the row shows: a location smuggled in is stripped
+    expect(
+      ConnectionSchema.parse({ ...connection, gathering: { ...gathering, location: '12 Elm St' } }).gathering,
+    ).toEqual(gathering);
+  });
+
   it('a connection always carries links, and the card never does', () => {
     const connection = {
       id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
       created_at: '2026-10-11T00:00:00Z',
       profile: card,
     };
-    expect(ConnectionSchema.safeParse(connection).success).toBe(false);
-    expect(ConnectionSchema.safeParse({ ...connection, links: [] }).success).toBe(true);
+    expect(ConnectionSchema.safeParse({ ...connection, gathering: null }).success).toBe(false);
+    expect(ConnectionSchema.safeParse({ ...connection, links: [], gathering: null }).success).toBe(true);
     expect(Object.keys(PublicProfileSchema.shape)).not.toContain('links');
     // and parsing strips a links key smuggled onto a card
     expect(PublicProfileSchema.parse({ ...card, links: [{ platform: 'x', value: 'ada' }] })).toEqual(

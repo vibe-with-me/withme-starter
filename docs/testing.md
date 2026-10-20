@@ -66,7 +66,7 @@ with no spec is a gap. Close it before you build on it.
 | `/me` | `shell` |
 | `/t/$uid` | `handshake`, `gatherings`, `reports`, `resolver`, `share`, `enumeration` (unknown and malformed UIDs) |
 | `/claim/$uid` | `handshake`, `enumeration` (someone else's tag refuses like a missing one), `signed-out` |
-| `/connections` | `handshake` (accept), `connections` (lists, decline, remove), `blocks` |
+| `/connections` | `handshake` (accept), `connections` (lists, decline, remove, where you met), `blocks` |
 | `/gatherings` (Discover, Yours) | `gatherings`, `gathering-controls`, `blocks` (a blocked host's gathering is gone from the whole Discover feed) |
 | `/gatherings/new` | `gatherings`, `gathering-controls`, and every spec that hosts one (`createGathering`) |
 | `/gatherings/$id` | `gatherings`, `gathering-controls`, `reports`, `blocks` |
@@ -188,9 +188,10 @@ deploys the branch's Workers as `withme-api-staging` and `withme-web-staging`
 (beside the live demo Workers, which it never touches), points them at the
 hosted starter demo's database, and runs the same specs there.
 
-**Starting it.** Add the `staging-e2e` label to a pull request (it runs
-again on each push while the label stays), or run it from the Actions tab.
-Runs take turns: they share one database.
+**Starting it.** Add the `staging-e2e` label to a pull request, or run it
+from the Actions tab. A push does not start another run: to stage new
+commits, remove the label and add it again. Runs take turns: they share
+one database.
 
 **Startup and teardown.** Every spec seeds its own data, scoped to the run:
 accounts on `@rls.test` addresses, the tags it provisions, and what those

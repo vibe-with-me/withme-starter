@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { fonts, radius, space, TAP_TARGET, useTokens } from '../lib/tokens';
 import { Button, Card, ErrorText, Field, Muted, SectionHeader } from './ui';
 
@@ -384,6 +385,62 @@ export function LinkChips({ links }: { links: ProfileLink[] }) {
   );
 }
 
+/**
+ * The card's locked rows, the mirror of web's LockedLinks: the platforms a
+ * tag's owner can be reached on, named but never valued (resolve_tag
+ * carries no value). Connect unlocks them; the owner reads a note instead
+ * of the invitation, once the session read settles.
+ */
+export function LockedLinks({
+  platforms,
+  name,
+  ownerId,
+}: {
+  platforms: LinkPlatformId[];
+  name: string;
+  ownerId: string;
+}) {
+  const t = useTokens();
+  const [viewer, setViewer] = useState<'loading' | 'self' | 'other'>('loading');
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!cancelled) setViewer(data.session?.user.id === ownerId ? 'self' : 'other');
+      })
+      .catch(() => {
+        if (!cancelled) setViewer('other');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerId]);
+  if (platforms.length === 0) return null;
+  return (
+    <>
+      {viewer === 'loading' ? null : (
+        <Muted>
+          {viewer === 'self'
+            ? 'Only your connections see where these lead.'
+            : `Connect to unlock ${name}’s links.`}
+        </Muted>
+      )}
+      <View style={styles.locked} accessible accessibilityLabel={`${name}’s links, locked: ${platforms.map((p) => LINK_PLATFORMS[p].label).join(', ')}`}>
+        {platforms.map((platform) => (
+          <View key={platform} style={[styles.lockedRow, { backgroundColor: t.bg }]}>
+            <PlatformIcon platform={platform} color={t.ink} />
+            <Text style={[styles.lockedPlatform, { color: t.ink }]}>
+              {LINK_PLATFORMS[platform].label}
+            </Text>
+            <Feather name="lock" size={ICON_SIZE} color={t.inkMuted} />
+          </View>
+        ))}
+      </View>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   loadError: { width: '100%', alignItems: 'center', gap: space.s2 },
   row: { width: '100%' },
@@ -413,4 +470,14 @@ const styles = StyleSheet.create({
   },
   chipPlatform: { fontFamily: fonts.body, fontSize: 14 },
   chipValue: { fontFamily: fonts.bodySemiBold, fontSize: 14, flexShrink: 1 },
+  locked: { width: '100%', gap: space.s2 },
+  lockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.s2,
+    minHeight: TAP_TARGET,
+    paddingHorizontal: space.s3,
+    borderRadius: radius.pill,
+  },
+  lockedPlatform: { fontFamily: fonts.body, fontSize: 14, flex: 1 },
 });
