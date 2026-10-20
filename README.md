@@ -1,6 +1,9 @@
 # withme-starter
 
 [![CI](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/vibe-with-me/withme-starter)](LICENSE)
+[![npm: @vibewithme/nfc](https://img.shields.io/npm/v/@vibewithme/nfc?label=%40vibewithme%2Fnfc)](https://www.npmjs.com/package/@vibewithme/nfc)
+[![Live demo](https://img.shields.io/badge/live_demo-starter--demo.vibewithme.co-1c1916)](https://starter-demo.vibewithme.co/t/04BBBBBBBBBBBB)
 
 **Find your people in what you love to do.**
 
@@ -190,6 +193,16 @@ community can sell its own gear instead: almost any accessory can carry a
 tag, with no ads and no data sold. That's how Vibe With Me runs,
 at [vibewithme.co/shop](https://vibewithme.co/shop). The optional Merch tab
 links to a fork's own store.
+
+## Made something with it?
+
+Add the badge to your fork's README so the next builder finds the starter:
+
+[![Made with withme](docs/brand/made-with-withme.svg)](https://github.com/vibe-with-me/withme-starter)
+
+```md
+[![Made with withme](https://raw.githubusercontent.com/vibe-with-me/withme-starter/main/docs/brand/made-with-withme.svg)](https://github.com/vibe-with-me/withme-starter)
+```
 
 ## Contributing
 
