@@ -127,6 +127,11 @@ demo logins (`ada@` and `lin@demo.withme.local`):
 
 - **A public demo** (nobody signs up for real): the seed stays, and the
   landing page may show a demo login (`VITE_DEMO_CREDENTIALS`, section 3).
+  Everyone holding that login is the same account, so lock it and restore
+  it on a schedule: [Shared demo logins](../../../docs/moderation.md#shared-demo-logins)
+  has the two switches (no one can then delete the demo logins, change
+  their email or password, or sign other visitors out; the cards, tags,
+  gatherings and request come back hourly).
 - **An app for real users**: the seed is only for the checks in sections
   2 and 3, and section 5 removes it before anyone is told about the app.
   Never publish a demo login next to real users. Whoever holds it can sign

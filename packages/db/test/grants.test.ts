@@ -139,6 +139,7 @@ const GATHERING_READERS: Record<string, 'asks sees_gathering' | string> = {
   'public.create_gathering': "the caller's own new row, and a count of their own upcoming ones",
   'private.on_block_created': 'deletes pair-hosted memberships; returns nothing',
   'private.on_gathering_member_joined': 'pushes the title and a count to the host only',
+  'private.restore_demo': "postgres only (pg_cron); rewrites the demo hosts' own rows",
 };
 
 describe('gathering readers', () => {

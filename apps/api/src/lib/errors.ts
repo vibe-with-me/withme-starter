@@ -30,6 +30,10 @@ export function throwFromDbError(error: DbError, logger: Logger): never {
       // join_gathering: capacity reached. Only reachable for a viewer who
       // already sees the gathering and its headcount.
       throw new ORPCError('CONFLICT', { message: 'Gathering is full' });
+    case 'P0008':
+      // A shared demo login (private.settings 'demo_account_domain'):
+      // delete_my_account refuses it.
+      throw new ORPCError('FORBIDDEN', { message: 'Demo account' });
     case '42501':
       throw new ORPCError('UNAUTHORIZED', { message: 'Authentication required' });
     case '23503':

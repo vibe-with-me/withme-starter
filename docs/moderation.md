@@ -177,6 +177,67 @@ launch, write down who checks, when, and who covers for them; `go-live`
 section 5 asks for the name. If you cannot keep 24 hours, do not launch a
 store app until you can.
 
+## Shared demo logins
+
+A public demo that prints a login on its landing page
+(`VITE_DEMO_CREDENTIALS`) hands every visitor the same account. Two
+switches keep one visitor from breaking it for the rest. Both are off by
+default, and an app with real users leaves them off (it has no demo
+logins: go-live section 5 removes them).
+
+**Lock the demo logins.** Set the domain the seed's logins use:
+
+```sql
+update private.settings
+   set value = 'demo.withme.local'
+ where key = 'demo_account_domain';
+```
+
+From then on, for any account at that domain:
+
+- Profile → Account → Delete fails (the API answers 403).
+- Changing its email, phone or password through Supabase Auth fails, for
+  the visitor and for the service-role admin API alike. To change the demo
+  password yourself, set the row back to `null` first, or change it in SQL.
+- Signing out ends only the visitor's own copy: no other visitor is
+  signed out, whatever scope the client asks for.
+- Card edits, links, tags, gatherings and requests stay open. That is the
+  demo.
+
+The seed still works with the lock on (it resets the demo users through the
+admin API, which may delete them).
+
+**Restore it on a schedule.** `private.restore_demo()` puts Ada, Lin and
+the three demo tags back as the seed leaves them: both cards, Ada's links,
+Lin's pending request, Ada's gathering (Lin going) two days out, Lin's five
+days out, `04BBBBBBBBBBBB` opening Ada's card. Strangers' accounts and
+gatherings stay. It also cuts what ties a stranger to the shared login:
+connections and requests with Ada or Lin, and blocks Ada or Lin made, since
+whoever holds the password can read a connection's links. Reports filed as
+Ada stay. It does nothing (`off`) while the lock's row is `null`.
+
+Run it hourly with pg_cron (Database → Extensions → enable `pg_cron`, then
+in the SQL Editor):
+
+```sql
+select cron.schedule('restore-demo', '0 * * * *', 'select private.restore_demo()');
+-- check it ran:
+select status, return_message, start_time from cron.job_run_details
+ where jobid = (select jobid from cron.job where jobname = 'restore-demo')
+ order by start_time desc limit 5;
+-- switch it off:
+select cron.unschedule('restore-demo');
+```
+
+pg_cron runs inside the database, on time, with no credential leaving it.
+A GitHub Actions cron would need the database password in a workflow,
+starts late or not at all under load, and stops after 60 days without a
+commit. Run `select private.restore_demo();` by hand any time.
+
+A photo a visitor uploads as Ada loses its pointer at the next run, but the
+file stays in Storage → avatars → Ada's id. Empty that folder when the
+demo window ends.
+
 ## Adding a filter
 
 Guideline 1.2 also asks for "a method for filtering objectionable material

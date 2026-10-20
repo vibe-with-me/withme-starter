@@ -61,6 +61,7 @@ describe('throwFromDbError', () => {
     ['P0005', 'CONFLICT', 'Request expired'],
     ['P0006', 'CONFLICT', 'Try again'],
     ['P0007', 'CONFLICT', 'Gathering is full'],
+    ['P0008', 'FORBIDDEN', 'Demo account'],
     ['42501', 'UNAUTHORIZED', 'Authentication required'],
     ['23503', 'BAD_REQUEST', 'Profile required'],
     ['23505', 'CONFLICT', 'Already exists'],
