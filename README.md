@@ -5,9 +5,8 @@
 **Find your people in what you love to do.**
 
 An open-source starter for apps where people meet in person around
-something they love. Tap someone's NFC tag or scan their code, no app
-needed, and their card opens. Two taps later you are connected. Point a
-tag at a gathering and the tap is the invitation.
+something they love: tap someone's tag or scan their code, no app needed,
+and you stay connected long after the moment that brought you together.
 
 It grew out of [Vibe With Me](https://vibewithme.co), for the people you
 meet at shows. Golf is my other passion, so the first remix is
