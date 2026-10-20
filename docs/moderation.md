@@ -201,7 +201,8 @@ From then on, for any account at that domain:
   password yourself, set the row back to `null` first, or change it in SQL.
 - Signing out ends only the visitor's own copy: no other visitor is
   signed out, whatever scope the client asks for. The server keeps the
-  session until the restore below prunes it (idle for a day).
+  session until the restore below deletes it, once it has been idle for
+  more than a day; sessions used within the last day stay signed in.
 - Card edits, links, tags, gatherings and requests stay open. That is the
   demo.
 
@@ -215,7 +216,10 @@ days out, `04BBBBBBBBBBBB` opening Ada's card. Strangers' accounts and
 gatherings stay. It also cuts what ties a stranger to the shared login:
 connections and requests with Ada or Lin, and blocks Ada or Lin made, since
 whoever holds the password can read a connection's links. Reports filed as
-Ada stay. It does nothing (`off`) while the lock's row is `null`.
+Ada stay. It returns `restored`; `off` (does nothing) while the lock's row
+is `null`; and `missing` when there is no `ada@` or `lin@` login with a
+card at that domain, which means the demo was never seeded or was
+removed: run the seed (go-live section 1), then the restore again.
 
 Run it hourly with pg_cron (Database → Extensions → enable `pg_cron`, then
 in the SQL Editor):
@@ -232,8 +236,9 @@ select cron.unschedule('restore-demo');
 
 pg_cron runs inside the database, on time, with no credential leaving it.
 A GitHub Actions cron would need the database password in a workflow,
-starts late or not at all under load, and stops after 60 days without a
-commit. Run `select private.restore_demo();` by hand any time.
+starts late or not at all under load, and in a public repository GitHub
+disables it after 60 days with no repository activity. Run
+`select private.restore_demo();` by hand any time.
 
 A photo a visitor uploads as Ada loses its pointer at the next run, but the
 file stays in Storage → avatars → Ada's id. Empty that folder when the
