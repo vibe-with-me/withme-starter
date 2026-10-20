@@ -1,6 +1,7 @@
 # withme-starter
 
 [![CI](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/vibe-with-me/withme-starter/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvibe-with-me%2Fwithme-starter%2Fbadges%2Fbadge.json)](docs/testing.md#coverage)
 
 **Find your people in what you love to do.**
 

@@ -56,8 +56,8 @@ verified. Run it first, then fill this list from the sheet.
   (e.g. `com.acme.app`), URL scheme (e.g. `acme`).
 - Optional: a store URL for the Merch tab and the landing page's "Get
   tags" link — step 7.
-- Optional: your fork's repository URL, for the root README's CI badge —
-  step 3.
+- Optional: your fork's repository URL, for the root README's CI and
+  coverage badges — step 3.
 - Where your terms of use and privacy policy will live (two https URLs),
   and the contact email they name: step 7b. Not needed to start, but a
   store app cannot launch without them (`go-live` section 5).
@@ -300,7 +300,8 @@ product). Then these, which that grep does not reach:
   `git clone …/withme-starter`, the Run With Me worked example with its
   `runwithme` names, Vibe With Me's story), so no substitution makes it
   your app's. Replace it with your own: the wordmark as the title
-  (`# acme`), a CI badge pointing at your **fork's URL**, a line on what
+  (`# acme`), the CI and coverage badges pointing at your **fork's URL**
+  (the coverage one reads `<owner>/<repo>/badges/badge.json`), a line on what
   the app is, the local quickstart, the demo-credentials line (it must
   match the seed, previous bullet), and one attribution line such as
   `Built from [withme-starter](https://github.com/vibe-with-me/withme-starter).`,

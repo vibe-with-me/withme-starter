@@ -8,7 +8,7 @@ service-role key) is in [Local development](local-development.md#tests).
 
 | Layer | Where | What it proves | Runs in CI |
 | --- | --- | --- | --- |
-| Unit | `packages/contract`, `packages/nfc-sdk`, `apps/mobile/lib`, `apps/api` | Schemas, parsing, formatting, the Worker's routing and limits | Yes, `ci` |
+| Unit | `packages/contract`, `packages/nfc-sdk`, `apps/api`, `apps/web/src/lib`, `apps/mobile/lib` | Schemas, parsing, formatting, the Worker's routing and limits | Yes, `ci` |
 | Database (RLS) | `packages/db/test` | Every safety promise, against real per-user clients. [The safety model](safety-model.md) names the file for each. | Yes, `ci` |
 | API e2e | `apps/api/e2e` | The published SDK through the API Worker into Supabase | Yes, `ci` |
 | Web e2e | `apps/web/e2e` | The user flows in a real browser, against the production build in workerd | Yes, `e2e`; on demand against the hosted demo ([staging](#staging-the-hosted-demo)) |
@@ -148,13 +148,35 @@ suite working: update the spec in the same PR as the copy.
 Two jobs on every PR and on main ([ci.yml](../.github/workflows/ci.yml)):
 
 - **`ci`**: lint, typecheck, build, the SDK publish checks, and
-  `bun run test` (unit, database and API e2e) against Supabase local.
+  `bun run test` (unit, database and API e2e) against Supabase local,
+  then `bun run coverage` ([below](#coverage)).
 - **`e2e`**: the web e2e suite against the production build, on its own
   Supabase local.
 
 They run side by side. The split exists so the check's name says what
 broke: a red `e2e` with a green `ci` means the code builds and the rules
 hold, but a user flow no longer works in the browser.
+
+### Coverage
+
+The README's coverage pill is one number: the share of lines the unit and
+database suites run, across each package's unit scope (`src/` in the
+packages and the API, `apps/web/src/lib`, `apps/mobile/lib`). Web routes,
+components and mobile screens are left out; the e2e suites test those.
+A file in scope that no test loads counts at 0%, with its size estimated,
+so an untested file pulls the number down instead of vanishing from it.
+
+```sh
+bun run coverage              # needs the local stack, for packages/db
+bun run coverage --skip db    # without it
+```
+
+It prints a table per package with the files no test loads, writes it to
+`coverage/summary.md`, and in CI puts it on the `ci` run's summary page.
+On main, the `coverage-badge` job force-pushes `coverage/badge.json` to a
+`badges` branch that holds only that file, and the pill reads it through
+shields.io. In a fork it works with no setup once the README points at
+your repository (`make-it-yours` step 3).
 
 ### Reading a failure
 

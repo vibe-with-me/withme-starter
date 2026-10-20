@@ -47,7 +47,7 @@ attribution link in the README.
 
 A fork in the same GitHub org as the starter (`vibe-with-me/<your-repo>`)
 has more correct matches: every link to the fork's own repository (the
-README CI badge from step 3, and step 8's contact points, which now say
+README CI and coverage badges from step 3, and step 8's contact points, which now say
 `github.com/vibe-with-me/<your-repo>/…` in the issue and PR templates and
 `CONTRIBUTING.md`), and `"owner": "vibe-with-me"` once step 5 has given
 `app.json` the fork's own `projectId`. Append this to the sweep, with
