@@ -84,7 +84,12 @@ for (const suite of suites) {
 }
 
 function readLcov(file: string, cwd: string) {
-  if (!existsSync(file)) return
+  // A suite that passed but wrote no report would otherwise vanish from the
+  // totals, its files all counted as untested.
+  if (!existsSync(file)) {
+    console.error(`coverage: no lcov report at ${relative(root, file)}`)
+    process.exit(1)
+  }
   let current: Map<number, number> | undefined
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     if (line.startsWith('SF:')) {
