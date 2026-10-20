@@ -34,7 +34,7 @@ function Home() {
         {import.meta.env.VITE_DEMO_CREDENTIALS ? (
           <p className="hint">
             Try it: tap <a href="/t/04BBBBBBBBBBBB">a live demo tag</a>, or sign in as{' '}
-            <code>{import.meta.env.VITE_DEMO_CREDENTIALS}</code>.
+            <code>{import.meta.env.VITE_DEMO_CREDENTIALS}</code>
           </p>
         ) : null}
         {signedIn ? (
