@@ -39,7 +39,7 @@ a way to remix the idea for whatever you love.
     <td align="center" width="25%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/4-events-dark.png">
-        <img src="docs/images/readme/4-events-light.png" alt="The Events tab with Discover and Yours tabs, listing two gatherings with their times, places and headcounts" width="200">
+        <img src="docs/images/readme/4-events-light.png" alt="The Events tab with Discover and Yours tabs and All, This week, This weekend and Later filters, listing two gatherings with their times, places and headcounts" width="200">
       </picture>
       <br><sub>Events: discover gatherings, or see yours</sub>
     </td>
