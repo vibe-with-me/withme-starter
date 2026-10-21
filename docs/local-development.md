@@ -80,7 +80,9 @@ The iOS simulator reaches the host's API and Supabase at `localhost`.
 The Android emulator reaches the host at `10.0.2.2`, so set
 `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SUPABASE_URL` and
 `EXPO_PUBLIC_WEB_URL` (what your share code and QR scanner use) to that
-there, and on a physical device to your machine's LAN IP. Expo Go from
+there, and on a physical device to your machine's LAN IP. `10.0.2.2`
+works only inside the emulator: for a share code another phone will
+scan, set `EXPO_PUBLIC_WEB_URL` to the LAN IP even there. Expo Go from
 the App Store or Play Store runs one Expo SDK, and the starter tracks
 that SDK (57 today), not the newest release, so the app opens on a real
 phone. If Expo Go on a phone says the project is incompatible, the
