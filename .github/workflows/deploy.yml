@@ -209,7 +209,6 @@ jobs:
     environment: production
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      EAS_UPDATE_BRANCH: ${{ vars.EAS_UPDATE_BRANCH }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -225,10 +224,12 @@ jobs:
       # The EXPO_PUBLIC_* values come from the EAS project's `production`
       # environment variables (go-live section 5), not from a file: there is
       # no apps/mobile/.env.production here. The message is the commit's
-      # subject, read from git rather than the event payload.
+      # subject, read from git rather than the event payload. It publishes to
+      # the `production` channel, the one eas.json's production builds listen
+      # on: EAS sends it to whichever branch that channel points at, and
+      # creates both (named `production`) on the first publish.
       - name: Publish the EAS Update
         working-directory: apps/mobile
         run: |
-          : "${EAS_UPDATE_BRANCH:?The production environment has no EAS_UPDATE_BRANCH variable}"
-          npx -y eas-cli@24.13.0 update --branch "$EAS_UPDATE_BRANCH" --environment production \
+          npx -y eas-cli@24.13.0 update --channel production --environment production \
             --message "$(git log -1 --format=%s)" --non-interactive

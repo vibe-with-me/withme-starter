@@ -54,3 +54,41 @@ cd apps/web && ( trap 'rm -f authed-check.ts' EXIT; bun --env-file=.env.producti
 
 The trap deletes the file however the check ends, and the subshell exits
 with the check's status, so a failed check still fails the command.
+
+## Staging build
+
+(From section 4.) Where each build listens, from `apps/mobile/eas.json`:
+
+| Profile | Distribution | Channel | EAS environment |
+| --- | --- | --- | --- |
+| `development` | internal (a development client) | `development` | `development` (EAS's default for it) |
+| `staging` | internal (APK link, registered iPhones) | `staging` | `preview` |
+| `production` | store | `production` | `production` (EAS's default for it) |
+
+A build only takes updates published to its own channel, which is why
+section 4 and `deploy.yml` publish with `--channel production` and
+testers' updates go out with `--channel staging`. `--branch` would
+publish to a branch that no channel points at until someone links one
+(`eas channel:edit`), and no build would see it.
+
+**Why `runtimeVersion` stays on `sdkVersion`.** EAS Update gives an
+update to a build only when their runtime versions match. Under the
+`sdkVersion` policy the runtime is the Expo SDK (`exposdk:57.0.0`), the
+same value Expo Go reports, so Expo Go loads the starter's published
+updates: the quickstart depends on that. Under `fingerprint` the runtime
+is a hash of the project's native code, which Expo Go never matches, so
+switching the starter would break the quickstart.
+
+The price is paid by installed builds. A staging build made before a
+native change (a new native module, an Expo plugin added or reconfigured
+in `app.json`) has the same SDK runtime as the update made after it, so
+it downloads that update and crashes on the missing native code. The
+rule until the fix lands: a native change gets a new build; only
+JavaScript changes go out as `eas update`. The same holds for the
+`deploy.yml` run form (untick `mobile`).
+
+The planned fix is a runtime policy per build profile (`sdkVersion`
+where Expo Go loads updates, `fingerprint` for staging and store
+builds), so each build only accepts updates made for its own native
+code. It arrives with a store-release skill, which also covers store
+builds and submission.
