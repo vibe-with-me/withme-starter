@@ -9,8 +9,10 @@
 **Find your people in what you love to do.**
 
 An open-source starter for apps where people meet in person around
-something they love: tap someone's tag or scan their code, no app needed,
-and you stay connected long after the moment that brought you together.
+something they love: tap someone's tag or scan their code, nothing to
+install, and you stay connected long after the moment that brought you
+together. It ships as a web app and an iOS and Android app over one API,
+ready to remix.
 
 It grew out of [Vibe With Me](https://vibewithme.co), for the people you
 meet at shows. Golf is my other passion, so the first remix is
@@ -103,7 +105,7 @@ A working product, not a template:
 ## Try the live demo
 
 Open [starter-demo.vibewithme.co/t/04BBBBBBBBBBBB](https://starter-demo.vibewithme.co/t/04BBBBBBBBBBBB)
-on any phone: it's what a tap on Ada's tag shows, no app needed.
+on any phone: it's what a tap on Ada's tag shows, nothing to install.
 
 ## Try it locally
 
