@@ -162,7 +162,8 @@ hold, but a user flow no longer works in the browser.
 The README's coverage pill is one number: the share of lines the unit and
 database suites run, across each package's unit scope (`src/` in the
 packages and the API, `apps/web/src/lib`, `apps/mobile/lib`). Web routes,
-components and mobile screens are left out; the e2e suites test those.
+components and mobile screens are left out, since the e2e suites test
+those, and so are generated files (the Supabase types).
 A file in scope that no test loads counts at 0%, with its size estimated,
 so an untested file pulls the number down instead of vanishing from it.
 
@@ -175,8 +176,25 @@ It prints a table per package with the files no test loads, writes it to
 `coverage/summary.md`, and in CI puts it on the `ci` run's summary page.
 On main, the `coverage-badge` job force-pushes `coverage/badge.json` to a
 `badges` branch that holds only that file, and the pill reads it through
-shields.io. In a fork it works with no setup once the README points at
-your repository (`make-it-yours` step 3).
+shields.io.
+
+**In a fork** the badge job publishes to your repository with no secrets
+or accounts. Point the README's pill at your repository
+(`make-it-yours` step 3), and mind three things:
+
+- **New packages.** The suites are listed by hand at the top of
+  `scripts/coverage.ts`. Add a line when you add a package with tests; the
+  run warns (in the output and on the summary page) about any workspace
+  package with a `test` script that isn't listed, and skips a listed one
+  you deleted.
+- **Private repositories.** shields.io reads the badge from
+  `raw.githubusercontent.com`, which a private repository doesn't serve
+  without a sign-in, so the pill won't render. The table on the run page
+  still works; for a pill, publish the number somewhere public instead
+  (Codecov, or a public gist with a token).
+- **Rulesets on every branch.** The starter's ruleset protects only
+  `main`. If yours covers all branches, exclude `badges` or let GitHub
+  Actions bypass it, or the `coverage-badge` job fails on its push.
 
 ### Reading a failure
 

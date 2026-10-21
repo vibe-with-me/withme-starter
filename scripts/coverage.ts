@@ -16,6 +16,10 @@
 //
 // Writes coverage/summary.md and coverage/badge.json (a shields.io endpoint).
 // In CI, the summary goes on the run page and main publishes the badge.
+//
+// A fork that adds a package with tests adds a line to `suites`; the script
+// warns about any workspace package with a `test` script that isn't listed.
+// A listed package the fork deleted is skipped with a warning.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, appendFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
@@ -29,6 +33,8 @@ type Suite = {
   cwd: string
   // The package's own unit scope: what its tests are meant to cover.
   scope: string[]
+  // Inside the scope but not code a person wrote: generated files.
+  ignore?: string[]
   run: (dir: string) => string[]
 }
 
@@ -43,7 +49,13 @@ const bunTest = (args: string[]) => (dir: string) => [
 
 const suites: Suite[] = [
   { name: 'contract', cwd: 'packages/contract', scope: ['src/**/*.ts'], run: bunTest([]) },
-  { name: 'db', cwd: 'packages/db', scope: ['src/**/*.ts'], run: bunTest(['--timeout', '20000']) },
+  {
+    name: 'db',
+    cwd: 'packages/db',
+    scope: ['src/**/*.ts'],
+    ignore: ['src/types/supabase.ts'], // `bun run db:types` writes it
+    run: bunTest(['--timeout', '20000']),
+  },
   {
     name: 'nfc-sdk',
     cwd: 'packages/nfc-sdk',
@@ -65,6 +77,29 @@ const suites: Suite[] = [
 
 const skipAt = process.argv.indexOf('--skip')
 const skip = new Set(skipAt === -1 ? [] : (process.argv[skipAt + 1] ?? '').split(','))
+const warnings: string[] = []
+
+for (const suite of suites) {
+  if (!existsSync(join(root, suite.cwd, 'package.json'))) {
+    warnings.push(`\`${suite.cwd}\` is listed in scripts/coverage.ts but doesn't exist; skipped.`)
+    skip.add(suite.name)
+  }
+}
+
+// Workspace packages with tests that no suite covers: their tests run in
+// `bun run test` but would never reach the number.
+const workspaces: string[] = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).workspaces
+const listed = new Set(suites.map((s) => s.cwd))
+for (const pattern of workspaces) {
+  for (const manifest of new Glob(`${pattern}/package.json`).scanSync({ cwd: root })) {
+    const dir = manifest.slice(0, -'/package.json'.length)
+    const { scripts } = JSON.parse(readFileSync(join(root, manifest), 'utf8'))
+    if (scripts?.test && !listed.has(dir)) {
+      warnings.push(`\`${dir}\` has a test script but no line in scripts/coverage.ts; not counted.`)
+    }
+  }
+}
+for (const w of warnings) console.warn(`coverage: ${w.replaceAll('`', '')}`)
 
 // Absolute path → line → hits, merged across every suite.
 const lines = new Map<string, Map<number, number>>()
@@ -128,6 +163,7 @@ for (const suite of suites) {
   const files = suite.scope
     .flatMap((pattern) => [...new Glob(pattern).scanSync({ cwd, absolute: true })])
     .filter((p) => !isTest(p) && !p.includes('node_modules'))
+    .filter((p) => !suite.ignore?.includes(relative(cwd, p)))
   let found = 0,
     hit = 0,
     loadedSource = 0
@@ -194,6 +230,7 @@ const summary = [
   '',
   '\\* includes an estimate for the files no test loads, counted at 0%.',
   skip.size ? `\nSkipped: ${[...skip].join(', ')}.` : '',
+  ...warnings.map((w) => `\n> [!WARNING]\n> ${w}`),
 ].join('\n')
 
 writeFileSync(join(out, 'summary.md'), summary + '\n')
