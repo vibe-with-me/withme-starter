@@ -80,7 +80,7 @@ The iOS simulator reaches the host's API and Supabase at `localhost`. On
 a physical device set `EXPO_PUBLIC_API_URL` and
 `EXPO_PUBLIC_SUPABASE_URL` to your machine's LAN IP. Expo Go from the
 App Store or Play Store runs one Expo SDK, and the starter tracks that
-SDK (57 today), not the newest release, so the app opens on a real
+SDK (58 today), not the newest release, so the app opens on a real
 phone. If Expo Go on a phone says the project is incompatible, the
 stores have moved on: upgrade the SDK (see the upgrade note in the
 mobile README). The simulator and emulator need nothing: Expo CLI
