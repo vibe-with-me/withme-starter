@@ -73,7 +73,7 @@ publish to a branch that no channel points at until someone links one
 
 **Why `runtimeVersion` stays on `sdkVersion`.** EAS Update gives an
 update to a build only when their runtime versions match. Under the
-`sdkVersion` policy the runtime is the Expo SDK (`exposdk:57.0.0`), the
+`sdkVersion` policy the runtime is the Expo SDK (`exposdk:56.0.0` today), the
 same value Expo Go reports, so Expo Go loads the starter's published
 updates: the quickstart depends on that. Under `fingerprint` the runtime
 is a hash of the project's native code, which Expo Go never matches, so
@@ -82,10 +82,13 @@ switching the starter would break the quickstart.
 The price is paid by installed builds. A staging build made before a
 native change (a new native module, an Expo plugin added or reconfigured
 in `app.json`) has the same SDK runtime as the update made after it, so
-it downloads that update and crashes on the missing native code. The
-rule until the fix lands: a native change gets a new build; only
-JavaScript changes go out as `eas update`. The same holds for the
-`deploy.yml` run form (untick `mobile`).
+it downloads that update and crashes on the missing native code. A new
+build does not retire the old installs: they stay on the same channel
+and runtime, so every later update reaches them too. The rule until the
+fix lands: a native change gets a new build, and that channel gets no
+update until every tester (or, for production, every user) has
+installed it. The same holds for the `deploy.yml` run form (untick
+`mobile`).
 
 The planned fix is a runtime policy per build profile (`sdkVersion`
 where Expo Go loads updates, `fingerprint` for staging and store

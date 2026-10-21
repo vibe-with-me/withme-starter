@@ -78,8 +78,9 @@ the scan screen falls back to manual entry there. The committed
 `app.json` belongs to the upstream Expo project; a fork runs `eas init`
 once to own its own (`make-it-yours` step 5). `runtimeVersion` stays on
 the `sdkVersion` policy so Expo Go loads published updates; installed
-builds pay for that, so a native change ships as a new build, not an
-update, until a per-profile policy lands (`apps/mobile/README.md`
+builds pay for that: after a native change, older installs still take
+later updates and crash, so a native change ships as a new build and
+updates wait until everyone has it, until a per-profile policy lands (`apps/mobile/README.md`
 explains why).
 
 ## Supabase (Postgres + Auth + Storage)

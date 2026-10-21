@@ -416,8 +416,10 @@ has the same bundle identifier and package.
 for that SDK. That is what lets Expo Go load published updates for the
 quickstart. The cost lands on builds: an update that needs native code a
 build lacks (a new native module, a changed plugin) still installs on
-that build and crashes it. Until it is fixed, a native change means a new
-staging build, never an `eas update`. Switching the whole starter to the
+that build and crashes it, and a new build doesn't retire the old
+installs. Until it is fixed, a native change means a new staging build,
+and no `eas update --channel staging` until every tester has installed
+it. Switching the whole starter to the
 `fingerprint` policy would stop Expo Go loading updates, so it stays. The
 planned fix is a runtime policy per build profile, arriving with a
 store-release skill. `.agents/skills/go-live/reference.md` → Staging

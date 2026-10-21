@@ -51,10 +51,13 @@ steps.
 updates by QR, which the quickstart relies on. The trade-off: every build on
 one SDK accepts every update for that SDK, so an update that needs native
 code a build lacks (a new native module, a changed plugin) installs on that
-build and crashes it. Switching to `"policy": "fingerprint"` would protect
-builds but stop Expo Go loading updates, so the starter doesn't. Until a
-per-profile runtime policy lands (planned, with a store-release skill),
-**ship native changes as a new build, never as an `eas update`.**
+build and crashes it. A new build doesn't retire the old installs: they
+keep taking every later update on their channel. Switching to
+`"policy": "fingerprint"` would protect builds but stop Expo Go loading
+updates, so the starter doesn't. Until a per-profile runtime policy lands
+(planned, with a store-release skill), **ship a native change as a new
+build, and publish no update to that channel until every tester has
+installed it.**
 
 ## Notes
 
