@@ -78,19 +78,21 @@ bun run --filter @withme/mobile dev     # Metro; press i for iOS, a for Android
 
 The iOS simulator reaches the host's API and Supabase at `localhost`.
 The Android emulator reaches the host at `10.0.2.2`, so set
-`EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SUPABASE_URL` to that there, and
-on a physical device to your machine's LAN IP. Expo Go from the App
-Store or Play Store runs one Expo SDK, and the starter tracks that SDK
-(57 today), not the newest release, so the app opens on a real phone. If
-Expo Go on a phone says the project is incompatible, the stores have
-moved to a newer SDK. On Android, install the Expo Go that matches the
-project from [expo.dev/go](https://expo.dev/go); on an iPhone, build
-your own with `eas go` (TestFlight, needs an Apple Developer Program
-membership) or use a development build. Or upgrade the SDK when you are
-ready (see the upgrade note in the mobile README). On an iPhone, Expo Go
-also opens a project from your machine only when it and Expo CLI are
-signed in to the same Expo account: run `bunx expo login`, then sign in
-from the account icon in Expo Go ([Expo's
+`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SUPABASE_URL` and
+`EXPO_PUBLIC_WEB_URL` (what your share code and QR scanner use) to that
+there, and on a physical device to your machine's LAN IP. Expo Go from
+the App Store or Play Store runs one Expo SDK, and the starter tracks
+that SDK (57 today), not the newest release, so the app opens on a real
+phone. If Expo Go on a phone says the project is incompatible, the
+stores have moved to a newer SDK. On Android, install the Expo Go that
+matches the project from [expo.dev/go](https://expo.dev/go); on an
+iPhone, build your own with `bunx eas-cli go` (an EAS build sent to
+TestFlight; needs an Apple Developer Program membership) or use a
+development build. Or upgrade the SDK when you are ready (see the
+upgrade note in the mobile README). On an iPhone, Expo Go also opens a
+project from your machine only when it and Expo CLI are signed in to the
+same Expo account: run `bunx expo login`, then sign in from the account
+icon in Expo Go ([Expo's
 note](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/)).
 Simulators and emulators need no Expo Go install: Expo CLI installs the
 matching one. NFC reading needs a development build (`npx expo
