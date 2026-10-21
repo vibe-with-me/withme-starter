@@ -105,7 +105,7 @@ A working product, not a template:
 ## Try the live demo
 
 Open [starter-demo.vibewithme.co/t/04BBBBBBBBBBBB](https://starter-demo.vibewithme.co/t/04BBBBBBBBBBBB)
-on any phone: it's what a tap on Ada's tag shows, nothing to install.
+in any phone's browser: it's what a tap on Ada's tag shows, nothing to install.
 
 ## Try it locally
 
