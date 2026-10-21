@@ -16,8 +16,19 @@ appId: ${APP_ID}
 # screen), or signed out: wait for any. The first open after Metro starts
 # waits for the whole bundle.
 - extendedWaitUntil:
-    visible: 'Profile|Updated terms|New here\? Create an account'
+    visible: 'Profile|Updated terms|New here\? Create an account|SDK version: .*'
     timeout: 120000
+# Expo Go 57+ opens its developer menu over the app on a project's first
+# load instead of the card above; close it.
+- runFlow:
+    when:
+      visible: 'SDK version: .*'
+    commands:
+      - tapOn:
+          id: xmark
+      - extendedWaitUntil:
+          visible: 'Profile|Updated terms|New here\? Create an account'
+          timeout: 30000
 - tapOn:
     text: Continue
     optional: true
