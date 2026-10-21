@@ -8,7 +8,8 @@ description: Use when deploying a withme-starter app or fork to production, for 
 Distilled from two real production deploys (the starter demo and a
 vertical fork). Every step below was executed against live infrastructure;
 every warning marks a pothole that was actually hit. Order matters: DB →
-API worker → web worker → mobile.
+API worker → web worker → mobile. Testers who need NFC or real pushes
+before the stores get a **staging build** (section 4, Staging build).
 
 **Checkpoints.** Every section ends with one: run its command and read the
 output before you call the section done (`docs/the-slice.md` →
@@ -298,10 +299,13 @@ stop and tell the owner — never work around it with the service role.
 2. Write `apps/mobile/.env.production` with the `EXPO_PUBLIC_*` mirrors
    of step 3's values (`EXPO_PUBLIC_TERMS_URL` and
    `EXPO_PUBLIC_PRIVACY_URL` included).
-3. Publish — `--environment` is REQUIRED in non-interactive mode:
+3. Publish to the `production` channel, the one `eas.json`'s production
+   builds listen on (EAS creates the channel, and a branch of the same
+   name, on the first publish; Expo Go loads it too). `--environment` is
+   REQUIRED in non-interactive mode:
 
 ```sh
-bunx eas-cli update --branch demo --environment production \
+bunx eas-cli update --channel production --environment production \
   --message "<what changed>" --non-interactive
 ```
 
@@ -369,6 +373,62 @@ request from a second account: the push arrives and tapping it opens
 Requests. A pair rings once per 24 hours, so repeat the check with a
 different second account (or decline, wait out the day, and re-send). `select value from private.settings where key = 'push_url'` reads
 Expo's URL; setting it to `null` is the kill switch for every push.
+
+### Staging build
+
+Expo Go can't read NFC tags or receive your pushes. A staging build is a
+real app testers install from a link, with NFC and real pushes, before
+anything goes to the stores. It is `eas.json`'s `staging` profile:
+internal distribution, the `staging` channel, and EAS's `preview`
+environment. Each build uses EAS build minutes: free up to a monthly
+limit, then billed, so get the owner's OK before every one.
+
+1. **The `preview` environment.** Four values, pointing at the fork's
+   staging API and web: the `*-staging` Workers from `docs/testing.md`
+   (Staging), or the production ones if the fork has no staging stack.
+
+   ```sh
+   bunx eas-cli env:create --environment preview --visibility plaintext \
+     --name EXPO_PUBLIC_API_URL --value https://<api-worker>-staging.<subdomain>.workers.dev
+   ```
+
+   and the same for `EXPO_PUBLIC_SUPABASE_URL`,
+   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `EXPO_PUBLIC_WEB_URL`. Don't
+   skip `EXPO_PUBLIC_WEB_URL`: it is the address QR share codes encode,
+   and without it the share and scan screens say they are not configured.
+2. **Android.** `bunx eas-cli build --platform android --profile staging`
+   ends with an APK link anyone can install.
+3. **iOS.** Register each tester's iPhone first with
+   `bunx eas-cli device:create` (it gives a link to open on the phone),
+   then `bunx eas-cli build --platform ios --profile staging`. The first
+   run asks for the owner's Apple ID, so the owner runs it. An iPhone
+   added later needs a new build.
+4. **Updates.** Ship JavaScript changes to testers with
+   `bunx eas-cli update --channel staging --environment preview --message "<what changed>"`.
+   Only staging builds listen on `staging`, so it never reaches
+   production users.
+
+Push credentials from the section above serve the staging build too: it
+has the same bundle identifier and package.
+
+**The runtime catch.** `app.json` keeps `runtimeVersion` on the
+`sdkVersion` policy, so every build on one Expo SDK accepts every update
+for that SDK. That is what lets Expo Go load published updates for the
+quickstart. The cost lands on builds: an update that needs native code a
+build lacks (a new native module, a changed plugin) still installs on
+that build and crashes it, and a new build doesn't retire the old
+installs. Until it is fixed, a native change means a new staging build,
+and no `eas update --channel staging` until every tester has installed
+it. Switching the whole starter to the
+`fingerprint` policy would stop Expo Go loading updates, so it stays. The
+planned fix is a runtime policy per build profile, arriving with a
+store-release skill. `.agents/skills/go-live/reference.md` → Staging
+build has the detail.
+
+**Checkpoint:** `bunx eas-cli config --profile staging --platform android`
+prints the profile with `"channel": "staging"` and `"environment": "preview"`;
+on a phone running the build, the share screen shows a QR code, a tag
+read opens a card, and the push checkpoint above passes.
 
 ## 5. Before real users
 
@@ -489,7 +549,7 @@ By hand, in the same order as a first deploy: DB, new migrations via
 `supabase db push` (reseed only with the owner's OK, and never on an app
 with real users; section 1). API: `bunx wrangler deploy` (secrets
 persist). Web: `bun run build && bunx wrangler deploy`. Mobile: a fresh
-`eas update`.
+`eas update --channel production` (section 4).
 
 **Checkpoint:** rerun the checkpoint of each section you redeployed, in
 deploy order: section 1's (`db push` lists the new migrations and ends
@@ -563,8 +623,9 @@ their accounts):
      users (section 5).
    - `VITE_STORE_URL`, and `VITE_DEMO_CREDENTIALS` for a public demo
      only: optional.
-   - `EAS_UPDATE_BRANCH`: the EAS branch your builds' channel reads
-     (section 4 publishes to `demo`).
+
+   The `mobile` job needs no variable: it publishes to the `production`
+   channel, like section 4.
 6. In `deploy.yml`, replace `your-org/your-repo` with your repository in
    all four `if:` lines, delete `demo-migrate.yml`, and merge.
 7. Run it from the Actions tab.

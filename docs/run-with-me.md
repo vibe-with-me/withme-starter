@@ -366,8 +366,8 @@ Order matters with the next step: provision against production after
 
 > Run `.agents/skills/go-live/SKILL.md`. New Supabase org "Run With Me"
 > on the free plan for now, region us-east-1. Cloudflare account already
-> logged in (`wrangler whoami`). Mobile: an EAS update on the `demo`
-> branch. Stop and ask me before anything that bills or writes to
+> logged in (`wrangler whoami`). Mobile: an EAS update on the
+> `production` channel. Stop and ask me before anything that bills or writes to
 > production.
 
 **What changes.** Production, in order: the database (`supabase projects

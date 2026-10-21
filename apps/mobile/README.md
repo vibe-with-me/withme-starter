@@ -38,14 +38,26 @@ build with your deployed endpoints baked in:
 EXPO_PUBLIC_API_URL=https://<your-api> \
 EXPO_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co \
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_… \
-npx eas-cli update --branch demo --environment production
+npx eas-cli update --channel production --environment production
 ```
 
+`eas.json` gives each build profile its own channel (`development`,
+`staging`, `production`), and a build only takes updates published to its
+channel. The `staging` profile is an installable test build with NFC and
+real pushes, before the stores: go-live's Staging build section has the
+steps.
+
 `runtimeVersion` uses the `sdkVersion` policy so Expo Go can load published
-updates by QR — that is the point of the demo. The trade-off: all builds on
-one SDK share a runtime, which is unsafe once you ship development builds
-with native modules (this app already includes `react-native-nfc-manager`).
-**Switch to `"policy": "fingerprint"` before distributing dev builds.**
+updates by QR, which the quickstart relies on. The trade-off: every build on
+one SDK accepts every update for that SDK, so an update that needs native
+code a build lacks (a new native module, a changed plugin) installs on that
+build and crashes it. A new build doesn't retire the old installs: they
+keep taking every later update on their channel. Switching to
+`"policy": "fingerprint"` would protect builds but stop Expo Go loading
+updates, so the starter doesn't. Until a per-profile runtime policy lands
+(planned, with a store-release skill), **ship a native change as a new
+build, and publish no update to that channel until every tester has
+installed it.**
 
 ## Notes
 
