@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@withme/contract": "workspace:*",
-    "@supabase/supabase-js": "^2.117.3"
+    "@supabase/supabase-js": "^2.118.0",
+    "@withme/contract": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
