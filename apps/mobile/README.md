@@ -63,3 +63,20 @@ with native modules (this app already includes `react-native-nfc-manager`).
   the exact version React Native requires; **bump the overrides and this
   package's pins together** (a web-only React upgrade now goes through the
   root override too).
+- The starter tracks the Expo SDK that store Expo Go supports, not the
+  newest release: that is what lets a forker open the app on a real phone.
+  Check the App Store or Play Store listing for Expo Go's version (57.x
+  runs SDK 57) before moving to a new SDK.
+- Upgrading the Expo SDK: one major at a time, following Expo's changelog
+  for each. Set the root `expo` override to the new version, then in this
+  directory run `bunx expo install expo@<version>` and
+  `bunx expo install --fix`, which moves every Expo-pinned package together
+  (Dependabot ignores them on purpose). Bring `react` here and the root
+  `react`/`react-dom` overrides to the version the SDK pins, then run
+  `bunx expo-doctor@latest`. Check `bun.lock` for a root
+  `@expo/metro-runtime` entry left on the old major: `expo` only peers on
+  it, so Bun keeps the stale resolution. Delete that entry and its nested
+  `@expo/log-box` lines, then `bun install` again. expo-doctor's "duplicate
+  dependencies" check flags `expo` installed twice at the same version.
+  That is Bun's isolated linker making one copy per peer set, not two
+  versions, and it predates SDK 57.
