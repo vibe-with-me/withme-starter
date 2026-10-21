@@ -19,16 +19,23 @@ appId: ${APP_ID}
     visible: 'Profile|Updated terms|New here\? Create an account|SDK version: .*'
     timeout: 120000
 # Expo Go 57+ opens its developer menu over the app on a project's first
-# load instead of the card above; close it.
+# load instead of the card above; close it. Its close button is the id
+# xmark on iOS and the text Close on Android.
 - runFlow:
     when:
       visible: 'SDK version: .*'
     commands:
       - tapOn:
           id: xmark
+          optional: true
+      - runFlow:
+          when:
+            visible: 'SDK version: .*'
+          commands:
+            - tapOn: Close
       - extendedWaitUntil:
           visible: 'Profile|Updated terms|New here\? Create an account'
-          timeout: 30000
+          timeout: 120000
 - tapOn:
     text: Continue
     optional: true
