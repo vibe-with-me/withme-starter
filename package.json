@@ -32,9 +32,9 @@
     "turbo": "^2.11.10"
   },
   "overrides": {
-    "expo": "57.0.30",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "expo": "58.0.16",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "baseline-browser-mapping": "^2.11.0",
     "browserslist": "^4.28.7",
     "js-yaml": "^4.3.2",

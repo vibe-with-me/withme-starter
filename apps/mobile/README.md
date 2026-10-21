@@ -65,8 +65,8 @@ with native modules (this app already includes `react-native-nfc-manager`).
   root override too).
 - The starter tracks the Expo SDK that store Expo Go supports, not the
   newest release: that is what lets a forker open the app on a real phone.
-  Check the App Store or Play Store listing for Expo Go's version (57.x
-  runs SDK 57) before moving to a new SDK.
+  Check the App Store or Play Store listing for Expo Go's version (58.x
+  runs SDK 58) before moving to a new SDK.
 - Upgrading the Expo SDK: one major at a time, following Expo's changelog
   for each. Set the root `expo` override to the new version, then in this
   directory run `bunx expo install expo@<version>` and

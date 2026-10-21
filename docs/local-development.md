@@ -84,7 +84,7 @@ there, and on a physical device to your machine's LAN IP. `10.0.2.2`
 works only inside the emulator: for a share code another phone will
 scan, set `EXPO_PUBLIC_WEB_URL` to the LAN IP even there. Expo Go from
 the App Store or Play Store runs one Expo SDK, and the starter tracks
-that SDK (57 today), not the newest release, so the app opens on a real
+that SDK (58 today), not the newest release, so the app opens on a real
 phone. If Expo Go on a phone says the project is incompatible, the
 stores have moved to a newer SDK. On Android, install the Expo Go that
 matches the project from [expo.dev/go](https://expo.dev/go); on an
