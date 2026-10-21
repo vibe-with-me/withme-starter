@@ -348,6 +348,10 @@ around, each commented where it happens:
   matches as `<title>, <when>, <going>, <names>`.
 - The system's Save Password sheet hides the app until it is declined,
   and iOS asks "Open in Expo Go?" before a link from outside the app.
+  On iOS 27 the sheet hides its own Not Now button from Maestro too, so
+  run the suite on an iOS 26 simulator.
+- Expo Go opens its developer menu over the app on a project's first
+  load; the open step closes it.
 - In a new-password field, iOS's strong-password suggestion takes over
   typed text: fill the form in sign-in mode, then switch.
 - The keyboard covers buttons, and Maestro's `hideKeyboard` cannot close

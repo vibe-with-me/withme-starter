@@ -83,10 +83,14 @@ on a physical device to your machine's LAN IP. Expo Go from the App
 Store or Play Store runs one Expo SDK, and the starter tracks that SDK
 (58 today), not the newest release, so the app opens on a real phone. If
 Expo Go on a phone says the project is incompatible, the stores have
-moved on: upgrade the SDK (see the upgrade note in the mobile README).
-On an iPhone, Expo Go also opens a project from your machine only when
-it and Expo CLI are signed in to the same Expo account: run `bunx expo
-login`, then sign in from the account icon in Expo Go ([Expo's
+moved to a newer SDK. On Android, install the Expo Go that matches the
+project from [expo.dev/go](https://expo.dev/go); on an iPhone, build
+your own with `eas go` (TestFlight, needs an Apple Developer Program
+membership) or use a development build. Or upgrade the SDK when you are
+ready (see the upgrade note in the mobile README). On an iPhone, Expo Go
+also opens a project from your machine only when it and Expo CLI are
+signed in to the same Expo account: run `bunx expo login`, then sign in
+from the account icon in Expo Go ([Expo's
 note](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/)).
 Simulators and emulators need no Expo Go install: Expo CLI installs the
 matching one. NFC reading needs a development build (`npx expo
