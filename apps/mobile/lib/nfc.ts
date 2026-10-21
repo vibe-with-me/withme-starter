@@ -4,6 +4,7 @@
  * unavailable and the UI hides the scan affordance. Deep links and manual
  * UID entry work everywhere.
  */
+import { NativeModules, TurboModuleRegistry } from 'react-native';
 
 interface NfcModule {
   isSupported(): Promise<boolean>;
@@ -15,9 +16,13 @@ interface NfcModule {
 }
 
 function loadNfc(): { manager: NfcModule; tech: unknown } | null {
+  // Expo Go has no NfcManager native module, and react-native-nfc-manager 4
+  // throws while loading without it. A require made outside module loading
+  // (here, from an effect) reports that throw to LogBox as an uncaught error
+  // even inside try/catch, so check for the module before requiring.
+  if (!TurboModuleRegistry.get('NfcManager') && !NativeModules.NfcManager) return null;
   try {
-    // Dynamic require: in Expo Go the JS loads but the native module is
-    // absent; in that case treat NFC as unavailable.
+    // Dynamic require: development builds only (see above).
     // oxlint-disable-next-line no-require-imports
     const mod = require('react-native-nfc-manager') as {
       default: NfcModule;
