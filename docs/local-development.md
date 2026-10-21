@@ -76,17 +76,22 @@ cp apps/mobile/.env.example apps/mobile/.env
 bun run --filter @withme/mobile dev     # Metro; press i for iOS, a for Android
 ```
 
-The iOS simulator reaches the host's API and Supabase at `localhost`. On
-a physical device set `EXPO_PUBLIC_API_URL` and
-`EXPO_PUBLIC_SUPABASE_URL` to your machine's LAN IP. Expo Go from the
-App Store or Play Store runs one Expo SDK, and the starter tracks that
-SDK (58 today), not the newest release, so the app opens on a real
-phone. If Expo Go on a phone says the project is incompatible, the
-stores have moved on: upgrade the SDK (see the upgrade note in the
-mobile README). The simulator and emulator need nothing: Expo CLI
-installs the matching Expo Go there. NFC reading needs a development
-build (`npx expo run:ios`); in Expo Go the scan screen falls back to
-typing a UID or following a deep link.
+The iOS simulator reaches the host's API and Supabase at `localhost`.
+The Android emulator reaches the host at `10.0.2.2`, so set
+`EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SUPABASE_URL` to that there, and
+on a physical device to your machine's LAN IP. Expo Go from the App
+Store or Play Store runs one Expo SDK, and the starter tracks that SDK
+(58 today), not the newest release, so the app opens on a real phone. If
+Expo Go on a phone says the project is incompatible, the stores have
+moved on: upgrade the SDK (see the upgrade note in the mobile README).
+On an iPhone, Expo Go also opens a project from your machine only when
+it and Expo CLI are signed in to the same Expo account: run `bunx expo
+login`, then sign in from the account icon in Expo Go ([Expo's
+note](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/)).
+Simulators and emulators need no Expo Go install: Expo CLI installs the
+matching one. NFC reading needs a development build (`npx expo
+run:ios`); in Expo Go the scan screen falls back to typing a UID or
+following a deep link.
 [`apps/mobile/README.md`](../apps/mobile/README.md) has the rest.
 
 ### Push notifications
