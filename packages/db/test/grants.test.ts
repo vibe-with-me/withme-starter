@@ -39,11 +39,16 @@ const ANON_EXECUTABLE = ['private.current_tenant_id', 'public.log_scan', 'public
 
 const SIGNED_IN_RPCS = [
   'public.accept_connect_request',
+  // Operators only: each raises 42501 for anyone else before reading.
+  'public.admin_get_report',
+  'public.admin_list_open_reports',
   'public.claim_tag',
   'public.create_gathering',
   'public.decline_connect_request',
   'public.delete_my_account',
   'public.gathering_member_counts',
+  // About the caller only.
+  'public.is_operator',
   'public.join_gathering',
   'public.my_share_code',
   'public.register_push_token',
@@ -139,6 +144,7 @@ const GATHERING_READERS: Record<string, 'asks sees_gathering' | string> = {
   'public.create_gathering': "the caller's own new row, and a count of their own upcoming ones",
   'private.on_block_created': 'deletes pair-hosted memberships; returns nothing',
   'private.on_gathering_member_joined': 'pushes the title and a count to the host only',
+  'public.admin_get_report': 'operators only: raises 42501 for anyone else before it reads',
 };
 
 describe('gathering readers', () => {
@@ -173,6 +179,62 @@ describe('gathering readers', () => {
         has_function_privilege('anon', 'private.sees_gathering(uuid)', 'EXECUTE') as anon,
         has_function_privilege('authenticated', 'private.sees_gathering(uuid)', 'EXECUTE') as authed`;
     expect(row).toEqual({ anon: false, authed: true });
+  });
+});
+
+// Operators (20261023120000): the role is a row nobody but SQL writes, and
+// the check is a helper no client role may call. public.is_operator is the
+// one door to its answer, about the caller only.
+describe('operators', () => {
+  it('private.is_operator is executable by no client role, public.is_operator by authenticated only', async () => {
+    const [row] = await sql`
+      select
+        has_function_privilege('anon', 'private.is_operator()', 'EXECUTE') private_anon,
+        has_function_privilege('authenticated', 'private.is_operator()', 'EXECUTE') private_authed,
+        has_function_privilege('anon', 'public.is_operator()', 'EXECUTE') public_anon,
+        has_function_privilege('authenticated', 'public.is_operator()', 'EXECUTE') public_authed`;
+    expect(row).toEqual({
+      private_anon: false,
+      private_authed: false,
+      public_anon: false,
+      public_authed: true,
+    });
+  });
+
+  it('private.operators has RLS on, no policies, and no client privilege', async () => {
+    const [table] = await sql`
+      select c.relrowsecurity as rls,
+             (select count(*)::int from pg_policies where schemaname = 'private' and tablename = 'operators') as policies,
+             has_table_privilege('anon', 'private.operators', 'SELECT, INSERT, UPDATE, DELETE') as anon,
+             has_table_privilege('authenticated', 'private.operators', 'SELECT, INSERT, UPDATE, DELETE') as authed
+        from pg_class c
+       where c.oid = 'private.operators'::regclass`;
+    expect(table).toEqual({ rls: true, policies: 0, anon: false, authed: false });
+  });
+
+  // No function writes the table: making an operator is SQL only.
+  it('no function in public or private writes private.operators', async () => {
+    const rows: { fn: string }[] = await sql`
+      select n.nspname || '.' || p.proname as fn
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in ('public', 'private')
+        and p.prosrc ~* '(insert[[:space:]]+into|update|delete[[:space:]]+from)[[:space:]]+private[.]operators'
+      order by 1`;
+    expect(rows).toEqual([]);
+  });
+
+  // Every admin function asks private.is_operator before anything else.
+  it('every admin_* function checks is_operator first', async () => {
+    const rows: { fn: string; first: boolean }[] = await sql`
+      select p.proname as fn,
+             p.prosrc ~ '^[[:space:]]*(declare[^$]*)?begin[[:space:]]+if not private[.]is_operator[(][)] then' as first
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and left(p.proname, 6) = 'admin_'
+      order by 1`;
+    expect(rows.map((r) => r.fn)).toEqual(['admin_get_report', 'admin_list_open_reports']);
+    for (const row of rows) expect(row).toEqual({ fn: row.fn, first: true });
   });
 });
 

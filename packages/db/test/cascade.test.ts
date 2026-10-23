@@ -1,16 +1,23 @@
 // Account deletion cascades: profile gone, connections and requests deleted,
-// blocks deleted, claimed tags reset to unclaimed, their scan history erased.
-import { beforeAll, describe, expect, it } from 'bun:test';
+// blocks deleted, claimed tags reset to unclaimed, their scan history erased,
+// and an operator's role gone with them.
+import { SQL } from 'bun';
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import {
+  SUPABASE_DB_URL,
   admin,
   anonClient,
   assertStackRunning,
   connectUsers,
   createTestUser,
+  makeOperator,
   provisionTag,
 } from '../src/test-utils/index.ts';
 
+const sql = new SQL(SUPABASE_DB_URL);
+
 beforeAll(assertStackRunning);
+afterAll(() => sql.close());
 
 describe('account deletion', () => {
   it('cascades through every table and resets claimed tags', async () => {
@@ -59,5 +66,49 @@ describe('account deletion', () => {
     // And the tag is immediately re-claimable.
     const { error: reclaim } = await bob.client.rpc('claim_tag', { p_uid: uid });
     expect(reclaim).toBeNull();
+  });
+});
+
+describe('operator account deletion', () => {
+  it('an operator who deletes their account loses the role; a report they resolved keeps its row', async () => {
+    const ops = await createTestUser('Operator');
+    await makeOperator(ops.id);
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    expect((await alice.client.rpc('report_user', { p_reported: bob.id, p_reason: 'spam' })).error).toBeNull();
+    const { data: report } = await admin.from('reports').select('id').eq('reporter_id', alice.id).single();
+    // As #135's resolve will record it.
+    const resolved = await admin
+      .from('reports')
+      .update({ status: 'dismissed', resolved_at: new Date().toISOString(), resolved_by: ops.id })
+      .eq('id', report!.id)
+      .select('resolved_by');
+    expect(resolved.data).toEqual([{ resolved_by: ops.id }]);
+    expect((await ops.client.rpc('is_operator')).data).toBe(true);
+
+    expect((await ops.client.rpc('delete_my_account')).error).toBeNull();
+
+    expect(await sql`select user_id from private.operators where user_id = ${ops.id}`).toEqual([]);
+    const { data: after } = await admin
+      .from('reports')
+      .select('status, resolved_by')
+      .eq('id', report!.id)
+      .single();
+    expect(after).toEqual({ status: 'dismissed', resolved_by: null });
+
+    // A new account is a new user id: nothing carries over.
+    const fresh = await createTestUser('Operator again');
+    expect((await fresh.client.rpc('is_operator')).data).toBe(false);
+  });
+
+  it('resolved_by must be a profile', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    await alice.client.rpc('report_user', { p_reported: bob.id, p_reason: 'spam' });
+    const { error } = await admin
+      .from('reports')
+      .update({ resolved_by: crypto.randomUUID() })
+      .eq('reporter_id', alice.id);
+    expect(error?.code).toBe('23503');
   });
 });

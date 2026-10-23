@@ -379,6 +379,7 @@ export type Database = {
           reporter_id: string | null
           resolution_note: string | null
           resolved_at: string | null
+          resolved_by: string | null
           snapshot: NonNullable<Json>
           status: string
           tenant_id: string
@@ -395,6 +396,7 @@ export type Database = {
           reporter_id?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           snapshot: NonNullable<Json>
           status?: string
           tenant_id?: string
@@ -410,6 +412,7 @@ export type Database = {
           reporter_id?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           snapshot?: NonNullable<Json>
           status?: string
           tenant_id?: string
@@ -432,6 +435,13 @@ export type Database = {
           {
             foreignKeyName: "reports_reporter_id_fkey"
             columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -522,6 +532,22 @@ export type Database = {
     }
     Functions: {
       accept_connect_request: { Args: { p_request_id: string }; Returns: Json }
+      admin_get_report: { Args: { p_id: string }; Returns: Json }
+      admin_list_open_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          details: string
+          gathering_id: string
+          gathering_snapshot: Json
+          gathering_title: string
+          id: string
+          open_reports_about_them: number
+          reason: string
+          reported_id: string
+          reported_name: string
+        }[]
+      }
       claim_tag: {
         Args: { p_destination?: Json; p_uid: string }
         Returns: Json
@@ -551,6 +577,7 @@ export type Database = {
           member_count: number
         }[]
       }
+      is_operator: { Args: Record<PropertyKey, never>; Returns: boolean }
       join_gathering: { Args: { p_gathering_id: string }; Returns: undefined }
       log_scan: {
         Args: { p_scan_method?: string; p_uid: string; p_user_agent?: string }
