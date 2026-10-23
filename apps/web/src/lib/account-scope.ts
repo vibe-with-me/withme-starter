@@ -68,6 +68,14 @@ export async function asSignedInAccount<T>(load: () => Promise<T>): Promise<T> {
   }
 }
 
+/**
+ * Layouts whose content belongs to the signed-in account: the shell, and
+ * the admin area (its guard asks the API whether this account is an operator).
+ */
+function isAccountScoped(routeId: string): boolean {
+  return routeId === '/_app' || routeId === '/admin';
+}
+
 export function scopeRouterToAccount(router: AnyRouter): void {
   if (typeof window === 'undefined') return;
   let supabase: ReturnType<typeof getSupabase>;
@@ -94,8 +102,8 @@ export function scopeRouterToAccount(router: AnyRouter): void {
     // `latestLocation` is the navigation's destination as soon as it starts.
     const [destination] = router.getMatchedRoutes(router.latestLocation.pathname);
     const shellOnScreen =
-      router.state.matches.some((match) => match.routeId === '/_app') ||
-      destination.some((route) => route.id === '/_app');
+      router.state.matches.some((match) => isAccountScoped(match.routeId)) ||
+      destination.some((route) => isAccountScoped(route.id));
     if (!shellOnScreen) return;
 
     setSwitchesInFlight(switchesInFlight + 1);

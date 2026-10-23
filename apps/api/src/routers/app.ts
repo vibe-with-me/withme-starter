@@ -35,18 +35,9 @@ import {
   upsertOwnProfile,
 } from '@withme/db/queries';
 import { sniffAvatar } from '../lib/avatar.ts';
-import { throwFromDbError } from '../lib/errors.ts';
+import { isDbError, throwFromDbError } from '../lib/errors.ts';
 import { appProcedure } from '../lib/orpc.ts';
 import type { ApiContext } from '../lib/orpc.ts';
-
-function isDbError(error: unknown): error is { code: string; message?: string } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    typeof (error as { code: unknown }).code === 'string'
-  );
-}
 
 async function run<T>(context: ApiContext, work: () => Promise<T>): Promise<T> {
   try {

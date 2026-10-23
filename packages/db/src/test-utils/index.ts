@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { SQL } from 'bun';
 import { TERMS_VERSION } from '@withme/contract';
 import type { Database } from '../types/supabase.ts';
 import type { Db } from '../index.ts';
@@ -131,4 +132,36 @@ export async function connectUsers(a: TestUser, b: TestUser): Promise<void> {
     p_request_id: requestId,
   });
   if (acceptError) throw acceptError;
+}
+
+// The database itself, for what has no client path at all. Local only, like
+// everything here, whatever SUPABASE_URL says: a hosted project makes its
+// operators in the SQL Editor (docs/moderation.md).
+export const SUPABASE_DB_URL =
+  process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
+
+/**
+ * Makes someone an operator (private.operators), as the SQL Editor would.
+ * No function or client role can write that table, so this connects to
+ * Postgres directly. `tenantId` is for the tenant seam tests only.
+ */
+export async function makeOperator(userId: string, tenantId?: string): Promise<void> {
+  const db = new URL(SUPABASE_DB_URL);
+  if (!['127.0.0.1', 'localhost'].includes(db.hostname)) {
+    throw new Error(
+      `Refusing to make an operator on ${db.hostname}: use the SQL Editor (docs/moderation.md).`,
+    );
+  }
+  const sql = new SQL(SUPABASE_DB_URL);
+  try {
+    if (tenantId) {
+      await sql`insert into private.operators (user_id, tenant_id) values (${userId}, ${tenantId})
+                on conflict (user_id) do update set tenant_id = excluded.tenant_id`;
+    } else {
+      await sql`insert into private.operators (user_id) values (${userId})
+                on conflict (user_id) do nothing`;
+    }
+  } finally {
+    await sql.close();
+  }
 }

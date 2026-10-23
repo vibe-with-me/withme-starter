@@ -6,6 +6,16 @@ interface DbError {
   message?: string;
 }
 
+/** A PostgREST or Postgres error: it carries a SQLSTATE-like code. */
+export function isDbError(error: unknown): error is { code: string; message?: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as { code: unknown }).code === 'string'
+  );
+}
+
 /**
  * Maps SQLSTATE codes raised by the database RPCs (the safety-semantic layer)
  * to ORPC errors. Database messages never pass through verbatim — what the

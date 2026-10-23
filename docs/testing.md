@@ -46,7 +46,9 @@ bun run --cwd apps/web test:e2e --repeat-each=3
 **Another checkout or fork already running?** The suite takes ports 8796
 (API), 9456 (its inspector) and 3010 (web). Move them with
 `E2E_API_PORT`, `E2E_API_INSPECTOR_PORT` and `E2E_WEB_PORT`. A second
-Supabase stack goes on other ports too: set `SUPABASE_URL` to it.
+Supabase stack goes on other ports too: set `SUPABASE_URL` to its API and
+`SUPABASE_DB_URL` to its database (the grants tests and the admin spec's
+operator setup talk to Postgres directly).
 One more shared resource: the web Worker finds the API Worker by its
 name (`withme-api`) through wrangler's dev registry, so two checkouts
 running the suite at once can reach each other's API. Run one at a
@@ -75,6 +77,7 @@ with no spec is a gap. Close it before you build on it.
 | `/share` | `share` |
 | `/terms` | `terms` |
 | Signed out, every page above that needs a session | `signed-out` (one test per page) |
+| `/admin` | `admin` (an operator sees the admin home; a signed-in non-operator and a signed-out visitor get the not-found page; nothing links to it) |
 
 | Promise ([safety-model.md](safety-model.md)) | Spec |
 | --- | --- |
@@ -83,7 +86,8 @@ with no spec is a gap. Close it before you build on it.
 | Connections are mutual | `handshake`, `connections` |
 | Who's going is connections-only | `gatherings` |
 | Gathering visibility and capacity | `gathering-controls`, `blocks` |
-| Reports are private | `reports` |
+| Reports are private | `reports`, `admin` |
+| Operators | `admin` |
 | Terms are agreed to, and recorded | `terms` |
 | Two tiers of profile data | `profile` (links shown to a connection, never on the card) |
 | A shared code can be taken back | `share` |

@@ -41,9 +41,11 @@ appropriate.
 
 ## Where reports land
 
-`public.reports`, in your Supabase project. Only the service role can read
-it: the person who reported cannot read it back, the person reported never
-learns of it, and nothing about it is public
+`public.reports`, in your Supabase project. Only the service role and your
+operators can read it (operators through the admin functions, see
+[Your first operator](#your-first-operator)): the person who reported
+cannot read it back, the person reported never learns of it, and nothing
+about it is public
 ([the safety model](safety-model.md#reports-are-private)). Each row has the
 reason, what the reporter wrote, and a snapshot of the reported card as it
 was when they reported it (`snapshot`: name, bio, photo path), so an edit
@@ -93,6 +95,8 @@ the daily check below still stands.
 **The daily check.** Pick one person who owns this, and make it part of
 their day:
 
+- **Admin:** `/admin` on your web app, signed in as an operator. Its
+  reports page is coming (#135); until it lands, use one of the two below.
 - **Studio:** Table Editor → `reports`, filtered to `status = open`.
 - **SQL:** save this in the SQL Editor as "Open reports" and run it:
 
@@ -126,6 +130,38 @@ missed.
 
 The API also logs `report filed` (no ids, no names) in the API Worker's
 logs, which tells you reports are arriving but not what they say.
+
+## Your first operator
+
+An operator is a signed-in account the database knows runs the
+community: it can open `/admin` on the web app. Its reports page is
+coming (#135); until then, read reports in Studio or with the
+"Open reports" query above.
+Nobody becomes one from the app. You make each one in the SQL Editor:
+
+1. Sign up in your app with the account that will be the operator, and
+   create its profile.
+2. In the Supabase dashboard, find its id (Authentication → Users), then
+   run:
+
+```sql
+insert into private.operators (user_id)
+values ('<their user id>');
+```
+
+3. Sign in as them and open `/admin`. Nothing in the app links there:
+   bookmark it.
+
+To take the role away: `delete from private.operators where user_id =
+'<their user id>';`. Deleting the account removes it too. To see who
+has it: `select * from private.operators;`.
+
+Locally, `bun run db:seed` makes `operator@demo.withme.local` (password
+`withme-demo-1`) an operator, and `bun run db:operator <email>` makes any
+local account one. The seed never makes an operator on a hosted project:
+demo logins are shared, and whoever held one would read every report.
+How operators are checked is in
+[the safety model](safety-model.md#operators).
 
 ## What you do with one
 

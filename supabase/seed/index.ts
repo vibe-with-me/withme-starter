@@ -1,11 +1,11 @@
 // Demo seed: two users, three tags (unclaimed / claimed / disabled), one
 // pending connect request, two gatherings — enough to walk the full handshake
-// locally.
+// locally. Locally, also an operator account that can open /admin.
 // Idempotent: re-running resets the demo users and tags. `bun run db:unseed`
 // removes them.
 import './local-env.ts';
 import { TERMS_VERSION } from '@withme/contract';
-import { admin, anonClient } from '@withme/db/test-utils';
+import { admin, anonClient, makeOperator } from '@withme/db/test-utils';
 import { DEMO_TAGS as TAGS, DEMO_USERS, findDemoUsers } from './demo.ts';
 
 // This seed DELETES the demo users and tags it owns. Refuse anything that
@@ -147,10 +147,22 @@ const { error: linGatheringError } = await lin.client.rpc('create_gathering', {
 });
 if (linGatheringError) throw linGatheringError;
 
+// An operator, locally only: anyone holding a hosted project's demo login
+// would read every report. A hosted project makes its operators in the SQL
+// Editor (docs/moderation.md).
+if (!remote) {
+  const operator = await createDemoUser(DEMO_USERS.operator, 'Sam', 'Runs this community.');
+  await makeOperator(operator.id);
+}
+
 console.log(`
 Seeded.
   Users     ${DEMO_USERS.ada} / ${DEMO_PASSWORD}   (has 1 pending request from Lin; hosts a gathering Lin joined; six links)
-            ${DEMO_USERS.lin} / ${DEMO_PASSWORD}   (hosts a second gathering, listed to the domain)
+            ${DEMO_USERS.lin} / ${DEMO_PASSWORD}   (hosts a second gathering, listed to the domain)${
+              remote
+                ? ''
+                : `\n            ${DEMO_USERS.operator} / ${DEMO_PASSWORD}   (an operator: opens /admin)`
+            }
   Tags      /t/${TAGS.claimed}  -> Ada's card, her links locked behind Connect
             /t/${TAGS.unclaimed}  -> claim flow
             /t/${TAGS.disabled}  -> inactive

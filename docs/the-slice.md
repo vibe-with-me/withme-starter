@@ -53,8 +53,9 @@ skill:
 `packages/contract`. Zod schemas in `src/schemas/` (one file per concept —
 see `destination.ts`, `tag.ts`, `profile.ts`, `connection.ts`), wired into
 oRPC routers in `src/contract/public.ts` (tag-scoped; anonymous + the SDK
-wraps it) and `src/contract/app.ts` (session-scoped; verified JWT only),
-exported through `src/index.ts`. Everything downstream — API, web, mobile,
+wraps it), `src/contract/app.ts` (session-scoped; verified JWT only) and
+`src/contract/admin.ts` (operators only; the web `/admin` area), exported
+through `src/index.ts`. Everything downstream — API, web, mobile,
 SDK — derives its types from here. Schema behavior is pinned by
 `packages/contract/test/schemas.test.ts`, including *negative* cases:
 unknown variants must fail to parse.
@@ -100,12 +101,16 @@ anon must NOT see. `enumeration.test.ts` and `blocks.test.ts` are the model.
 client, and give every negative case a positive control so it cannot pass
 red.
 
-**4. API handlers.** `apps/api/src/routers/{public,app}.ts` implement the
+**4. API handlers.** `apps/api/src/routers/{public,app,admin}.ts` implement the
 contract via `implement(contract)` (`src/lib/orpc.ts`). Every `app.*`
 procedure is signed-in only: `appProcedure`'s middleware refuses an
 anonymous caller with UNAUTHORIZED and hands the handler a typed
 `context.userId`, so a new handler cannot forget the check (the one
 signed-in `public.*` procedure, `claim`, calls `requireUser` itself).
+Every `admin.*` procedure is built on `adminProcedure`, which adds
+FORBIDDEN for anyone `public.is_operator()` does not answer yes for; the
+admin functions behind it check again in the database
+([safety-model.md → Operators](safety-model.md#operators)).
 Handlers are thin: a typed query from
 `packages/db/src/queries/` or an `rpc()` call, with `throwFromDbError`
 mapping PG error codes to oRPC codes. Every handler runs on `context.db`,
@@ -193,7 +198,8 @@ spots: hidden from a stranger, full after the host's connections join),
 (the list ladder; decline and remove),
 `profile.spec.ts` (photo, my tags, account deletion), `reports.spec.ts`
 (report and block from a card or a gathering), `terms.spec.ts` (the terms
-agreement and its re-ask), `blocks.spec.ts`, `enumeration.spec.ts` and
+agreement and its re-ask), `admin.spec.ts` (the operators-only `/admin`
+area), `blocks.spec.ts`, `enumeration.spec.ts` and
 `signed-out.spec.ts`, all sharing `e2e/helpers.ts` (`agreeToTerms` ticks
 the sign-up box). [testing.md](testing.md) has the map. Extend whichever
 one your slice touches; a slice nobody can walk end-to-end is not done.

@@ -5,3 +5,4 @@ export * from './avatars.ts';
 export * from './links.ts';
 export * from './push.ts';
 export * from './reports.ts';
+export * from './admin.ts';

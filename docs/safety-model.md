@@ -190,8 +190,9 @@ nothing about a report is ever public. Reporting is not a way to find out
 whether someone exists.
 
 **How.** `public.reports` has row-level security on, no policies, and every
-privilege revoked from anon and authenticated, so only the service role
-reads it. Reports enter through `report_user`, a security-definer function.
+privilege revoked from anon and authenticated, so no session reads the
+table: the service role does, and an operator does only through the admin
+functions, which refuse everyone else first ([Operators](#operators)). Reports enter through `report_user`, a security-definer function.
 It answers an id that is not a person in the tenant exactly as it answers a
 real one (nothing is stored), so it is not an existence oracle. It checks
 the reason and the text before it reads anything about the id, so a bad
@@ -230,7 +231,8 @@ one optional webhook URL, unset by default. When it is set, each new report POST
 and nothing else (no names, no reason, no text) through pg_net, so the
 operator learns a report exists and reads it in Studio.
 
-**The test.** `packages/db/test/reports.test.ts`, and the report steps in
+**The test.** `packages/db/test/reports.test.ts` (and `admin.test.ts`
+for the operator's reads), and the report steps in
 `apps/api/e2e/handshake.e2e.ts` and `apps/web/e2e/reports.spec.ts`.
 
 **What this means for a fork.** A fork that ships to the stores must act
@@ -239,6 +241,71 @@ the operator's side. Never add a way for a reporter or the reported person
 to read reports, or a count of reports anywhere a user can see it. A fork
 that must keep evidence longer (child safety, legal holds) changes the
 `reported_id` cascade on purpose and says so here.
+
+## Operators
+
+**The promise.** The people who run a community can act on reports without
+a service-role key in any browser or in the API. Operators are named in
+the database, one by one, by someone with database access. Nobody becomes
+one from the app, and nothing an operator can read becomes readable to
+anyone else: reports stay unreadable to the person who filed them, the
+person reported, and everyone who is not an operator.
+
+**Who they are.** A signed-in person with a row in `private.operators`
+for the tenant. The table has row-level security on, no policies, and no
+privilege for anon or authenticated, and `private` is not exposed through
+PostgREST. No function writes it, so a row is made only by SQL: the SQL
+Editor in production ([moderation.md](moderation.md#your-first-operator)),
+a migration, or locally the seed and `bun run db:operator <email>`. The
+row references the profile and goes with it: an operator who deletes
+their account stops being one.
+
+**How the check works.** `private.is_operator()` (stable, security
+definer, `search_path = ''`) answers for `auth.uid()` in the current
+tenant; no client role may execute it. `public.is_operator()` is the one
+door to that answer, for the API, and it answers about the caller only, so
+it says nothing about anyone else. Every admin function is a security
+definer that raises `42501` for a non-operator **before** it reads
+anything. In the API, every `admin.*` procedure is built on
+`adminProcedure` (`apps/api/src/lib/orpc.ts`): UNAUTHORIZED with no
+token, FORBIDDEN unless `is_operator` says yes through the caller's own
+client. The database checks again regardless. The web `/admin` area
+(client-only) shows anyone who is not an operator the app's normal
+not-found page, signed out included, and nothing in the app links to it.
+
+**What they can read.** Today, reports: `admin_list_open_reports()` (the
+open reports in the tenant, child safety first, then oldest first, after
+the 90-day purge) and `admin_get_report(id)` (one report, the reported
+person's card and the gathering as they are now, and how many open reports
+there are about that person). Neither returns who filed a report. Reading
+a report shows an operator the reported person's card, whoever they are:
+that is the job, and it reaches only people someone reported, never a
+list of everyone. Admin pages for tags and gatherings (#100) add their own
+functions, each checked the same way, and say here what they read.
+
+**Who acted.** `reports.resolved_by` is reserved for the operator who
+resolves a report (cleared if their account goes). Nothing writes it yet:
+the reports queue's resolve action (#135) will.
+
+**The tenant seam.** An operator row carries `tenant_id`, and both the
+check and every admin read predicate on the current tenant, so an
+operator of one tenant reads nothing of another's.
+
+**The test.** `packages/db/test/admin.test.ts` (refusals for a non-operator,
+anon and another tenant's operator, each with a positive control; order;
+purge), `grants.test.ts` (nothing executes `private.is_operator`, no
+client privilege on `private.operators`, no function writes it, every
+`admin_*` function checks first), `cascade.test.ts` (the role goes with
+the account), `apps/api/test/admin.test.ts` and `apps/api/e2e`
+(UNAUTHORIZED, FORBIDDEN), and `apps/web/e2e/admin.spec.ts`.
+
+**What this means for a fork.** Every new admin function starts with
+`if not private.is_operator() then raise exception ... using errcode =
+'42501'`, before any read or write, and gets a refusal test.
+`grants.test.ts` checks that every `public.admin_*` function does. Never
+add a function or endpoint that makes an operator, never put an admin key
+in a client, and never return a report, or a count of them, from anything
+that is not operator-checked.
 
 ## Terms are agreed to, and recorded
 
