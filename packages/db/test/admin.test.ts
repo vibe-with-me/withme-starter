@@ -5,7 +5,7 @@
 // and no data, and public.reports stays unreadable to them.
 import { SQL } from 'bun';
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
-import { getReportForOperator, isOperator, listOpenReports } from '../src/queries/admin.ts';
+import { getReportForOperator, isOperator, listOpenReports } from '../src/queries/index.ts';
 import {
   SUPABASE_DB_URL,
   admin,
