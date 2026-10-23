@@ -42,7 +42,7 @@ appropriate.
 ## Where reports land
 
 `public.reports`, in your Supabase project. Only the service role and your
-operators can read it (operators through `/admin`, see
+operators can read it (operators through the admin functions, see
 [Your first operator](#your-first-operator)): the person who reported
 cannot read it back, the person reported never learns of it, and nothing
 about it is public
@@ -134,7 +134,9 @@ logs, which tells you reports are arriving but not what they say.
 ## Your first operator
 
 An operator is a signed-in account the database knows runs the
-community: it can open `/admin` on the web app and read reports there.
+community: it can open `/admin` on the web app. Its reports page is
+coming (#135); until then, read reports in Studio or with the
+"Open reports" query above.
 Nobody becomes one from the app. You make each one in the SQL Editor:
 
 1. Sign up in your app with the account that will be the operator, and

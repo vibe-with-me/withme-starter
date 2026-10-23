@@ -283,8 +283,9 @@ that is the job, and it reaches only people someone reported, never a
 list of everyone. Admin pages for tags and gatherings (#100) add their own
 functions, each checked the same way, and say here what they read.
 
-**Who acted.** `reports.resolved_by` records the operator who resolved a
-report (cleared if their account goes). The action functions fill it in.
+**Who acted.** `reports.resolved_by` is reserved for the operator who
+resolves a report (cleared if their account goes). Nothing writes it yet:
+the reports queue's resolve action (#135) will.
 
 **The tenant seam.** An operator row carries `tenant_id`, and both the
 check and every admin read predicate on the current tenant, so an

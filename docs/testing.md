@@ -46,7 +46,9 @@ bun run --cwd apps/web test:e2e --repeat-each=3
 **Another checkout or fork already running?** The suite takes ports 8796
 (API), 9456 (its inspector) and 3010 (web). Move them with
 `E2E_API_PORT`, `E2E_API_INSPECTOR_PORT` and `E2E_WEB_PORT`. A second
-Supabase stack goes on other ports too: set `SUPABASE_URL` to it.
+Supabase stack goes on other ports too: set `SUPABASE_URL` to its API and
+`SUPABASE_DB_URL` to its database (the grants tests and the admin spec's
+operator setup talk to Postgres directly).
 One more shared resource: the web Worker finds the API Worker by its
 name (`withme-api`) through wrangler's dev registry, so two checkouts
 running the suite at once can reach each other's API. Run one at a

@@ -153,8 +153,6 @@ if (linGatheringError) throw linGatheringError;
 if (!remote) {
   const operator = await createDemoUser(DEMO_USERS.operator, 'Sam', 'Runs this community.');
   await makeOperator(operator.id);
-} else {
-  await resetDemoUser(DEMO_USERS.operator);
 }
 
 console.log(`
