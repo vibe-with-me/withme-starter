@@ -198,7 +198,8 @@ spots: hidden from a stranger, full after the host's connections join),
 (the list ladder; decline and remove),
 `profile.spec.ts` (photo, my tags, account deletion), `reports.spec.ts`
 (report and block from a card or a gathering), `terms.spec.ts` (the terms
-agreement and its re-ask), `blocks.spec.ts`, `enumeration.spec.ts` and
+agreement and its re-ask), `admin.spec.ts` (the operators-only `/admin`
+area), `blocks.spec.ts`, `enumeration.spec.ts` and
 `signed-out.spec.ts`, all sharing `e2e/helpers.ts` (`agreeToTerms` ticks
 the sign-up box). [testing.md](testing.md) has the map. Extend whichever
 one your slice touches; a slice nobody can walk end-to-end is not done.
