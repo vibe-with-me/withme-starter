@@ -4,7 +4,7 @@
 // app links to it. Operators are made by SQL only; here, by the script the
 // seed uses (helpers.makeOperator).
 import { expect, test } from '@playwright/test';
-import { isStaging, makeOperator, signUpWithProfile, uniqueStamp } from './helpers.ts';
+import { isStaging, makeOperator, signUp, signUpWithProfile, uniqueStamp } from './helpers.ts';
 
 const SECTIONS = ['Reports', 'Tags', 'Gatherings'];
 
@@ -40,6 +40,32 @@ test.describe('Admin area', () => {
       await page.goto(path);
       await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
       await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
+    }
+  });
+
+  // lib/account-scope.ts: the admin area is account-scoped like the shell.
+  test('an account change in another tab takes the admin area away', async ({ browser }) => {
+    test.skip(isStaging, 'a hosted project makes its operators in the SQL Editor');
+    const stamp = uniqueStamp();
+    const context = await browser.newContext();
+    try {
+      const first = await context.newPage();
+      const email = `admin-tab-a-${stamp}@rls.test`;
+      await signUpWithProfile(first, email, `Ops ${stamp}`);
+      makeOperator(email);
+      await first.goto('/admin');
+      await expect(first.getByRole('heading', { name: 'Admin', level: 1 })).toBeVisible();
+
+      // Another tab in the same browser becomes a different account, not an operator.
+      const second = await context.newPage();
+      await second.goto('/login');
+      await signUp(second, `admin-tab-b-${stamp}@rls.test`);
+      await second.waitForURL(/\/profile\?/);
+
+      await expect(first.getByRole('heading', { name: 'Nothing here' })).toBeVisible();
+      await expect(first.getByRole('heading', { name: 'Admin' })).toHaveCount(0);
+    } finally {
+      await context.close();
     }
   });
 

@@ -68,6 +68,14 @@ export async function asSignedInAccount<T>(load: () => Promise<T>): Promise<T> {
   }
 }
 
+/**
+ * Layouts whose content belongs to the signed-in account: the shell, and
+ * the admin area (its guard asks the API whether this account is an operator).
+ */
+function isAccountScoped(routeId: string): boolean {
+  return routeId === '/_app' || routeId === '/admin';
+}
+
 export function scopeRouterToAccount(router: AnyRouter): void {
   if (typeof window === 'undefined') return;
   let supabase: ReturnType<typeof getSupabase>;
@@ -92,13 +100,10 @@ export function scopeRouterToAccount(router: AnyRouter): void {
     // page, a tag): the cleared cache is all that is needed. A pending
     // navigation into the shell counts: its loader ran as the previous account.
     // `latestLocation` is the navigation's destination as soon as it starts.
-    // The admin area is guarded per account the same way (its guard asks
-    // the API whether this account is an operator).
-    const guarded = (id: string) => id === '/_app' || id === '/admin';
     const [destination] = router.getMatchedRoutes(router.latestLocation.pathname);
     const shellOnScreen =
-      router.state.matches.some((match) => guarded(match.routeId)) ||
-      destination.some((route) => guarded(route.id));
+      router.state.matches.some((match) => isAccountScoped(match.routeId)) ||
+      destination.some((route) => isAccountScoped(route.id));
     if (!shellOnScreen) return;
 
     setSwitchesInFlight(switchesInFlight + 1);
