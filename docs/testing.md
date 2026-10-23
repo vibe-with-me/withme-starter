@@ -75,6 +75,7 @@ with no spec is a gap. Close it before you build on it.
 | `/share` | `share` |
 | `/terms` | `terms` |
 | Signed out, every page above that needs a session | `signed-out` (one test per page) |
+| `/admin` | `admin` (an operator sees the admin home; a signed-in non-operator and a signed-out visitor get the not-found page; nothing links to it) |
 
 | Promise ([safety-model.md](safety-model.md)) | Spec |
 | --- | --- |
@@ -83,7 +84,8 @@ with no spec is a gap. Close it before you build on it.
 | Connections are mutual | `handshake`, `connections` |
 | Who's going is connections-only | `gatherings` |
 | Gathering visibility and capacity | `gathering-controls`, `blocks` |
-| Reports are private | `reports` |
+| Reports are private | `reports`, `admin` |
+| Operators | `admin` |
 | Terms are agreed to, and recorded | `terms` |
 | Two tiers of profile data | `profile` (links shown to a connection, never on the card) |
 | A shared code can be taken back | `share` |

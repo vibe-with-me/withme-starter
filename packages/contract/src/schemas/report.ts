@@ -36,8 +36,9 @@ export const REPORT_DETAILS_MAX = 1000;
 
 /**
  * Report a person, optionally blocking them in the same step. Reports are
- * read only by the fork's operator (the service role): never by the
- * reporter, never by the reported person, never publicly.
+ * read only by the fork's operators (through the admin functions) and the
+ * service role: never by the reporter, never by the reported person, never
+ * publicly.
  */
 export const CreateReportInputSchema = z.object({
   reported_id: z.uuid(),
