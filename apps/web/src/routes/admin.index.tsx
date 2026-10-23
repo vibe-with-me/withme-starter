@@ -36,7 +36,7 @@ function AdminHome() {
                 <span className="name">{section.name}</span>
                 <span className="sub">{section.about}</span>
               </div>
-              <span className="hint">Coming soon</span>
+              <span className="soon">Coming soon</span>
             </li>
           ))}
         </ul>

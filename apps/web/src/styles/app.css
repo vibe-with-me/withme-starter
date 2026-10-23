@@ -526,6 +526,12 @@ a.link:hover {
   padding: 0;
 }
 
+.admin-sections .soon {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
 /* The consent moment must stay legible one-handed: below phone width the
  * actions drop under the card text instead of crushing it. */
 @media (max-width: 480px) {
