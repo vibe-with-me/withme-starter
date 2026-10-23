@@ -3,7 +3,15 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LinkChips } from '../../components/Links';
 import { PushOffer } from '../../components/Push';
-import { AccessibilityInfo, Pressable, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
+import {
+  AccessibilityInfo,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  type ScrollViewInstance,
+} from 'react-native';
 import {
   Button,
   ErrorText,
@@ -94,7 +102,7 @@ export default function ConnectionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [busyIds, setBusyIds] = useState<ReadonlySet<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   // One counter per list: every load (a retry included) takes the next
   // number, and only the latest number's answer lands.
   const seq = useRef<Record<ListKey, number>>({ pending: 0, connections: 0, blocks: 0 });
