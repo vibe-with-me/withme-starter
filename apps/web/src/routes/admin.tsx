@@ -22,13 +22,13 @@ export const Route = createFileRoute('/admin')({
   }),
   beforeLoad: async () => {
     if (!(await getSessionUserId())) throw notFound();
-    try {
-      await asSignedInAccount(() => api.admin.session());
-    } catch (error) {
-      const code = (error as { code?: string }).code;
-      if (code === 'FORBIDDEN' || code === 'UNAUTHORIZED') throw notFound();
-      throw error;
-    }
+    // Every failure is the not-found page, not only FORBIDDEN: an error
+    // page here and not-found on a missing path would tell a non-operator
+    // the route exists. An operator whose check failed (a network blip)
+    // reloads.
+    await asSignedInAccount(() => api.admin.session()).catch(() => {
+      throw notFound();
+    });
   },
   component: AdminLayout,
 });

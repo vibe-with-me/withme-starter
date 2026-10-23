@@ -212,29 +212,57 @@ describe('operators', () => {
     expect(table).toEqual({ rls: true, policies: 0, anon: false, authed: false });
   });
 
-  // No function writes the table: making an operator is SQL only.
-  it('no function in public or private writes private.operators', async () => {
+  // No function writes the table: making an operator is SQL only. Any
+  // mention of the table at all, so dynamic SQL and quoted names count too;
+  // only the check itself may read it.
+  it('no function but private.is_operator mentions the operators table', async () => {
     const rows: { fn: string }[] = await sql`
       select n.nspname || '.' || p.proname as fn
       from pg_proc p
       join pg_namespace n on n.oid = p.pronamespace
       where n.nspname in ('public', 'private')
-        and p.prosrc ~* '(insert[[:space:]]+into|update|delete[[:space:]]+from)[[:space:]]+private[.]operators'
+        and p.prosrc ~* 'operators'
+        and p.prosrc !~* 'is_operator[(][)]'
+      union
+      select n.nspname || '.' || p.proname
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in ('public', 'private')
+        and p.prosrc ~* '"?private"?[.]"?operators'
       order by 1`;
-    expect(rows).toEqual([]);
+    expect(rows.map((r) => r.fn)).toEqual(['private.is_operator']);
   });
 
-  // Every admin function asks private.is_operator before anything else.
-  it('every admin_* function checks is_operator first', async () => {
+  // Every definer that reads reports either asks private.is_operator before
+  // anything else, or is listed here with why it never shows one to a
+  // client. A new reader fails until it is one or the other.
+  it('every definer that reads reports checks is_operator first or is listed', async () => {
+    const WRITERS_ONLY = [
+      'private.on_profile_deleted_reports',
+      'private.purge_expired_reports',
+      'public.report_gathering',
+      'public.report_user',
+    ];
     const rows: { fn: string; first: boolean }[] = await sql`
-      select p.proname as fn,
+      select n.nspname || '.' || p.proname as fn,
              p.prosrc ~ '^[[:space:]]*(declare[^$]*)?begin[[:space:]]+if not private[.]is_operator[(][)] then' as first
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in ('public', 'private')
+        and p.prosecdef
+        and p.prosrc ~ 'public[.]reports([^_a-z]|$)'
+      order by 1`;
+    const checked = rows.filter((r) => !WRITERS_ONLY.includes(r.fn));
+    expect(checked.map((r) => r.fn)).toEqual(['public.admin_get_report', 'public.admin_list_open_reports']);
+    for (const row of checked) expect(row).toEqual({ fn: row.fn, first: true });
+    // And every public admin_* function is among them.
+    const admins: { fn: string }[] = await sql`
+      select 'public.' || p.proname as fn
       from pg_proc p
       join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and left(p.proname, 6) = 'admin_'
       order by 1`;
-    expect(rows.map((r) => r.fn)).toEqual(['admin_get_report', 'admin_list_open_reports']);
-    for (const row of rows) expect(row).toEqual({ fn: row.fn, first: true });
+    expect(admins.map((r) => r.fn)).toEqual(checked.map((r) => r.fn));
   });
 });
 

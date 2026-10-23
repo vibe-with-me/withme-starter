@@ -25,6 +25,14 @@ export async function findUserByEmail(client: Db, email: string): Promise<string
 }
 
 if (import.meta.main) {
+  // Local only, whatever else is set: never SEED_ALLOW_REMOTE.
+  const target = new URL(process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321');
+  if (!['127.0.0.1', 'localhost'].includes(target.hostname)) {
+    console.error(
+      `Refusing to make an operator on ${target.origin}: use the SQL Editor (docs/moderation.md).`,
+    );
+    process.exit(1);
+  }
   const email = process.argv[2];
   if (!email) {
     console.error('Usage: bun run db:operator <email>');
