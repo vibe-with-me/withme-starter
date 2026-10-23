@@ -7,6 +7,7 @@ import type { HonoEnv } from './env.ts';
 import type { ApiContext } from './lib/orpc.ts';
 import { supabaseAuth } from './middleware/jwt.ts';
 import { avatarUploadLimit } from './middleware/upload-limit.ts';
+import { adminRouter } from './routers/admin.ts';
 import { appRouter } from './routers/app.ts';
 import { publicRouter } from './routers/public.ts';
 
@@ -21,7 +22,7 @@ configureSync({
 
 const logger = getLogger(['api', 'http']);
 
-const rpcHandler = new RPCHandler({ public: publicRouter, app: appRouter });
+const rpcHandler = new RPCHandler({ public: publicRouter, app: appRouter, admin: adminRouter });
 
 const app = new Hono<HonoEnv>();
 

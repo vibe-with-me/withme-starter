@@ -2,7 +2,7 @@
 // built SDK client -> API Worker (wrangler dev) -> Supabase local (RLS).
 // Run: bun run db:start, then `bun run dev` here, then `bun run e2e`.
 import { NfcClient } from '@vibewithme/nfc/client';
-import { admin, createTestUser, provisionTag } from '@withme/db/test-utils';
+import { admin, createTestUser, makeOperator, provisionTag } from '@withme/db/test-utils';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:8786';
 
@@ -522,6 +522,50 @@ const anonReport = await anonApp.reports
 assert(anonReport === 'UNAUTHORIZED', `anon cannot report (got ${anonReport})`);
 const selfReport = await bobApp.reports.create({ reported_id: bob.id, reason: 'spam' }).then(() => 'stored', codeOf);
 assert(selfReport === 'BAD_REQUEST', `reporting yourself is refused (got ${selfReport})`);
+
+// 19d. admin: an operator reads the queue through the Worker; nobody else gets in
+type AdminClient = import('@orpc/contract').ContractRouterClient<typeof contract>['admin'];
+const adminClientFor = (token?: string): AdminClient =>
+  createORPCClient(
+    new RPCLink({
+      url: `${API_URL}/rpc/admin`,
+      headers: () => (token ? { authorization: `Bearer ${token}` } : {}),
+    }),
+  );
+const anonAdmin = adminClientFor();
+const bobAdmin = adminClientFor(bobSession.session?.access_token ?? '');
+for (const [label, call] of [
+  ['session', (a: AdminClient) => a.session()],
+  ['reports.list', (a: AdminClient) => a.reports.list()],
+  ['reports.get', (a: AdminClient) => a.reports.get({ id: crypto.randomUUID() })],
+] as const) {
+  const anonCode = await call(anonAdmin).then(() => 'succeeded', codeOf);
+  assert(anonCode === 'UNAUTHORIZED', `anon admin.${label} rejected (got ${anonCode})`);
+  const bobCode = await call(bobAdmin).then(() => 'succeeded', codeOf);
+  assert(bobCode === 'FORBIDDEN', `non-operator admin.${label} is FORBIDDEN (got ${bobCode})`);
+}
+const ops = await createTestUser('E2E Operator');
+await makeOperator(ops.id);
+const { data: opsSession } = await ops.client.auth.getSession();
+const opsAdmin = adminClientFor(opsSession.session?.access_token ?? '');
+assert((await opsAdmin.session()).operator === true, 'admin.session answers an operator');
+const { data: filed } = await admin
+  .from('reports')
+  .select('id')
+  .eq('reporter_id', bob.id)
+  .eq('reported_id', alice.id)
+  .limit(1)
+  .single();
+const queue = await opsAdmin.reports.list();
+assert(
+  queue.reports.some((r) => r.id === filed?.id && r.reason === 'spam'),
+  "an operator's queue holds bob's report",
+);
+const one = await opsAdmin.reports.get({ id: filed!.id });
+assert(one.report.details === 'e2e' && one.card?.id === alice.id, 'admin.reports.get shows it next to the card');
+assert(!('reporter_id' in one.report), 'without who filed it');
+const missing = await opsAdmin.reports.get({ id: crypto.randomUUID() }).then(() => 'found', codeOf);
+assert(missing === 'NOT_FOUND', `an unknown report is NOT_FOUND (got ${missing})`);
 
 // 19c. share code: the same resolver, a scan logged as qr, and replacing it retires the old one
 const code = await bobApp.shareCode.get();
