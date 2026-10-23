@@ -4,13 +4,16 @@ import {
   AdminReportListItemSchema,
   ReportStatusSchema,
   contract,
+  type AdminReport,
+  type AdminReportDetail,
+  type AdminReportListItem,
 } from '../src/index.ts';
 
 const id = '9b2c8f43-1b1a-4f7e-9d3c-2a6c1e5b8d90';
 const other = '3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b';
 const at = '2026-10-22T12:00:00.123456+00:00';
 
-const row = {
+const row: AdminReportListItem = {
   id,
   created_at: at,
   reason: 'spam',
@@ -23,7 +26,7 @@ const row = {
   open_reports_about_them: 2,
 };
 
-const report = {
+const report: AdminReport = {
   id,
   created_at: at,
   reason: 'child_safety',
@@ -44,7 +47,12 @@ describe('AdminReportListItemSchema', () => {
   });
 
   it('takes a row about a deleted account (no id, no count)', () => {
-    const gone = { ...row, reported_id: null, open_reports_about_them: null, gathering_snapshot: null };
+    const gone: AdminReportListItem = {
+      ...row,
+      reported_id: null,
+      open_reports_about_them: null,
+      gathering_snapshot: null,
+    };
     expect(AdminReportListItemSchema.parse(gone)).toEqual(gone);
   });
 
@@ -58,12 +66,17 @@ describe('AdminReportListItemSchema', () => {
 
 describe('AdminReportDetailSchema', () => {
   it('parses a report whose account and gathering are gone', () => {
-    const detail = { report, card: null, gathering: null, open_reports_about_them: 0 };
+    const detail: AdminReportDetail = {
+      report,
+      card: null,
+      gathering: null,
+      open_reports_about_them: 0,
+    };
     expect(AdminReportDetailSchema.parse(detail)).toEqual(detail);
   });
 
   it('parses the current card and gathering', () => {
-    const detail = {
+    const detail: AdminReportDetail = {
       report: { ...report, reported_id: other, reported_deleted_at: null, gathering_id: other },
       card: { id: other, display_name: 'Bob', bio: 'Now innocent', avatar_path: null },
       gathering: {
@@ -84,11 +97,12 @@ describe('AdminReportDetailSchema', () => {
   it('refuses an unknown status and a negative count', () => {
     const detail = { report, card: null, gathering: null, open_reports_about_them: 0 };
     expect(
-      AdminReportDetailSchema.safeParse({ ...detail, report: { ...report, status: 'closed' } }).success,
+      AdminReportDetailSchema.safeParse({ ...detail, report: { ...report, status: 'closed' } })
+        .success,
     ).toBe(false);
-    expect(AdminReportDetailSchema.safeParse({ ...detail, open_reports_about_them: -1 }).success).toBe(
-      false,
-    );
+    expect(
+      AdminReportDetailSchema.safeParse({ ...detail, open_reports_about_them: -1 }).success,
+    ).toBe(false);
   });
 });
 

@@ -30,8 +30,15 @@ async function newOperator(name = 'Operator'): Promise<TestUser> {
 }
 
 /** Files a report through the real flow and returns its id. */
-async function fileReport(reporter: TestUser, reported: string, reason = 'harassment'): Promise<string> {
-  const { error } = await reporter.client.rpc('report_user', { p_reported: reported, p_reason: reason });
+async function fileReport(
+  reporter: TestUser,
+  reported: string,
+  reason = 'harassment',
+): Promise<string> {
+  const { error } = await reporter.client.rpc('report_user', {
+    p_reported: reported,
+    p_reason: reason,
+  });
   if (error) throw error;
   const { data, error: readError } = await admin
     .from('reports')
@@ -114,12 +121,18 @@ describe('who may call the admin functions', () => {
   it('nobody reaches private.operators through PostgREST, an operator included', async () => {
     const ops = await newOperator();
     for (const client of [ops.client, (await createTestUser('Alice')).client, anonClient()]) {
-      const read = await client.schema('private' as 'public').from('operators' as 'profiles').select('*');
+      const read = await client
+        .schema('private' as 'public')
+        .from('operators' as 'profiles')
+        .select('*');
       expect(read.error).not.toBeNull();
       expect(read.data).toBeNull();
     }
     // Nor does the service role: the schema is not exposed at all.
-    const { error } = await admin.schema('private' as 'public').from('operators' as 'profiles').select('*');
+    const { error } = await admin
+      .schema('private' as 'public')
+      .from('operators' as 'profiles')
+      .select('*');
     expect(error).not.toBeNull();
   });
 
@@ -224,7 +237,10 @@ describe('admin_list_open_reports', () => {
     const ids = await openIds(ops);
     expect(ids).not.toContain(aboutBob);
     expect(ids).toContain(aboutCarol);
-    const { data: left } = await admin.from('reports').select('id').in('id', [aboutBob, aboutCarol]);
+    const { data: left } = await admin
+      .from('reports')
+      .select('id')
+      .in('id', [aboutBob, aboutCarol]);
     expect(left).toEqual([{ id: aboutCarol }]);
 
     // A deleted account's report has no id to count by.
@@ -264,7 +280,10 @@ describe('admin_get_report', () => {
 
     // Both change after the report: the detail shows them as they are now.
     await bob.client.from('profiles').update({ bio: 'Innocent now' }).eq('id', bob.id);
-    await bob.client.from('gatherings').update({ title: 'Vinyl swap (free)' }).eq('id', gatheringId);
+    await bob.client
+      .from('gatherings')
+      .update({ title: 'Vinyl swap (free)' })
+      .eq('id', gatheringId);
 
     const { data, error } = await ops.client.rpc('admin_get_report', { p_id: row!.id });
     expect(error).toBeNull();
@@ -311,7 +330,9 @@ describe('admin_get_report', () => {
       gathering: null,
       open_reports_about_them: 0,
     });
-    expect((data as { report: { reported_deleted_at: string | null } }).report.reported_deleted_at).not.toBeNull();
+    expect(
+      (data as { report: { reported_deleted_at: string | null } }).report.reported_deleted_at,
+    ).not.toBeNull();
   });
 
   it('an id that is not a report is P0003 for an operator', async () => {

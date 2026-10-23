@@ -21,8 +21,8 @@ function AdminHome() {
       <div className="card">
         <h1>Admin</h1>
         <p className="hint">
-          For the people who run this community. What you do here acts on everyone&rsquo;s data,
-          so take your time.
+          For the people who run this community. What you do here acts on everyone&rsquo;s data, so
+          take your time.
         </p>
       </div>
       <section aria-labelledby="admin-sections">

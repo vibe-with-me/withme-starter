@@ -115,15 +115,17 @@ describe('as an operator', () => {
     };
     supabase.on('POST', '/rest/v1/rpc/admin_list_open_reports', [listRow, second]);
     expect(await api.admin.reports.list()).toEqual({ reports: [listRow, second] });
-    expect(supabase.to('POST', '/rest/v1/rpc/admin_list_open_reports')[0]?.headers.get('authorization')).toBe(
-      `Bearer ${bearer}`,
-    );
+    expect(
+      supabase.to('POST', '/rest/v1/rpc/admin_list_open_reports')[0]?.headers.get('authorization'),
+    ).toBe(`Bearer ${bearer}`);
   });
 
   test('reports.get passes the id and returns the detail', async () => {
     supabase.on('POST', '/rest/v1/rpc/admin_get_report', detail);
     expect(await api.admin.reports.get({ id: REPORT_ID })).toEqual(detail);
-    expect(supabase.to('POST', '/rest/v1/rpc/admin_get_report')[0]?.body).toEqual({ p_id: REPORT_ID });
+    expect(supabase.to('POST', '/rest/v1/rpc/admin_get_report')[0]?.body).toEqual({
+      p_id: REPORT_ID,
+    });
   });
 
   test('reports.get: an unknown report is NOT_FOUND', async () => {
@@ -139,7 +141,11 @@ describe('as an operator', () => {
   // The role was taken away between adminProcedure's check and the call.
   test.each([
     ['reports.list', '/rest/v1/rpc/admin_list_open_reports', (a: Api) => a.admin.reports.list()],
-    ['reports.get', '/rest/v1/rpc/admin_get_report', (a: Api) => a.admin.reports.get({ id: REPORT_ID })],
+    [
+      'reports.get',
+      '/rest/v1/rpc/admin_get_report',
+      (a: Api) => a.admin.reports.get({ id: REPORT_ID }),
+    ],
   ] as const)('%s: the database refusing (42501) is FORBIDDEN', async (_name, path, call) => {
     supabase.on('POST', path, pgError('42501', 403));
     expect(await codeOf(call(api))).toBe('FORBIDDEN');
