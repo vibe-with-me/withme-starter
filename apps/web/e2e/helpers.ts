@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { expect, type Browser, type Locator, type Page } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
@@ -158,4 +160,15 @@ export async function claimFreshTag(page: Page, email: string, name: string): Pr
   await page.getByRole('button', { name: 'Claim tag' }).click();
   await page.waitForURL(`**/t/${uid}`);
   return uid;
+}
+
+/**
+ * Setup, not the path under test: makes an account an operator. No client
+ * path can (private.operators is SQL only), so this runs the same script
+ * as `bun run db:operator`, which writes the row over the local database
+ * URL (SUPABASE_DB_URL). Local stacks only; never on staging.
+ */
+export function makeOperator(email: string): void {
+  const script = fileURLToPath(new URL('../../../supabase/seed/operator.ts', import.meta.url));
+  execFileSync('bun', [script, email], { env: process.env, stdio: 'pipe' });
 }

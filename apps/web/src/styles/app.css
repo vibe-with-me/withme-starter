@@ -519,6 +519,13 @@ a.link:hover {
   gap: var(--space-1);
 }
 
+/* The admin home's sections: rows in a plain list. */
+.admin-sections {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 /* The consent moment must stay legible one-handed: below phone width the
  * actions drop under the card text instead of crushing it. */
 @media (max-width: 480px) {

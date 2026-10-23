@@ -92,10 +92,13 @@ export function scopeRouterToAccount(router: AnyRouter): void {
     // page, a tag): the cleared cache is all that is needed. A pending
     // navigation into the shell counts: its loader ran as the previous account.
     // `latestLocation` is the navigation's destination as soon as it starts.
+    // The admin area is guarded per account the same way (its guard asks
+    // the API whether this account is an operator).
+    const guarded = (id: string) => id === '/_app' || id === '/admin';
     const [destination] = router.getMatchedRoutes(router.latestLocation.pathname);
     const shellOnScreen =
-      router.state.matches.some((match) => match.routeId === '/_app') ||
-      destination.some((route) => route.id === '/_app');
+      router.state.matches.some((match) => guarded(match.routeId)) ||
+      destination.some((route) => guarded(route.id));
     if (!shellOnScreen) return;
 
     setSwitchesInFlight(switchesInFlight + 1);

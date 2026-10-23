@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as AppConnectionsRouteImport } from './routes/_app.connections'
@@ -19,6 +20,7 @@ import { Route as AppMerchRouteImport } from './routes/_app.merch'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppShareRouteImport } from './routes/_app.share'
 import { Route as AppTermsRouteImport } from './routes/_app.terms'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ClaimUidRouteImport } from './routes/claim.$uid'
 import { Route as TUidRouteImport } from './routes/t.$uid'
@@ -32,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -74,6 +81,11 @@ const AppTermsRoute = AppTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => AppRoute,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -102,6 +114,7 @@ const AppGatheringsNewRoute = AppGatheringsNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/connections': typeof AppConnectionsRoute
@@ -113,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
+  '/admin/': typeof AdminIndexRoute
   '/gatherings/$id': typeof AppGatheringsIdRoute
   '/gatherings/new': typeof AppGatheringsNewRoute
 }
@@ -129,6 +143,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
+  '/admin': typeof AdminIndexRoute
   '/gatherings/$id': typeof AppGatheringsIdRoute
   '/gatherings/new': typeof AppGatheringsNewRoute
 }
@@ -136,6 +151,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/_app/connections': typeof AppConnectionsRoute
@@ -147,6 +163,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/claim/$uid': typeof ClaimUidRoute
   '/t/$uid': typeof TUidRoute
+  '/admin/': typeof AdminIndexRoute
   '/_app/gatherings_/$id': typeof AppGatheringsIdRoute
   '/_app/gatherings_/new': typeof AppGatheringsNewRoute
 }
@@ -154,6 +171,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/login'
     | '/me'
     | '/connections'
@@ -165,6 +183,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/claim/$uid'
     | '/t/$uid'
+    | '/admin/'
     | '/gatherings/$id'
     | '/gatherings/new'
   fileRoutesByTo: FileRoutesByTo
@@ -181,12 +200,14 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/claim/$uid'
     | '/t/$uid'
+    | '/admin'
     | '/gatherings/$id'
     | '/gatherings/new'
   id:
     | '__root__'
     | '/'
     | '/_app'
+    | '/admin'
     | '/login'
     | '/me'
     | '/_app/connections'
@@ -198,6 +219,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/claim/$uid'
     | '/t/$uid'
+    | '/admin/'
     | '/_app/gatherings_/$id'
     | '/_app/gatherings_/new'
   fileRoutesById: FileRoutesById
@@ -205,6 +227,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -226,6 +249,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -283,6 +313,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms'
       preLoaderRoute: typeof AppTermsRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/auth/callback': {
       id: '/auth/callback'
@@ -346,9 +383,20 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
