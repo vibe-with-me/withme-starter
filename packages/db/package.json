@@ -19,7 +19,7 @@
     "@withme/contract": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.4",
     "typescript": "~5.9.3"
   }
 }

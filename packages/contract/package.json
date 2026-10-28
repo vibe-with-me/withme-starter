@@ -12,11 +12,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@orpc/contract": "^1.15.5",
+    "@orpc/contract": "^1.16.1",
     "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.4",
     "typescript": "~5.9.3"
   }
 }
