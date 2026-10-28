@@ -42,17 +42,17 @@
     "lean-qr": "^2.7.4",
     "react": "19.2.3",
     "react-native": "0.86.3",
-    "react-native-nfc-manager": "^4.0.0",
+    "react-native-nfc-manager": "^4.1.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-svg": "15.15.4"
+    "react-native-svg": "15.16.0"
   },
   "devDependencies": {
-    "@orpc/contract": "^1.15.5",
+    "@orpc/contract": "^1.16.1",
     "@types/aes-js": "^3.1.4",
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.4",
     "@types/react": "~19.2.2",
-    "agent-device": "0.21.29",
+    "agent-device": "0.21.31",
     "typescript": "~6.0.3"
   }
 }
