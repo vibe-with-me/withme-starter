@@ -16,7 +16,7 @@ const SHARE_SIZE = 56;
  * width so the button sits at the center. Tabs hidden with `href: null`
  * (Merch without a store) are skipped, as the stock bar skips them.
  */
-export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
+export function TabBar({ state, descriptors, emitter, navigateToTab, insets }: BottomTabBarProps) {
   const t = useTokens();
   const shadow = useShadow();
   const visible = state.routes.filter(
@@ -38,10 +38,10 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
         accessibilityState={{ selected: focused }}
         accessibilityLabel={title}
         onPress={() => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+          const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !event.defaultPrevented) navigateToTab(route.key);
         }}
-        onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+        onLongPress={() => emitter.emit({ type: 'tabLongPress', target: route.key })}
         style={styles.tab}
       >
         {options.tabBarIcon?.({ focused, color, size: 24 })}
