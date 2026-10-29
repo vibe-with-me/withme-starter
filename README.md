@@ -52,14 +52,18 @@ a way to remix the idea for whatever you love.
   </tr>
 </table>
 
-**Why.** *Join or Die*, the documentary about Robert Putnam's *Bowling
-Alone*, makes the case that the clubs and leagues that used to build
-social capital have thinned out, and that much of what replaced them
-online is built for scrolling, not meeting people. This starter is a small
-push the other way: every connection starts with two people in the same
-place, doing something they both love. Someone out there is the right
-person to build the run club or climbing gym version, and they shouldn't
-need a company behind them to do it.
+**Why.** In *Bowling Alone*, Robert Putnam traced how the leagues and
+clubs that built America's social capital thinned out: generational change
+did the most, television about a quarter, sprawl and busier lives the rest.
+*Join or Die*, the documentary about his work, carries that into a world of
+feeds built to hold attention, not bring people together. Putnam's remedy
+is plain: join something. Shared pastimes build the kind he calls bridging
+social capital, where people who differ on everything else meet over the
+one thing they share. This starter is a small push in that direction:
+every connection starts with two people in the same place, doing something
+they both love. Someone out there is the right person to build the run
+club or climbing gym version, and they shouldn't need a company behind
+them to do it.
 
 ## What you could build
 
