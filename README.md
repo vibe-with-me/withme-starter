@@ -54,7 +54,7 @@ a way to remix the idea for whatever you love.
 
 **Why.** In *Bowling Alone*, Robert Putnam traced how the leagues and
 clubs that built America's social capital thinned out: generational change
-did the most, television about a quarter, sprawl and busier lives the rest.
+did the most, television about a quarter, sprawl and busier lives about a tenth each.
 *Join or Die*, the documentary about his work, carries that into a world of
 feeds built to hold attention, not bring people together. Putnam's remedy
 is plain: join something. Shared pastimes build the kind he calls bridging
