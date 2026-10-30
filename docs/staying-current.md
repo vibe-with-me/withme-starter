@@ -242,6 +242,7 @@ for).
 | App identity, EAS ids, worker names (`app.json`, `wrangler.jsonc`) | The starter bumped a version or added a key next to your ids. | Your ids, plus the starter's new keys. |
 | `bun.lock` | Almost always conflicts when both sides added dependencies. | Neither: take either side, run `bun install`, commit the result. |
 | `.agents/skills/` | Only if you edited a skill. | The starter's. Skills are runbooks; the new version is written against the new code. |
+| `AGENTS.md` | Only if you edited it. | Both: keep your lines, and take the starter's changes to the skill list. |
 | `apps/site` (`add-marketing-site`) | Never: the starter has no `apps/site`. Your site is a copy of the skill's `site/` template, so a fix to the template arrives in `.agents/skills/add-marketing-site/site/` and does not reach your copy. | Yours. When the merge changes that template, diff it against `apps/site` and carry the fixes over by hand. |
 | A starter file you rewrote for your own feature | Real conflicts, every time that file changes. | Decide case by case. This is the cost to avoid (below). |
 

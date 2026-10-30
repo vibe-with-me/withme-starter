@@ -23,8 +23,7 @@ says "the base branch", "the plans folder" and so on for those values.
 
 **How to run it.** In any agent that reads `.agents/skills/` (Claude
 Code, Codex, Cursor and others): "Run `.agents/skills/feature-dev/SKILL.md`
-for <the feature>". To get `/feature-dev` in Claude Code, link it into
-`.claude/skills/` once per clone
+for <the feature>". In Claude Code, `/feature-dev` does the same
 ([reference.md → Running it](reference.md#running-it)).
 
 **Other skills are optional.** Where a step names a skill (for example

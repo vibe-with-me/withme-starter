@@ -533,6 +533,11 @@ store app:
 - [ ] **A named report owner.** Someone runs the "Open reports" query
   (`docs/moderation.md`) at least once a day, every day, with a named
   stand-in, and acts within 24 hours. Write both names here.
+- [ ] **A first operator.** The seed never makes one on a hosted project,
+  so make the report owner one in the SQL Editor, the owner's OK first: a
+  production write (`docs/moderation.md`, Your first operator). Checkpoint:
+  signed in as that account, `/admin` on the live web app opens; signed in
+  as a test account, it does not.
 - [ ] **Published contact information.** The contact email in your terms,
   and a support URL on the App Store and Play listings that reaches a
   person.

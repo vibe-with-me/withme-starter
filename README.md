@@ -138,7 +138,10 @@ fixes for a first run that goes wrong are in
 Each skill is a Markdown runbook with a checkpoint after every step.
 [docs/run-with-me.md](docs/run-with-me.md) walks the whole run with the
 prompt for each step; [docs/agent-prompt.md](docs/agent-prompt.md) hands
-it to an agent in one go.
+it to an agent in one go. In Claude Code each one is also a slash command,
+such as `/make-it-yours`. That needs Git symlinks: on Windows, turn on
+Developer Mode and clone with `git clone -c core.symlinks=true`, or skip the
+commands and give the agent the skill's path, as those two pages do.
 
 1. **`design-direction`** (optional): a look for the domain.
 2. **`make-it-yours`**: your name, colors, fonts and app identity.
