@@ -63,7 +63,7 @@ describe('mint_my_tag', () => {
     const second = await mint(alice);
     expect(second).not.toBe(first);
     const mine = await listOwnTags(alice.client);
-    expect(mine.map((tag) => tag.uid).sort()).toEqual([first, second].sort());
+    expect(mine.map((tag) => tag.uid).toSorted()).toEqual([first, second].toSorted());
   });
 
   it('refuses anon', async () => {
