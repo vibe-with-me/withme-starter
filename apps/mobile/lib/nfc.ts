@@ -1,21 +1,51 @@
 /**
  * Feature-gated NFC: react-native-nfc-manager is a native module, so it only
  * exists in development builds — in Expo Go these functions report
- * unavailable and the UI hides the scan affordance. Deep links and manual
- * UID entry work everywhere.
+ * unavailable and the UI hides the scan and write affordances. Deep links and
+ * manual UID entry work everywhere.
  */
 import { NativeModules, TurboModuleRegistry } from 'react-native';
+import {
+  tagFromHold,
+  writeSticker,
+  type HeldTag,
+  type NdefRecordLike,
+  type StickerSession,
+  type StickerStatus,
+  type WriteResult,
+} from './tag-writer';
+import { webUrl } from './web-url';
 
 interface NfcModule {
   isSupported(): Promise<boolean>;
   isEnabled(): Promise<boolean>;
   start(): Promise<void>;
-  requestTechnology(tech: unknown): Promise<unknown>;
+  requestTechnology(tech: unknown, options?: { alertMessage?: string }): Promise<unknown>;
   getTag(): Promise<{ id?: string } | null>;
   cancelTechnologyRequest(): Promise<void>;
+  ndefHandler: {
+    getNdefStatus(): Promise<{ status: number; capacity: number }>;
+    getNdefMessage(): Promise<{ ndefMessage?: NdefRecordLike[] } | null>;
+    writeNdefMessage(bytes: number[]): Promise<void>;
+    makeReadOnly(): Promise<unknown>;
+  };
 }
 
-function loadNfc(): { manager: NfcModule; tech: unknown } | null {
+interface NfcLibrary {
+  manager: NfcModule;
+  /**
+   * Ndef first, so Android's lock call gets the Ndef session it needs; NfcA
+   * after it, so Android connects a chip with no NDEF and it can be refused
+   * instead of the hold never answering. iOS opens a tag session either way,
+   * which the TAG entitlement covers, and takes any chip for Ndef.
+   */
+  tech: unknown[];
+  encodeUrl(url: string): number[];
+  statusOf: { readWrite: number; readOnly: number };
+  isZeroLength(error: unknown): boolean;
+}
+
+function loadNfc(): NfcLibrary | null {
   // Expo Go has no NfcManager native module, and react-native-nfc-manager 4
   // throws while loading without it. A require made outside module loading
   // (here, from an effect) reports that throw to LogBox as an uncaught error
@@ -26,9 +56,21 @@ function loadNfc(): { manager: NfcModule; tech: unknown } | null {
     // oxlint-disable-next-line no-require-imports
     const mod = require('react-native-nfc-manager') as {
       default: NfcModule;
-      NfcTech: { NfcA: unknown };
+      NfcTech: { NfcA: unknown; Ndef: unknown };
+      NdefStatus: { ReadWrite: number; ReadOnly: number };
+      NfcError: { ZeroLengthMessage: new () => Error };
+      Ndef: {
+        uriRecord(url: string): unknown;
+        encodeMessage(records: unknown[]): number[];
+      };
     };
-    return { manager: mod.default, tech: mod.NfcTech.NfcA };
+    return {
+      manager: mod.default,
+      tech: [mod.NfcTech.Ndef, mod.NfcTech.NfcA],
+      encodeUrl: (url) => mod.Ndef.encodeMessage([mod.Ndef.uriRecord(url)]),
+      statusOf: { readWrite: mod.NdefStatus.ReadWrite, readOnly: mod.NdefStatus.ReadOnly },
+      isZeroLength: (error) => error instanceof mod.NfcError.ZeroLengthMessage,
+    };
   } catch {
     return null;
   }
@@ -53,17 +95,79 @@ export async function cancelRead(): Promise<void> {
   await nfc.manager.cancelTechnologyRequest().catch(() => undefined);
 }
 
-/** Reads one tag and returns its UID as uppercase hex, or null on cancel/failure. */
-export async function readTagUid(): Promise<string | null> {
+/** Reads one tag and says which it is, or null on cancel/failure. */
+export async function readTag(): Promise<HeldTag | null> {
   const nfc = loadNfc();
   if (!nfc) return null;
   try {
     await nfc.manager.start();
     await nfc.manager.requestTechnology(nfc.tech);
     const tag = await nfc.manager.getTag();
-    return tag?.id ? tag.id.toUpperCase() : null;
+    const session = stickerSession(nfc);
+    const { state } = await session.status();
+    const records = state === 'unsupported' ? undefined : await session.read();
+    return tagFromHold({ records, chipId: tag?.id, origin: webUrl });
   } catch {
     return null;
+  } finally {
+    await nfc.manager.cancelTechnologyRequest().catch(() => undefined);
+  }
+}
+
+function stickerSession(nfc: NfcLibrary): StickerSession {
+  const { manager, statusOf } = nfc;
+  async function read(): Promise<NdefRecordLike[]> {
+    // Not getTag: on iOS it reports every failed read as an empty tag, and on
+    // Android it hands back a copy taken when the tag was discovered.
+    let message;
+    try {
+      message = await manager.ndefHandler.getNdefMessage();
+    } catch (error) {
+      // How iOS says the chip is blank. Android returns no records.
+      if (nfc.isZeroLength(error)) return [];
+      throw error;
+    }
+    if (!message?.ndefMessage) throw new Error('No NDEF message in the reply');
+    return message.ndefMessage;
+  }
+  return {
+    async status(): Promise<StickerStatus> {
+      const { status, capacity } = await manager.ndefHandler.getNdefStatus();
+      if (status === statusOf.readWrite) return { state: 'writable', capacity };
+      if (status === statusOf.readOnly) return { state: 'locked', capacity };
+      return { state: 'unsupported', capacity: 0 };
+    },
+    read,
+    urlBytes: (url) => nfc.encodeUrl(url).length,
+    write: (url) => manager.ndefHandler.writeNdefMessage(nfc.encodeUrl(url)),
+    lock: () => manager.ndefHandler.makeReadOnly(),
+  };
+}
+
+/** Writes one held sticker (tag-writer.ts decides what to do); null on cancel. */
+export async function writeTag({
+  origin,
+  uid,
+  mint,
+}: {
+  origin: string;
+  uid: string | null;
+  mint: () => Promise<string>;
+}): Promise<WriteResult | null> {
+  const nfc = loadNfc();
+  if (!nfc) return null;
+  try {
+    await nfc.manager.start();
+    await nfc.manager.requestTechnology(nfc.tech, {
+      alertMessage: 'Hold your sticker against the phone.',
+    });
+  } catch {
+    // The person closed the sheet, or left the screen.
+    await nfc.manager.cancelTechnologyRequest().catch(() => undefined);
+    return null;
+  }
+  try {
+    return await writeSticker({ session: stickerSession(nfc), origin, uid, mint });
   } finally {
     await nfc.manager.cancelTechnologyRequest().catch(() => undefined);
   }

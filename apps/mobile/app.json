@@ -41,7 +41,7 @@
       [
         "react-native-nfc-manager",
         {
-          "nfcPermission": "Read withme tags to connect with people.",
+          "nfcPermission": "Read and write withme tags to connect with people.",
           "includeNdefEntitlement": false
         }
       ],

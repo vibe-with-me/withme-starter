@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import type { Destination, Gathering, Tag } from '@withme/contract';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '../lib/api';
@@ -10,7 +10,9 @@ import {
   destinationKey,
   gatheringChoiceLabel,
 } from '../lib/my-tags';
+import { isNfcAvailable } from '../lib/nfc';
 import { fonts, radius, space, TAP_TARGET, useTokens } from '../lib/tokens';
+import { webUrl } from '../lib/web-url';
 import { Button, ErrorText, ListLadder, Muted, SectionHeader, type ListState } from './ui';
 
 type TagPatch = { destination: Destination } | { status: 'claimed' | 'disabled' };
@@ -43,6 +45,8 @@ export function MyTags() {
   // Only the newest load writes state: a slow focus reload that started
   // before a save must not land after the save's own reload.
   const loads = useRef(0);
+  // Writing needs a real radio and an address to write: otherwise no buttons.
+  const [canWrite, setCanWrite] = useState(false);
 
   const load = useCallback(async (): Promise<Snapshot> => {
     const ticket = ++loads.current;
@@ -64,6 +68,12 @@ export function MyTags() {
   useFocusEffect(
     useCallback(() => {
       void load();
+      // On focus too: NFC may have been switched on in Settings since.
+      if (webUrl) {
+        isNfcAvailable()
+          .then(setCanWrite)
+          .catch(() => setCanWrite(false));
+      }
     }, [load]),
   );
 
@@ -125,11 +135,15 @@ export function MyTags() {
               tag={tag}
               gatherings={gatherings}
               busy={busyUids.has(tag.uid)}
+              canWrite={canWrite}
               onUpdate={(patch) => update(tag.uid, patch)}
             />
           ))
         }
       </ListLadder>
+      {canWrite ? (
+        <Button label="Add a tag" kind="quiet" onPress={() => router.push('/write-tag')} />
+      ) : null}
     </>
   );
 }
@@ -138,11 +152,13 @@ function TagRow({
   tag,
   gatherings,
   busy,
+  canWrite,
   onUpdate,
 }: {
   tag: Tag;
   gatherings: Gathering[] | null;
   busy: boolean;
+  canWrite: boolean;
   onUpdate: (patch: TagPatch) => Promise<boolean>;
 }) {
   const t = useTokens();
@@ -207,6 +223,16 @@ function TagRow({
           disabled={busy}
           onPress={() => void onUpdate({ status: off ? 'claimed' : 'disabled' })}
         />
+        {canWrite ? (
+          <Button
+            inline
+            kind="quiet"
+            label="Write to a tag"
+            accessibilityLabel={`Write ${tag.uid} to a tag`}
+            disabled={busy}
+            onPress={() => router.push({ pathname: '/write-tag', params: { uid: tag.uid } })}
+          />
+        ) : null}
       </View>
       {choosing ? (
         <View

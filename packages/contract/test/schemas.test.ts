@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  MintedTagSchema,
   AVATAR_MAX_BYTES,
   AvatarPathSchema,
   AvatarUploadInputSchema,
@@ -440,6 +441,14 @@ describe('avatar schemas', () => {
     expect(
       AvatarUploadInputSchema.safeParse({ file: 'data:image/jpeg;base64,AAAA' }).success,
     ).toBe(false);
+  });
+});
+
+describe('MintedTagSchema', () => {
+  it('takes a UID and rejects anything else', () => {
+    expect(MintedTagSchema.parse({ uid: '04A3B2C1D05E80' })).toEqual({ uid: '04A3B2C1D05E80' });
+    expect(MintedTagSchema.safeParse({ uid: 'nope' }).success).toBe(false);
+    expect(MintedTagSchema.safeParse({}).success).toBe(false);
   });
 });
 

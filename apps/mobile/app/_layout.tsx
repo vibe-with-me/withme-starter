@@ -72,6 +72,7 @@ export default function RootLayout() {
           <Stack.Screen name="gathering/[id]" />
           <Stack.Screen name="claim/[uid]" />
           <Stack.Screen name="share" />
+          <Stack.Screen name="write-tag" />
           <Stack.Screen name="report/[id]" options={{ presentation: 'modal' }} />
         </Stack.Protected>
         {/* Signed in under older terms: only the re-ask screen, not dismissible. */}
