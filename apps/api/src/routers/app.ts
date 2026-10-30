@@ -361,6 +361,12 @@ const tagsUpdate = appProcedure.tags.update.handler(async ({ input, context }) =
 
 // Your code. Both RPCs act on the caller only and take no uid, so neither
 // can be pointed at someone else's row.
+const tagsMint = appProcedure.tags.mint.handler(async ({ context }) => {
+  const { data, error } = await context.db.rpc('mint_my_tag');
+  if (error) throwFromDbError(error, context.logger);
+  return { uid: data };
+});
+
 const shareCodeGet = appProcedure.shareCode.get.handler(async ({ context }) => {
   const { data, error } = await context.db.rpc('my_share_code');
   if (error) throwFromDbError(error, context.logger);
@@ -414,7 +420,7 @@ export const appRouter = {
     remove: gatheringsRemove,
     report: gatheringsReport,
   },
-  tags: { listMine: tagsListMine, update: tagsUpdate },
+  tags: { listMine: tagsListMine, update: tagsUpdate, mint: tagsMint },
   shareCode: { get: shareCodeGet, replace: shareCodeReplace },
   push: { register: pushRegister, unregister: pushUnregister },
 };

@@ -20,7 +20,7 @@ import {
 import { RegisterPushTokenInputSchema, UnregisterPushTokenInputSchema } from '../schemas/push.ts';
 import { CreateReportInputSchema, ReportGatheringInputSchema } from '../schemas/report.ts';
 import { ShareCodeSchema } from '../schemas/share-code.ts';
-import { TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
+import { MintedTagSchema, TagSchema, UpdateMyTagInputSchema } from '../schemas/tag.ts';
 import { AcceptTermsInputSchema } from '../schemas/terms.ts';
 
 const getProfile = oc
@@ -218,6 +218,13 @@ const updateMyTag = oc
   // Not yours and nonexistent are the same NOT_FOUND.
   .output(z.object({ tag: TagSchema }));
 
+// A new tag for a blank sticker, claimed to the caller from the moment it
+// exists, so nothing unclaimed is ever created here. TOO_MANY_REQUESTS at the
+// MAX_OWNED_TAGS cap.
+const mintMyTag = oc
+  .route({ method: 'POST', path: '/me/tags', tags: ['Tags'] })
+  .output(MintedTagSchema);
+
 // Your code: the tab bar's raised button. A QR-only tag claimed to the caller.
 // get mints it on first use: idempotent, but NOT side-effect free, so
 // never cache, prefetch or preload it. replace retires it and mints a new
@@ -275,7 +282,7 @@ export const appContract = {
     remove: removeGathering,
     report: reportGathering,
   },
-  tags: { listMine: listMyTags, update: updateMyTag },
+  tags: { listMine: listMyTags, update: updateMyTag, mint: mintMyTag },
   shareCode: { get: getMyShareCode, replace: replaceMyShareCode },
   push: { register: registerPushToken, unregister: unregisterPushToken },
 };

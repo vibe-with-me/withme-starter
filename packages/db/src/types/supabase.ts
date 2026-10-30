@@ -583,6 +583,7 @@ export type Database = {
         Args: { p_scan_method?: string; p_uid: string; p_user_agent?: string }
         Returns: undefined
       }
+      mint_my_tag: { Args: Record<PropertyKey, never>; Returns: string }
       my_share_code: { Args: Record<PropertyKey, never>; Returns: string }
       register_push_token: {
         Args: { p_platform: string; p_token: string }

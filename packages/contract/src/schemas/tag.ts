@@ -39,8 +39,15 @@ export const UpdateMyTagInputSchema = z
     message: 'Nothing to update',
   });
 
+/** The most physical tags one person may own before minting stops. */
+export const MAX_OWNED_TAGS = 25;
+
+/** A tag the database just minted, already claimed to the caller. */
+export const MintedTagSchema = z.object({ uid: TagUidSchema });
+
 export type TagUid = z.infer<typeof TagUidSchema>;
 export type TagStatus = z.infer<typeof TagStatusSchema>;
 export type Tag = z.infer<typeof TagSchema>;
 export type OwnerTagStatus = z.infer<typeof OwnerTagStatusSchema>;
 export type UpdateMyTagInput = z.infer<typeof UpdateMyTagInputSchema>;
+export type MintedTag = z.infer<typeof MintedTagSchema>;
