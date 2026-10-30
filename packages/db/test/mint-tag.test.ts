@@ -186,6 +186,41 @@ describe('a minted tag is a tag', () => {
     expect((await resolve(uid, bob.client)).status).toBe('disabled');
   });
 
+  it('deleting the account retires it for good, and never makes it claimable', async () => {
+    const alice = await createTestUser('Alice');
+    const bob = await createTestUser('Bob');
+    const minted = await mint(alice);
+    // positive control: a provisioned tag she claimed goes back to unclaimed.
+    const sticker = await provisionTag();
+    expect((await alice.client.rpc('claim_tag', { p_uid: sticker })).error).toBeNull();
+    expect((await alice.client.rpc('delete_my_account')).error).toBeNull();
+
+    const { data } = await admin
+      .from('tags')
+      .select('uid, status, claimed_by, destination')
+      .in('uid', [minted, sticker]);
+    expect(data?.find((row) => row.uid === sticker)?.status).toBe('unclaimed');
+    expect(data?.find((row) => row.uid === minted)).toEqual({
+      uid: minted,
+      status: 'disabled',
+      claimed_by: null,
+      destination: null,
+    });
+    expect((await resolve(minted, bob.client)).status).toBe('disabled');
+    expect((await bob.client.rpc('claim_tag', { p_uid: minted })).data).toBeNull();
+  });
+
+  it('a client cannot mark a tag as minted', async () => {
+    const alice = await createTestUser('Alice');
+    const sticker = await provisionTag();
+    expect((await alice.client.rpc('claim_tag', { p_uid: sticker })).error).toBeNull();
+    const { error } = await alice.client
+      .from('tags')
+      .update({ minted: true } as never)
+      .eq('uid', sticker);
+    expect(error).not.toBeNull();
+  });
+
   it('nobody can mint a tag for someone else: the RPC takes no arguments', async () => {
     const alice = await createTestUser('Alice');
     const bob = await createTestUser('Bob');

@@ -167,6 +167,7 @@ function fakeSticker(
     records: NdefRecordLike[];
     readBack: NdefRecordLike[];
     failing: 'status' | 'read' | 'write' | 'readBack' | 'lock';
+    lockResult: unknown;
   }> = {},
 ) {
   const calls: string[] = [];
@@ -181,6 +182,11 @@ function fakeSticker(
       return overrides.status ?? { state: 'writable', capacity: 137 };
     },
     read: async () => {
+      // The first read is the check; once something is written, it's the read-back.
+      if (written !== null) {
+        fail('readBack');
+        return overrides.readBack ?? [uriRecord(written)];
+      }
       fail('read');
       return overrides.records ?? [];
     },
@@ -189,12 +195,9 @@ function fakeSticker(
       fail('write');
       written = url;
     },
-    readBack: async () => {
-      fail('readBack');
-      return overrides.readBack ?? (written ? [uriRecord(written)] : []);
-    },
     lock: async () => {
       fail('lock');
+      return overrides.lockResult;
     },
   };
   return { session, calls };
@@ -311,6 +314,32 @@ describe('writeSticker', () => {
     const { session, calls } = fakeSticker({ readBack: [uriRecord(`${ORIGIN}/t/${OTHER_UID}`)] });
     expect(await run(session)).toEqual({ kind: 'verify-failed', uid: UID });
     expect(calls).not.toContain('lock');
+  });
+
+  test('a chip that says it could not lock is not locked', async () => {
+    const { session } = fakeSticker({ lockResult: false });
+    expect(await run(session)).toEqual({ kind: 'lock-failed', uid: UID });
+  });
+
+  test('a chip without NDEF is refused without trying to read it', async () => {
+    const { session, calls } = fakeSticker({
+      status: { state: 'unsupported', capacity: 0 },
+      failing: 'read',
+    });
+    expect(await run(session)).toEqual({ kind: 'refused', reason: 'unsupported' });
+    expect(calls).toEqual(['status']);
+  });
+
+  test('a failed read is never treated as blank: nothing minted, written or locked', async () => {
+    const { session, calls } = fakeSticker({ failing: 'read' });
+    const minted: string[] = [];
+    const result = await run(session, async () => {
+      minted.push('mint');
+      return UID;
+    });
+    expect(result).toEqual({ kind: 'lost' });
+    expect(minted).toEqual([]);
+    expect(calls).toEqual(['status', 'read']);
   });
 
   test('a failed lock says so and names the row', async () => {

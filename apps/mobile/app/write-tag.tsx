@@ -111,7 +111,11 @@ export default function WriteTagScreen() {
                 your own domain for tags you’ll hand out.
               </ErrorText>
             ) : null}
-            {failed ? <ErrorText>{writeResultMessage(result)}</ErrorText> : null}
+            {result?.kind === 'lost' ? (
+              <Muted accessibilityLiveRegion="polite">{writeResultMessage(result)}</Muted>
+            ) : failed ? (
+              <ErrorText>{writeResultMessage(result)}</ErrorText>
+            ) : null}
             <Button
               kind="connect"
               label={holding ? 'Hold near the sticker…' : failed ? 'Try again' : 'Write the sticker'}

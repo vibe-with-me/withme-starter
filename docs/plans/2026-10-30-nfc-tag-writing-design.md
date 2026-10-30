@@ -40,8 +40,9 @@ callers only, a profile required, 56 random bits, retried on a UID collision.
 It inserts one row with `kind = 'nfc'`, `status = 'claimed'`, the caller as
 owner, and `destination = {"type": "profile"}`.
 
-- **Nothing new to steal.** The row is claimed from the moment it exists, so
-  `claim_tag` cannot take it, and nothing lists it except its owner's My tags.
+- **Nothing new to steal.** The row is claimed from the moment it exists and
+  retired when the account goes, so `claim_tag` can never take it, and nothing
+  lists it except its owner's My tags.
   This becomes the second exception to `provision-tags`' rule that nothing
   creates tags. Like the first, it opens no door that rule guards.
 - **A cap, not a rate limit.** The RPC refuses (`P0004`) once the caller owns
@@ -52,7 +53,7 @@ owner, and `destination = {"type": "profile"}`.
 
 ### Reading in the app
 
-`readTagUid` starts from the URL on the tag:
+`readTag` starts from the URL on the tag:
 
 - A URL that passes `tagUidFromUrl` gives the UID.
 - A URL that fails it is refused on screen, as the QR scanner does. It never
@@ -75,9 +76,12 @@ set, the buttons are hidden, as the share screen hides sharing.
   again. They all point to the same place, and one cannot be turned off alone.
 - A sticker can be made without the store, so merch sells the printed accessory
   rather than the only way to get a tag.
-- Deleting an account returns its minted tags to `unclaimed`, the same as any
-  sticker today (`provision-tags` §4). The UID has been seen by then, so whoever
-  claims next owns it. A later change could retire them, as share codes are.
+- Deleting an account retires its minted tags, as share codes are, so the
+  sticker opens an inactive tag for good. **Changed after approval:** this first
+  returned them to `unclaimed`, but code review showed that signing up, minting
+  and deleting would then make claimable rows with no operator involved. A
+  `tags.minted` column marks them. Tombstones still accumulate, limited by
+  sign-up friction, but nothing can claim one.
 
 ## Layers
 
@@ -133,18 +137,20 @@ build on a physical phone.
 NTAG213s, an iPhone and ideally an Android phone.
 
 Reading the library's native code settled which NFC session to use, and the
-device runs must confirm it:
+device runs must confirm it. The app asks for `Ndef`, then `NfcA`, on both
+platforms:
 
-- **iOS writes in the existing `NfcA` session.** The library maps it to a
-  `mifare` tag session, whose tag reads, writes and locks NDEF. `NfcTech.Ndef`
-  would open an `NFCNDEFReaderSession`, which the `TAG`-only entitlement
-  (`includeNdefEntitlement: false`) does not cover. If `TAG` turns out not to be
-  enough, the entitlement changes, and that must be checked against App Store
-  submission.
-- **Android writes in an `Ndef` session.** `makeReadOnly` casts the session to
-  `Ndef`. The writer asks for `Ndef` then `NfcA`, so a chip with no NDEF is
-  refused instead of the hold doing nothing.
-- **The reader stays on `NfcA` on both.** `getTag` already returns the NDEF
-  message there.
+- **iOS** opens a tag session either way, which the `TAG`-only entitlement
+  (`includeNdefEntitlement: false`) should cover, and accepts any chip for
+  `Ndef`, so a chip it can't use is refused. If `TAG` turns out not to be enough,
+  the entitlement changes, and that must be checked against App Store submission.
+- **Android** gets the `Ndef` session its lock call needs. `NfcA` connects a chip
+  with no NDEF, so it is refused instead of the hold doing nothing.
+- **Reading goes through `getNdefMessage`, never `getTag`,** for both the writer
+  and the scanner. `getTag` reports a failed iOS read as an empty tag, which would
+  overwrite and lock a sticker with content. Blank is recognized only from iOS's
+  zero-length error or Android's empty reply. If the zero-length error isn't what
+  an iOS blank chip returns, blank stickers are refused as "didn't catch it", and
+  nothing is harmed.
 
 The simulator can only confirm that the buttons stay hidden without NFC.

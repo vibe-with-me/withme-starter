@@ -88,14 +88,17 @@ export function decideSticker({
 /** One hold of one sticker. Any call rejects when the sticker moves away. */
 export interface StickerSession {
   status(): Promise<StickerStatus>;
-  /** What the sticker holds; never rejects for a blank one. */
-  read(): Promise<NdefRecordLike[] | undefined>;
+  /**
+   * What the chip holds right now, read live: empty for a blank chip, and a
+   * rejection for a read that failed. A failed read must never look blank, or
+   * the sticker gets overwritten and locked.
+   */
+  read(): Promise<NdefRecordLike[]>;
   /** The size `url` takes on the chip. */
   urlBytes(url: string): number;
   write(url: string): Promise<void>;
-  /** Reads the chip again, not a copy taken when the hold began. */
-  readBack(): Promise<NdefRecordLike[] | undefined>;
-  lock(): Promise<void>;
+  /** Resolves false when the chip could not be locked (Android reports it that way). */
+  lock(): Promise<unknown>;
 }
 
 export type WriteResult =
@@ -130,7 +133,9 @@ export async function writeSticker({
   let content: StickerContent;
   try {
     status = await session.status();
-    content = stickerContent(await session.read());
+    // A chip without NDEF has nothing to read, and reading it rejects.
+    content =
+      status.state === 'unsupported' ? { kind: 'blank' } : stickerContent(await session.read());
   } catch {
     return { kind: 'lost' };
   }
@@ -157,7 +162,7 @@ export async function writeSticker({
       return { kind: 'write-failed', uid: target };
     }
     try {
-      const after = stickerContent(await session.readBack());
+      const after = stickerContent(await session.read());
       if (after.kind !== 'url' || after.url !== url) {
         return { kind: 'verify-failed', uid: target };
       }
@@ -176,7 +181,7 @@ export async function writeSticker({
 
 async function lockSticker(session: StickerSession, uid: string): Promise<WriteResult> {
   try {
-    await session.lock();
+    if ((await session.lock()) === false) return { kind: 'lock-failed', uid };
     return { kind: 'done', uid, locked: true };
   } catch {
     return { kind: 'lock-failed', uid };

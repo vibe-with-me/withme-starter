@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Button, Card, ErrorText, Field, Muted, Title } from '../components/ui';
 import { cancelRead, isNfcAvailable, readTag } from '../lib/nfc';
 import { space, useTokens } from '../lib/tokens';
+import { webUrl } from '../lib/web-url';
 
 /**
  * Scan entry point. Native NFC reading appears only in development builds
@@ -64,7 +65,13 @@ export default function ScanScreen() {
             NFC reading needs a development build — in Expo Go, type the UID printed on the tag.
           </Muted>
         )}
-        {foreign ? <ErrorText>That isn’t one of this app’s tags, so it wasn’t opened.</ErrorText> : null}
+        {foreign ? (
+          <ErrorText>
+            {webUrl
+              ? 'That isn’t one of this app’s tags, so it wasn’t opened.'
+              : 'Reading tags isn’t set up: EXPO_PUBLIC_WEB_URL is missing.'}
+          </ErrorText>
+        ) : null}
         <Button label="Scan a QR code" onPress={() => router.push('/scan-qr')} />
         <Field
           label="Tag UID"

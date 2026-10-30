@@ -48,13 +48,6 @@ export function MyTags() {
   // Writing needs a real radio and an address to write: otherwise no buttons.
   const [canWrite, setCanWrite] = useState(false);
 
-  useEffect(() => {
-    if (!webUrl) return;
-    isNfcAvailable()
-      .then(setCanWrite)
-      .catch(() => setCanWrite(false));
-  }, []);
-
   const load = useCallback(async (): Promise<Snapshot> => {
     const ticket = ++loads.current;
     const [mine, yours] = await Promise.allSettled([
@@ -75,6 +68,12 @@ export function MyTags() {
   useFocusEffect(
     useCallback(() => {
       void load();
+      // On focus too: NFC may have been switched on in Settings since.
+      if (webUrl) {
+        isNfcAvailable()
+          .then(setCanWrite)
+          .catch(() => setCanWrite(false));
+      }
     }, [load]),
   );
 

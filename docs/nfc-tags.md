@@ -134,9 +134,12 @@ read back, lock.
 | A chip that cannot hold NDEF or fit the URL | Refuses |
 
 **Minting opens no door.** `mint_my_tag()` inserts a row already claimed to the
-caller, with 56 random bits, so it is never unclaimed, `claim_tag` can never
-take it, and only its owner's My tags lists it. After that it is an ordinary
-tag. It stops at 25 physical tags per person (`MAX_OWNED_TAGS`), counting claimed
+caller, with 56 random bits, so `claim_tag` can't take it and only its owner's
+My tags lists it. After that it is an ordinary tag, with one difference:
+deleting the account retires it, as with a share code, instead of returning it
+to unclaimed. Otherwise signing up, minting and deleting would make claimable
+rows with no operator involved. The sticker then opens "This tag is inactive"
+for good. Minting stops at 25 physical tags per person (`MAX_OWNED_TAGS`), counting claimed
 stickers and not share codes. Owners cannot release a tag, so the cap is what
 bounds the rows one account can make; `claim_tag` does not check it.
 
@@ -149,10 +152,10 @@ because [the domain is forever](#the-domain-is-forever).
 turned off separately. And anyone with a blank sticker can skip your store, so
 [merch](merch.md) sells the printed accessory, not the only way to get a tag.
 
-**The native sessions differ by platform** (`apps/mobile/lib/nfc.ts`). iOS
-reads, writes and locks in the `NfcA` tag session the `TAG` entitlement covers;
-`NfcTech.Ndef` would need the NDEF entitlement. Android writes in an `Ndef`
-session, because its lock call needs one.
+**The native session** (`apps/mobile/lib/nfc.ts`). The app asks for `Ndef`, then
+`NfcA`. On iOS that opens a tag session, which the `TAG` entitlement covers. On
+Android, the lock call needs the `Ndef` session, and `NfcA` is there so a chip
+with no NDEF connects and gets refused.
 
 ## Encoding in a batch
 

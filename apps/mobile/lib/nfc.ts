@@ -4,7 +4,7 @@
  * unavailable and the UI hides the scan and write affordances. Deep links and
  * manual UID entry work everywhere.
  */
-import { NativeModules, Platform, TurboModuleRegistry } from 'react-native';
+import { NativeModules, TurboModuleRegistry } from 'react-native';
 import {
   tagFromHold,
   writeSticker,
@@ -21,7 +21,7 @@ interface NfcModule {
   isEnabled(): Promise<boolean>;
   start(): Promise<void>;
   requestTechnology(tech: unknown, options?: { alertMessage?: string }): Promise<unknown>;
-  getTag(): Promise<{ id?: string; ndefMessage?: NdefRecordLike[] } | null>;
+  getTag(): Promise<{ id?: string } | null>;
   cancelTechnologyRequest(): Promise<void>;
   ndefHandler: {
     getNdefStatus(): Promise<{ status: number; capacity: number }>;
@@ -33,16 +33,16 @@ interface NfcModule {
 
 interface NfcLibrary {
   manager: NfcModule;
-  /** Every NTAG offers NfcA, and on iOS it opens the tag session the TAG entitlement covers. */
-  readTech: unknown;
   /**
-   * iOS writes in that same session: NfcTech.Ndef there would need the NDEF
-   * entitlement. Android's lock call needs an Ndef session, and NfcA after it
-   * connects a chip with no NDEF, so it is refused instead of never answering.
+   * Ndef first, so Android's lock call gets the Ndef session it needs; NfcA
+   * after it, so Android connects a chip with no NDEF and it can be refused
+   * instead of the hold never answering. iOS opens a tag session either way,
+   * which the TAG entitlement covers, and takes any chip for Ndef.
    */
-  writeTech: unknown;
+  tech: unknown[];
   encodeUrl(url: string): number[];
   statusOf: { readWrite: number; readOnly: number };
+  isZeroLength(error: unknown): boolean;
 }
 
 function loadNfc(): NfcLibrary | null {
@@ -58,6 +58,7 @@ function loadNfc(): NfcLibrary | null {
       default: NfcModule;
       NfcTech: { NfcA: unknown; Ndef: unknown };
       NdefStatus: { ReadWrite: number; ReadOnly: number };
+      NfcError: { ZeroLengthMessage: new () => Error };
       Ndef: {
         uriRecord(url: string): unknown;
         encodeMessage(records: unknown[]): number[];
@@ -65,11 +66,10 @@ function loadNfc(): NfcLibrary | null {
     };
     return {
       manager: mod.default,
-      readTech: mod.NfcTech.NfcA,
-      writeTech:
-        Platform.OS === 'ios' ? mod.NfcTech.NfcA : [mod.NfcTech.Ndef, mod.NfcTech.NfcA],
+      tech: [mod.NfcTech.Ndef, mod.NfcTech.NfcA],
       encodeUrl: (url) => mod.Ndef.encodeMessage([mod.Ndef.uriRecord(url)]),
       statusOf: { readWrite: mod.NdefStatus.ReadWrite, readOnly: mod.NdefStatus.ReadOnly },
+      isZeroLength: (error) => error instanceof mod.NfcError.ZeroLengthMessage,
     };
   } catch {
     return null;
@@ -101,9 +101,12 @@ export async function readTag(): Promise<HeldTag | null> {
   if (!nfc) return null;
   try {
     await nfc.manager.start();
-    await nfc.manager.requestTechnology(nfc.readTech);
+    await nfc.manager.requestTechnology(nfc.tech);
     const tag = await nfc.manager.getTag();
-    return tag ? tagFromHold({ records: tag.ndefMessage, chipId: tag.id, origin: webUrl }) : null;
+    const session = stickerSession(nfc);
+    const { state } = await session.status();
+    const records = state === 'unsupported' ? undefined : await session.read();
+    return tagFromHold({ records, chipId: tag?.id, origin: webUrl });
   } catch {
     return null;
   } finally {
@@ -113,6 +116,20 @@ export async function readTag(): Promise<HeldTag | null> {
 
 function stickerSession(nfc: NfcLibrary): StickerSession {
   const { manager, statusOf } = nfc;
+  async function read(): Promise<NdefRecordLike[]> {
+    // Not getTag: on iOS it reports every failed read as an empty tag, and on
+    // Android it hands back a copy taken when the tag was discovered.
+    let message;
+    try {
+      message = await manager.ndefHandler.getNdefMessage();
+    } catch (error) {
+      // How iOS says the chip is blank. Android returns no records.
+      if (nfc.isZeroLength(error)) return [];
+      throw error;
+    }
+    if (!message?.ndefMessage) throw new Error('No NDEF message in the reply');
+    return message.ndefMessage;
+  }
   return {
     async status(): Promise<StickerStatus> {
       const { status, capacity } = await manager.ndefHandler.getNdefStatus();
@@ -120,15 +137,10 @@ function stickerSession(nfc: NfcLibrary): StickerSession {
       if (status === statusOf.readOnly) return { state: 'locked', capacity };
       return { state: 'unsupported', capacity: 0 };
     },
-    // getTag, not getNdefMessage: on iOS reading a blank chip through that one
-    // is an error, and blank is the case that matters most here.
-    read: async () => (await manager.getTag())?.ndefMessage,
+    read,
     urlBytes: (url) => nfc.encodeUrl(url).length,
     write: (url) => manager.ndefHandler.writeNdefMessage(nfc.encodeUrl(url)),
-    readBack: async () => (await manager.ndefHandler.getNdefMessage())?.ndefMessage,
-    lock: async () => {
-      await manager.ndefHandler.makeReadOnly();
-    },
+    lock: () => manager.ndefHandler.makeReadOnly(),
   };
 }
 
@@ -146,7 +158,7 @@ export async function writeTag({
   if (!nfc) return null;
   try {
     await nfc.manager.start();
-    await nfc.manager.requestTechnology(nfc.writeTech, {
+    await nfc.manager.requestTechnology(nfc.tech, {
       alertMessage: 'Hold your sticker against the phone.',
     });
   } catch {

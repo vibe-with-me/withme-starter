@@ -53,7 +53,7 @@ No logic left to test, so these are checked by the owner on a device (design →
 What cannot be tested here).
 
 - **Files:** `apps/mobile/lib/nfc.ts` (the real session, `writeTag`, URL-first
-  `readTagUid`), `apps/mobile/app/write-tag.tsx`, `apps/mobile/app/_layout.tsx`,
+  `readTag`), `apps/mobile/app/write-tag.tsx`, `apps/mobile/app/_layout.tsx`,
   `apps/mobile/components/MyTags.tsx`, `apps/mobile/app/scan.tsx`,
   `apps/mobile/app.json`.
 - **Checkpoint:** `bun run typecheck && bun run lint`, and the simulator shows no

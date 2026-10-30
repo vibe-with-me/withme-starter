@@ -490,6 +490,7 @@ export type Database = {
           created_at: string
           destination: Json | null
           kind: string
+          minted: boolean
           status: Database["public"]["Enums"]["tag_status"]
           tenant_id: string
           uid: string
@@ -501,6 +502,7 @@ export type Database = {
           created_at?: string
           destination?: Json | null
           kind?: string
+          minted?: boolean
           status?: Database["public"]["Enums"]["tag_status"]
           tenant_id?: string
           uid: string
@@ -511,6 +513,7 @@ export type Database = {
           created_at?: string
           destination?: Json | null
           kind?: string
+          minted?: boolean
           status?: Database["public"]["Enums"]["tag_status"]
           tenant_id?: string
           uid?: string

@@ -39,7 +39,7 @@ change at a time, and after two failed attempts stop and tell the owner.
 | Unknown and unclaimed look alike | `public.resolve_tag` answers `unclaimed` for both (newest definition: the last migration that defines it) |
 | The tap | web `apps/web/src/routes/t.$uid.tsx` → `claim.$uid.tsx`; mobile `apps/mobile/app/t/[uid].tsx` → `claim/[uid].tsx` |
 | The in-app reader | `readTag` in `apps/mobile/lib/nfc.ts` — opens the URL on the tag; only a chip with no NDEF falls back to its own UID (§5) |
-| In-app writing (not provisioned) | Add a tag in My tags writes a blank sticker with a row `mint_my_tag` claims to its caller (`supabase/migrations/20261030120000_mint_my_tag.sql`). Never made by this script, never `unclaimed`; `docs/nfc-tags.md` § Writing a tag in the app explains it |
+| In-app writing (not provisioned) | Add a tag in My tags writes a blank sticker with a row `mint_my_tag` claims to its caller (`supabase/migrations/20261030120000_mint_my_tag.sql`). Never made by this script, and never `unclaimed`: deleting the account retires it; `docs/nfc-tags.md` § Writing a tag in the app explains it |
 | Share codes (not provisioned) | a QR-only tag row (`kind = 'qr'`) the database mints and claims to its owner when they open Your code, the raised button in the middle of the tab bar (`my_share_code` / `replace_my_share_code` in `supabase/migrations/20261017120100_share_codes.sql`). Never made by this script, never `unclaimed`, never in My tags; `docs/nfc-tags.md` § Share codes explains them |
 | After the claim | the owner's Profile → "My tags" on both platforms (web `apps/web/src/components/MyTags.tsx`, mobile `apps/mobile/components/MyTags.tsx`), over `app.tags.listMine` / `app.tags.update`: re-point a tag (the card or one of their gatherings) and "Turn off" / "Turn on" (`status` `disabled` / `claimed`, `OwnerTagStatusSchema` in `packages/contract/src/schemas/tag.ts`). A gathering's detail screen also points all of them at once (`TagPointer` in web `_app.gatherings_.$id.tsx`, mobile `app/gathering/[id].tsx`). No owner control releases a tag back to `unclaimed`; deleting the account does (`delete_my_account`: claimed tags reset, their scans erased) |
 
@@ -337,9 +337,9 @@ shipment. Both kinds of UID live in the same table.
 - No API route, RPC, policy, or screen creates unclaimed tags or lists them;
   provisioning stays a service-role script run by an operator. The two
   exceptions are a person's own share code (`my_share_code`) and a tag for a
-  blank sticker (`mint_my_tag`). Each is minted already claimed to its caller:
-  never unclaimed and listed only to its owner, so neither opens a door this
-  rule guards.
+  blank sticker (`mint_my_tag`). Each is minted already claimed to its caller,
+  listed only to its owner, and retired rather than returned to unclaimed when
+  the account is deleted, so neither opens a door this rule guards.
 - `resolve_tag` keeps answering `unclaimed` for an unknown UID exactly as
   for a provisioned one: the public resolver must not reveal which UIDs
   exist.
@@ -355,6 +355,9 @@ shipment. Both kinds of UID live in the same table.
   batch. That holds only while nothing lists unclaimed UIDs, and this
   runbook never exposes such a list: it lives in `$OUT`, on the operator's
   machine.
+- `tags.minted` stays set only by `mint_my_tag`: it is what stops account
+  deletion turning a minted tag into claimable inventory, and clients have no
+  grant on it.
 - `tags.uid` stays immutable: the column grant
   (`grant update (destination, status)`) is what stops an owner from
   re-keying a row onto a future batch.
