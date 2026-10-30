@@ -27,7 +27,7 @@ points at, or whether it has been claimed. All of that is a row in the
 database, which is why **the destination is mutable forever** without
 touching the sticker: claim it, point it at your card, point it at a
 gathering, turn it off, give a provisioned tag back to unclaimed by deleting
-your account (a tag [written in the app](#writing-a-tag-in-the-app) is retired
+your account (a tag made with [Add a tag](#writing-a-tag-in-the-app) is retired
 instead).
 
 The web app's resolver (`/t/$uid`) does the lookup server-side on every
@@ -118,7 +118,9 @@ does not do it.
 
 Anyone signed in can turn a blank sticker into their own tag: Profile → My
 tags → Add a tag, on mobile. **Write to a tag** on a row writes that row to
-another sticker, which also retries a failed attempt. It needs a development
+another sticker, which also retries a failed attempt. Which row a sticker carries decides
+what account deletion does to it, not how it was written: a provisioned row
+written this way still returns to unclaimed. It needs a development
 build, NFC turned on and `EXPO_PUBLIC_WEB_URL` set; otherwise the buttons don't
 appear. Web has none: iPhones have no Web NFC.
 
@@ -140,7 +142,7 @@ My tags lists it. After that it is an ordinary tag, with one difference:
 deleting the account retires it, as with a share code, instead of returning it
 to unclaimed. Otherwise signing up, minting and deleting would make claimable
 rows with no operator involved. The sticker then opens "This tag is inactive"
-for good. Minting stops at 25 physical tags per person (`MAX_OWNED_TAGS`), counting claimed
+for good. Minting stops at 25 tag rows per person (`MAX_OWNED_TAGS`), counting claimed
 stickers and not share codes. Owners cannot release a tag, so the cap is what
 bounds the rows one account can make; `claim_tag` does not check it.
 

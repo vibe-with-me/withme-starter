@@ -465,8 +465,8 @@ the web app shows the pending count instead.
 **The promise.** Delete your account and your profile, connections,
 requests, blocks, hosted gatherings and memberships, photos, push
 tokens, and scan history are gone. Provisioned tags you claimed return to
-unclaimed. Your share code and any tags you wrote in the app are retired, so
-a screenshot of the code or a tap on the sticker opens an inactive tag, and
+unclaimed. Your share code and any tags you made with Add a tag are retired,
+so a screenshot of the code or a tap on the sticker opens an inactive tag, and
 neither can ever be claimed by someone else. Reports you filed
 stay, anonymised; reports about you stay 90 days, then go (see Reports
 are private).
