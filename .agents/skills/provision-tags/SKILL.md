@@ -41,7 +41,7 @@ change at a time, and after two failed attempts stop and tell the owner.
 | The in-app reader | `readTag` in `apps/mobile/lib/nfc.ts` — opens the URL on the tag; only a chip with no NDEF falls back to its own UID (§5) |
 | In-app writing (not provisioned) | Add a tag in My tags writes a blank sticker with a row `mint_my_tag` claims to its caller (`supabase/migrations/20261030120000_mint_my_tag.sql`). Never made by this script, and never `unclaimed`: deleting the account retires it; `docs/nfc-tags.md` § Writing a tag in the app explains it |
 | Share codes (not provisioned) | a QR-only tag row (`kind = 'qr'`) the database mints and claims to its owner when they open Your code, the raised button in the middle of the tab bar (`my_share_code` / `replace_my_share_code` in `supabase/migrations/20261017120100_share_codes.sql`). Never made by this script, never `unclaimed`, never in My tags; `docs/nfc-tags.md` § Share codes explains them |
-| After the claim | the owner's Profile → "My tags" on both platforms (web `apps/web/src/components/MyTags.tsx`, mobile `apps/mobile/components/MyTags.tsx`), over `app.tags.listMine` / `app.tags.update`: re-point a tag (the card or one of their gatherings) and "Turn off" / "Turn on" (`status` `disabled` / `claimed`, `OwnerTagStatusSchema` in `packages/contract/src/schemas/tag.ts`). A gathering's detail screen also points all of them at once (`TagPointer` in web `_app.gatherings_.$id.tsx`, mobile `app/gathering/[id].tsx`). No owner control releases a tag back to `unclaimed`; deleting the account does (`delete_my_account`: claimed tags reset, their scans erased) |
+| After the claim | the owner's Profile → "My tags" on both platforms (web `apps/web/src/components/MyTags.tsx`, mobile `apps/mobile/components/MyTags.tsx`), over `app.tags.listMine` / `app.tags.update`: re-point a tag (the card or one of their gatherings) and "Turn off" / "Turn on" (`status` `disabled` / `claimed`, `OwnerTagStatusSchema` in `packages/contract/src/schemas/tag.ts`). A gathering's detail screen also points all of them at once (`TagPointer` in web `_app.gatherings_.$id.tsx`, mobile `app/gathering/[id].tsx`). No owner control releases a tag back to `unclaimed`; deleting the account does for provisioned tags (`delete_my_account`: claimed tags reset, their scans erased), and retires minted ones as `disabled` with no owner |
 
 ## The rules this runbook will not bend
 
@@ -281,7 +281,7 @@ the owner's OK at each write).
 
 A claimed tag's UID keeps resolving (that is the product) but can no
 longer be claimed — until its owner deletes their account, which releases
-the tag to `unclaimed`. By then everyone who tapped it has seen its UID, so
+a provisioned tag to `unclaimed` (a minted one is retired instead). By then everyone who tapped it has seen its UID, so
 rule 1's entropy no longer protects it: whoever claims it next owns it. If
 that matters for your fork, retire the physical tag, or disable its row
 with the same `update`, scoped to that UID and `status = 'unclaimed'`.
@@ -377,8 +377,8 @@ shipment. Both kinds of UID live in the same table.
   capability on paper, and so would a QR sheet if you add one: both inherit
   rule 2 and §4 (shred once the batch has shipped).
 - Re-pointing and turning off a claimed tag belong to its owner (Profile →
-  My tags, in the map); a tag goes back to `unclaimed` only when its owner
-  deletes their account. The operator has no client path to someone else's
+  My tags, in the map); a provisioned tag goes back to `unclaimed` only when its
+  owner deletes their account. The operator has no client path to someone else's
   tag, by design.
 - The gate is unchanged: `bun run lint && bun run typecheck && bun run test`
   stays green, because this runbook changes no code. A batch is proven by

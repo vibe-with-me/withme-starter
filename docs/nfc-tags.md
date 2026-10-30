@@ -26,8 +26,9 @@ That is the whole payload. The tag does not know whose it is, what it
 points at, or whether it has been claimed. All of that is a row in the
 database, which is why **the destination is mutable forever** without
 touching the sticker: claim it, point it at your card, point it at a
-gathering, turn it off, give it back to unclaimed by deleting your
-account.
+gathering, turn it off, give a provisioned tag back to unclaimed by deleting
+your account (a tag [written in the app](#writing-a-tag-in-the-app) is retired
+instead).
 
 The web app's resolver (`/t/$uid`) does the lookup server-side on every
 tap. The tag is a pointer that never changes.
