@@ -68,8 +68,9 @@ const deleteAccount = oc
   .route({ method: 'DELETE', path: '/me', tags: ['Profile'] })
   // Irreversible. The photo pointer is cleared, the avatar files swept
   // (Storage API), then delete_my_account(): profile, connections, requests,
-  // blocks, hosted gatherings and memberships go; claimed tags are released
-  // (unclaimed, scans erased).
+  // blocks, hosted gatherings and memberships go; claimed provisioned tags are
+  // released (unclaimed, scans erased); minted tags and the share code are
+  // retired (disabled, no owner, scans erased).
   .output(z.object({ ok: z.literal(true) }));
 
 const sendRequest = oc
