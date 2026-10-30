@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import { Button, Card, Field, Muted, Title } from '../components/ui';
-import { cancelRead, isNfcAvailable, readTagUid } from '../lib/nfc';
+import { Button, Card, ErrorText, Field, Muted, Title } from '../components/ui';
+import { cancelRead, isNfcAvailable, readTag } from '../lib/nfc';
 import { space, useTokens } from '../lib/tokens';
 
 /**
@@ -23,6 +23,7 @@ export default function ScanScreen() {
   const [uid, setUid] = useState('');
   const [nfcReady, setNfcReady] = useState(false);
   const [reading, setReading] = useState(false);
+  const [foreign, setForeign] = useState(false);
 
   useEffect(() => {
     isNfcAvailable()
@@ -48,9 +49,11 @@ export default function ScanScreen() {
             disabled={reading}
             onPress={async () => {
               setReading(true);
+              setForeign(false);
               try {
-                const tagUid = await readTagUid();
-                if (tagUid) open(tagUid, 'nfc');
+                const held = await readTag();
+                if (held?.kind === 'uid') open(held.uid, 'nfc');
+                else if (held?.kind === 'foreign') setForeign(true);
               } finally {
                 setReading(false);
               }
@@ -61,6 +64,7 @@ export default function ScanScreen() {
             NFC reading needs a development build — in Expo Go, type the UID printed on the tag.
           </Muted>
         )}
+        {foreign ? <ErrorText>That isn’t one of this app’s tags, so it wasn’t opened.</ErrorText> : null}
         <Button label="Scan a QR code" onPress={() => router.push('/scan-qr')} />
         <Field
           label="Tag UID"
