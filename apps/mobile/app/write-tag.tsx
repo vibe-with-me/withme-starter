@@ -48,15 +48,14 @@ export default function WriteTagScreen() {
     return () => {
       cancelRead();
     };
-    // oxlint-disable-next-line exhaustive-deps
-  }, []);
+  }, [params.uid]);
 
-  async function hold(origin: string) {
+  async function hold(address: string) {
     setHolding(true);
     setResult(null);
     try {
       const outcome = await writeTag({
-        origin,
+        origin: address,
         uid,
         mint: () => api.app.tags.mint().then((minted) => minted.uid),
       });
@@ -68,6 +67,8 @@ export default function WriteTagScreen() {
     }
   }
 
+  // A local const stays narrowed inside the button's callback below.
+  const origin = webUrl;
   const done = result?.kind === 'done';
   const failed = result !== null && !done;
 
@@ -78,7 +79,7 @@ export default function WriteTagScreen() {
     >
       <Card>
         <Title>{params.uid ? 'Write to a tag' : 'Add a tag'}</Title>
-        {!webUrl ? (
+        {!origin ? (
           <Muted>
             Writing isn’t set up. Set EXPO_PUBLIC_WEB_URL to your web app’s address; a tag opens a
             page there.
@@ -93,7 +94,7 @@ export default function WriteTagScreen() {
           <Muted accessibilityLiveRegion="polite">{writeResultMessage(result)}</Muted>
         ) : (
           <>
-            {locksTags(webUrl) ? (
+            {locksTags(origin) ? (
               <Muted>
                 Hold a blank sticker to your phone. It’s locked for good once it’s written, so it
                 can’t be written again, but you can change where it points whenever you like.
@@ -104,7 +105,7 @@ export default function WriteTagScreen() {
                 won’t be locked.
               </Muted>
             )}
-            {usesTemporaryAddress(webUrl) ? (
+            {usesTemporaryAddress(origin) ? (
               <ErrorText>
                 This app’s address is a workers.dev one, and a locked sticker keeps it for good. Use
                 your own domain for tags you’ll hand out.
@@ -115,7 +116,7 @@ export default function WriteTagScreen() {
               kind="connect"
               label={holding ? 'Hold near the sticker…' : failed ? 'Try again' : 'Write the sticker'}
               disabled={holding || ready === null}
-              onPress={() => void hold(webUrl)}
+              onPress={() => void hold(origin)}
             />
           </>
         )}

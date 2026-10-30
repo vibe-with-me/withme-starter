@@ -117,7 +117,7 @@ Display sizes (make-it-yours step 1): <"starter's" (web `--text-title` 2rem, `--
 | --- | --- | --- |
 | landing promise | apps/web/src/routes/index.tsx | <Find your people …> |
 | Merch card | apps/web/src/routes/_app.merch.tsx, apps/mobile/app/(tabs)/merch.tsx | <Tags and gear from the store.> |
-| NFC permission | apps/mobile/app.json nfcPermission | <Read Acme tags to connect with people.> |
+| NFC permission | apps/mobile/app.json nfcPermission | <Read and write Acme tags to connect with people.> |
 | photo permission | apps/mobile/app.json photosPermission | <Choose a photo for your profile.> |
 
 ## Artwork (make-it-yours step 8)

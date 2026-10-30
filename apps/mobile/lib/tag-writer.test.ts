@@ -74,15 +74,16 @@ describe('stickerContent', () => {
   });
 });
 
+const decide = (
+  status: StickerStatus,
+  content: Parameters<typeof decideSticker>[0]['content'],
+  uid: string | null = UID,
+  origin = ORIGIN,
+) => decideSticker({ status, content, uid, origin, urlBytes: 40 });
+
 describe('decideSticker: the design’s sticker table', () => {
   const writable: StickerStatus = { state: 'writable', capacity: 137 };
   const locked: StickerStatus = { state: 'locked', capacity: 137 };
-  const decide = (
-    status: StickerStatus,
-    content: Parameters<typeof decideSticker>[0]['content'],
-    uid: string | null = UID,
-    origin = ORIGIN,
-  ) => decideSticker({ status, content, uid, origin, urlBytes: 40 });
 
   test('blank and writable: write', () => {
     expect(decide(writable, { kind: 'blank' })).toEqual({ action: 'write' });
@@ -199,10 +200,10 @@ function fakeSticker(
   return { session, calls };
 }
 
-describe('writeSticker', () => {
-  const run = (session: StickerSession, mint = async () => UID, uid: string | null = null) =>
-    writeSticker({ session, origin: ORIGIN, uid, mint });
+const run = (session: StickerSession, mint = async () => UID, uid: string | null = null) =>
+  writeSticker({ session, origin: ORIGIN, uid, mint });
 
+describe('writeSticker', () => {
   test('a blank sticker: check, mint, write, read back, lock, in that order', async () => {
     const { session, calls } = fakeSticker();
     const order: string[] = calls;
@@ -349,10 +350,10 @@ describe('writeResultMessage', () => {
   });
 });
 
-describe('tagFromHold: what the in-app reader opens', () => {
-  const read = (records: NdefRecordLike[] | undefined, chip?: string, origin: string | null = ORIGIN) =>
-    tagFromHold({ records, chipId: chip, origin });
+const read = (records: NdefRecordLike[] | undefined, chip?: string, origin: string | null = ORIGIN) =>
+  tagFromHold({ records, chipId: chip, origin });
 
+describe('tagFromHold: what the in-app reader opens', () => {
   test('a URL for this app gives its UID, not the chip’s', () => {
     expect(read([uriRecord(URL)], '04000000000000')).toEqual({ kind: 'uid', uid: UID });
   });
