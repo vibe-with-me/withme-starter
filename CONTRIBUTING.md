@@ -133,7 +133,9 @@ Three consequences for contributions:
 
 How a skill is written. Skills must work in any agent that reads
 `.agents/skills/`, so they stand alone: no dependency on another plugin's
-skills.
+skills. A new skill also gets a link, so Claude Code loads it, and a line in
+`AGENTS.md` if a new app runs it:
+`ln -s ../../.agents/skills/<name> .claude/skills/<name>`.
 
 - **The `description` says when to use the skill, never what it does.**
   Start with "Use when…" and name the situations that call for it (a new

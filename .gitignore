@@ -48,8 +48,9 @@ credentials.json
 google-services.json
 GoogleService-Info.plist
 
-# Claude Code: per-machine settings and worktrees.
-.claude/
+# Claude Code: per-machine settings and worktrees. The skill links are shared.
+.claude/*
+!.claude/skills/
 
 # OS
 .DS_Store
