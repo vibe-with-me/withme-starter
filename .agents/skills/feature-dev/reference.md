@@ -362,10 +362,6 @@ somewhere public.
 
 Like every skill in `.agents/skills/`, this one runs by path in any
 agent: "Run `.agents/skills/feature-dev/SKILL.md` for <the feature>".
-Claude Code loads skills from `.claude/skills/`, so to have it offer
-the skill on its own and answer `/feature-dev`, link it into that
-per-machine folder (gitignored, so each clone does this once):
-
-```sh
-mkdir -p .claude/skills && ln -s ../../.agents/skills/feature-dev .claude/skills/feature-dev
-```
+Claude Code loads skills from `.claude/skills/`, and the repository links
+each skill there, so it offers this one on its own and answers
+`/feature-dev`.
