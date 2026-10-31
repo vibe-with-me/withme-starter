@@ -21,10 +21,12 @@ directly. On a physical device, set `EXPO_PUBLIC_API_URL` /
 
 ## NFC
 
-NFC tag reading uses `react-native-nfc-manager`, a native module that needs a
-development build (`npx expo run:ios` / EAS) — it is feature-gated, so in Expo
-Go the scan screen falls back to manual UID entry and deep links. Tags encode
-`https://<domain>/t/{UID}`; universal-link / app-link association is a
+NFC reading and writing use `react-native-nfc-manager`, a native module that
+needs a development build (`npx expo run:ios` / EAS) — it is feature-gated, so in
+Expo Go the scan screen falls back to manual UID entry and deep links, and My
+tags has no write buttons. The simulator has no NFC at all: writing can only be
+checked on a physical phone with blank NTAG213 stickers ([docs/nfc-tags.md](../../docs/nfc-tags.md#writing-a-tag-in-the-app)).
+Tags encode `https://<domain>/t/{UID}`; universal-link / app-link association is a
 deployment step left to the consumer.
 
 ## Publishing with EAS Update

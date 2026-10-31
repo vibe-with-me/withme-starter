@@ -26,8 +26,9 @@ That is the whole payload. The tag does not know whose it is, what it
 points at, or whether it has been claimed. All of that is a row in the
 database, which is why **the destination is mutable forever** without
 touching the sticker: claim it, point it at your card, point it at a
-gathering, turn it off, give it back to unclaimed by deleting your
-account.
+gathering, turn it off, give a provisioned tag back to unclaimed by deleting
+your account (a tag made with [Add a tag](#writing-a-tag-in-the-app) is retired
+instead).
 
 The web app's resolver (`/t/$uid`) does the lookup server-side on every
 tap. The tag is a pointer that never changes.
@@ -47,8 +48,8 @@ capabilities until each tag is claimed: written outside the repo,
 readable only by you, never in git, chat, or a shared drive.
 
 Using the chip's own UID is supported for tags claimed on the spot (the
-mobile scan screen reads it); `provision-tags` §5 covers when that makes
-sense and what it costs.
+mobile scan screen falls back to it on a chip with no NDEF); `provision-tags`
+§5 covers when that makes sense and what it costs.
 
 ## Share codes (QR)
 
@@ -113,7 +114,55 @@ DNA below, and the same place in the resolver is where it would go. It
 costs a server secret and breaks printed codes, which is why the starter
 does not do it.
 
-## Encoding
+## Writing a tag in the app
+
+Anyone signed in can turn a blank sticker into their own tag: Profile → My
+tags → Add a tag, on mobile. **Write to a tag** on a row writes that row to
+another sticker, which also retries a failed attempt. Which row a sticker carries decides
+what account deletion does to it, not how it was written: a provisioned row
+written this way still returns to unclaimed. It needs a development
+build, NFC turned on and `EXPO_PUBLIC_WEB_URL` set; otherwise the buttons don't
+appear. Web has none: iPhones have no Web NFC.
+
+One hold of the sticker does all of it (`writeSticker` in
+`apps/mobile/lib/tag-writer.ts`): check what's on it, mint the row, write,
+read back, lock.
+
+| The sticker holds | The app |
+| --- | --- |
+| Nothing, and it is writable | Mints if needed, writes, verifies, locks |
+| The URL for this row, unlocked | Locks it, which recovers an interrupted attempt |
+| The URL for this row, locked | Reports it as already done |
+| Anything else, locked or not | Refuses and changes nothing |
+| A chip that cannot hold NDEF or fit the URL | Refuses |
+
+**Minting opens no door.** `mint_my_tag()` inserts a row already claimed to the
+caller, with 56 random bits, so `claim_tag` can't take it and only its owner's
+My tags lists it. After that it is an ordinary tag, with one difference:
+deleting the account retires it, as with a share code, instead of returning it
+to unclaimed. Otherwise signing up, minting and deleting would make claimable
+rows with no operator involved. The sticker then opens "This tag is inactive"
+for good. Minting stops at 25 tag rows per person (`MAX_OWNED_TAGS`), counting claimed
+stickers and not share codes. Owners cannot release a tag, so the cap is what
+bounds the rows one account can make; `claim_tag` does not check it.
+
+**Locking follows the address.** The app locks only when `EXPO_PUBLIC_WEB_URL`
+is `https`. Over `http` it writes a test tag and leaves it unlocked, so local
+rehearsals don't use up stickers. A `workers.dev` address gets a warning first,
+because [the domain is forever](#the-domain-is-forever).
+
+**What it costs.** One row can live on several stickers, and they can't be
+turned off separately. And anyone with a blank sticker can skip your store, so
+[merch](merch.md) sells the printed accessory, not the only way to get a tag.
+
+**The native session** (`apps/mobile/lib/nfc.ts`). The app asks for `Ndef`, then
+`NfcA`. On iOS that opens a tag session, which the `TAG` entitlement covers. On
+Android, the lock call needs the `Ndef` session, and `NfcA` is there so a chip
+with no NDEF connects and gets refused.
+
+## Encoding in a batch
+
+For tags you sell or hand out unclaimed:
 
 1. Provision rows: `provision-tags` walks `bun run db:provision` locally
    first, then against production with the owner's explicit OK. The

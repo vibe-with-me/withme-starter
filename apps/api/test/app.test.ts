@@ -43,6 +43,7 @@ describe('every app.* procedure requires a verified identity', () => {
     ['blocks.block', (a) => a.app.blocks.block({ user_id: OTHER_ID })],
     ['gatherings.list', (a) => a.app.gatherings.list()],
     ['tags.listMine', (a) => a.app.tags.listMine()],
+    ['tags.mint', (a) => a.app.tags.mint()],
     ['shareCode.replace', (a) => a.app.shareCode.replace()],
     [
       'push.register',
@@ -332,6 +333,20 @@ describe('gatherings', () => {
 });
 
 describe('tags and share code', () => {
+  test('minting takes no uid and returns the one the database drew', async () => {
+    supabase.on('POST', '/rest/v1/rpc/mint_my_tag', UID);
+    expect(await api.app.tags.mint()).toEqual({ uid: UID });
+    expect(supabase.to('POST', '/rest/v1/rpc/mint_my_tag')[0]?.body ?? {}).toEqual({});
+  });
+
+  test.each([
+    ['P0004', 'TOO_MANY_REQUESTS'],
+    ['P0001', 'BAD_REQUEST'],
+  ])('minting maps %s to %s', async (sqlstate, code) => {
+    supabase.on('POST', '/rest/v1/rpc/mint_my_tag', pgError(sqlstate));
+    expect(await codeOf(api.app.tags.mint())).toBe(code);
+  });
+
   test('updating a tag that is not yours is NOT_FOUND', async () => {
     supabase.on('PATCH', '/rest/v1/tags', []);
     expect(await codeOf(api.app.tags.update({ uid: UID, status: 'disabled' }))).toBe('NOT_FOUND');

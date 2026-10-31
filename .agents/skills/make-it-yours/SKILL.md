@@ -260,7 +260,7 @@ the **wordmark** there. Use the **display name** inside prose sentences
 product). Then these, which that grep does not reach:
 
 - `apps/mobile/app.json` — the `react-native-nfc-manager` plugin's
-  `nfcPermission` string ("Read withme tags…" → "Read Acme tags…").
+  `nfcPermission` string ("Read and write withme tags…" → "Read and write Acme tags…").
 - `apps/mobile/app.json` — the `expo-camera` plugin's `cameraPermission`
   string ("Scan someone's code to open their card."), repeated in the
   `expo-image-picker` plugin's because both write the same iOS key. It

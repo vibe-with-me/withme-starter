@@ -38,9 +38,10 @@ change at a time, and after two failed attempts stop and tell the owner.
 | First tap wins | `public.claim_tag`, same migration |
 | Unknown and unclaimed look alike | `public.resolve_tag` answers `unclaimed` for both (newest definition: the last migration that defines it) |
 | The tap | web `apps/web/src/routes/t.$uid.tsx` → `claim.$uid.tsx`; mobile `apps/mobile/app/t/[uid].tsx` → `claim/[uid].tsx` |
-| The in-app reader | `readTagUid` in `apps/mobile/lib/nfc.ts` — reads the chip's own UID, not the URL (§5) |
+| The in-app reader | `readTag` in `apps/mobile/lib/nfc.ts` — opens the URL on the tag; only a chip with no NDEF falls back to its own UID (§5) |
+| In-app writing (not provisioned) | Add a tag in My tags writes a blank sticker with a row `mint_my_tag` claims to its caller (`supabase/migrations/20261030120000_mint_my_tag.sql`). Never made by this script, and never `unclaimed`: deleting the account retires it; `docs/nfc-tags.md` § Writing a tag in the app explains it |
 | Share codes (not provisioned) | a QR-only tag row (`kind = 'qr'`) the database mints and claims to its owner when they open Your code, the raised button in the middle of the tab bar (`my_share_code` / `replace_my_share_code` in `supabase/migrations/20261017120100_share_codes.sql`). Never made by this script, never `unclaimed`, never in My tags; `docs/nfc-tags.md` § Share codes explains them |
-| After the claim | the owner's Profile → "My tags" on both platforms (web `apps/web/src/components/MyTags.tsx`, mobile `apps/mobile/components/MyTags.tsx`), over `app.tags.listMine` / `app.tags.update`: re-point a tag (the card or one of their gatherings) and "Turn off" / "Turn on" (`status` `disabled` / `claimed`, `OwnerTagStatusSchema` in `packages/contract/src/schemas/tag.ts`). A gathering's detail screen also points all of them at once (`TagPointer` in web `_app.gatherings_.$id.tsx`, mobile `app/gathering/[id].tsx`). No owner control releases a tag back to `unclaimed`; deleting the account does (`delete_my_account`: claimed tags reset, their scans erased) |
+| After the claim | the owner's Profile → "My tags" on both platforms (web `apps/web/src/components/MyTags.tsx`, mobile `apps/mobile/components/MyTags.tsx`), over `app.tags.listMine` / `app.tags.update`: re-point a tag (the card or one of their gatherings) and "Turn off" / "Turn on" (`status` `disabled` / `claimed`, `OwnerTagStatusSchema` in `packages/contract/src/schemas/tag.ts`). A gathering's detail screen also points all of them at once (`TagPointer` in web `_app.gatherings_.$id.tsx`, mobile `app/gathering/[id].tsx`). No owner control releases a tag back to `unclaimed`; deleting the account does for provisioned tags (`delete_my_account`: claimed tags reset, their scans erased), and retires minted ones as `disabled` with no owner |
 
 ## The rules this runbook will not bend
 
@@ -66,7 +67,8 @@ change at a time, and after two failed attempts stop and tell the owner.
 3. **Provision what you are about to encode.** Unclaimed inventory is
    claimable inventory: batches of tens, not thousands held in advance.
 4. **Provisioning is an operator action on the service-role key** — never an
-   endpoint, an RPC, a policy, or a button. Do not add a "provision" or
+   endpoint, an RPC, a policy, or a button. (`mint_my_tag` is not provisioning:
+   it makes a tag already claimed to its caller.) Do not add a "provision" or
    "list unclaimed tags" surface to the API or the apps: it would be an
    enumeration surface for exactly the rows that can be stolen.
 5. **Production writes need the owner's explicit OK**, as in go-live. The
@@ -279,24 +281,20 @@ the owner's OK at each write).
 
 A claimed tag's UID keeps resolving (that is the product) but can no
 longer be claimed — until its owner deletes their account, which releases
-the tag to `unclaimed`. By then everyone who tapped it has seen its UID, so
+a provisioned tag to `unclaimed` (a minted one is retired instead). By then everyone who tapped it has seen its UID, so
 rule 1's entropy no longer protects it: whoever claims it next owns it. If
 that matters for your fork, retire the physical tag, or disable its row
 with the same `update`, scoped to that UID and `status = 'unclaimed'`.
 
 ## 5. The chip's own UID (in-app reading)
 
-The mobile scanner's "Read NFC tag" (`readTagUid`) reads the chip's
-hardware UID, not the URL written on it. For a tag carrying a
-script-generated UID:
+The mobile scanner's "Read NFC tag" (`readTag`) opens the URL written on the
+tag, the same as a tap through the phone's OS, so a script-generated UID works
+both ways. It refuses a URL for another site. Only a chip holding no NDEF at all
+falls back to its hardware UID.
 
-- a tap through the phone's OS — the normal path — opens the URL and works;
-- the in-app reader resolves the chip's UID instead, which was never
-  provisioned, and lands on the claim screen for an unknown tag. Typing the
-  URL's UID into the scanner's manual field works.
-
-If in-app reading must work for a batch, provision the chips' own UIDs
-instead. Read each one with your writer app and write it as 14 uppercase
+Provisioning the chips' own UIDs is for tags that stay unwritten, or a batch
+you want tied to the chip. Read each one with your writer app and write it as 14 uppercase
 hex characters with no separators (writer apps often show `04:A1:B2:…`).
 The `uid` CHECK rejects lowercase, separators, and any other length, so
 only 7-byte UIDs (NTAG21x and the like) fit; 4-byte MIFARE Classic UIDs do
@@ -336,11 +334,12 @@ shipment. Both kinds of UID live in the same table.
 
 ## What must not move
 
-- No API route, RPC, policy, or screen creates tags or lists unclaimed ones;
-  provisioning stays a service-role script run by an operator. The one
-  exception is a person's own share code, which `my_share_code` mints
-  already claimed to its caller: it is never unclaimed and never listable,
-  so it opens no door this rule guards.
+- No API route, RPC, policy, or screen creates unclaimed tags or lists them;
+  provisioning stays a service-role script run by an operator. The two
+  exceptions are a person's own share code (`my_share_code`) and a tag for a
+  blank sticker (`mint_my_tag`). Each is minted already claimed to its caller,
+  listed only to its owner, and retired rather than returned to unclaimed when
+  the account is deleted, so neither opens a door this rule guards.
 - `resolve_tag` keeps answering `unclaimed` for an unknown UID exactly as
   for a provisioned one: the public resolver must not reveal which UIDs
   exist.
@@ -356,6 +355,9 @@ shipment. Both kinds of UID live in the same table.
   batch. That holds only while nothing lists unclaimed UIDs, and this
   runbook never exposes such a list: it lives in `$OUT`, on the operator's
   machine.
+- `tags.minted` stays set only by `mint_my_tag`: it is what stops account
+  deletion turning a minted tag into claimable inventory, and clients have no
+  grant on it.
 - `tags.uid` stays immutable: the column grant
   (`grant update (destination, status)`) is what stops an owner from
   re-keying a row onto a future batch.
@@ -375,8 +377,8 @@ shipment. Both kinds of UID live in the same table.
   capability on paper, and so would a QR sheet if you add one: both inherit
   rule 2 and §4 (shred once the batch has shipped).
 - Re-pointing and turning off a claimed tag belong to its owner (Profile →
-  My tags, in the map); a tag goes back to `unclaimed` only when its owner
-  deletes their account. The operator has no client path to someone else's
+  My tags, in the map); a provisioned tag goes back to `unclaimed` only when its
+  owner deletes their account. The operator has no client path to someone else's
   tag, by design.
 - The gate is unchanged: `bun run lint && bun run typecheck && bun run test`
   stays green, because this runbook changes no code. A batch is proven by

@@ -50,6 +50,7 @@ const SIGNED_IN_RPCS = [
   // About the caller only.
   'public.is_operator',
   'public.join_gathering',
+  'public.mint_my_tag',
   'public.my_share_code',
   'public.register_push_token',
   'public.replace_my_share_code',
