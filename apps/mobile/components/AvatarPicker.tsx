@@ -1,7 +1,7 @@
 import type { Profile } from '@withme/contract';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Platform, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, Text, View, type ViewInstance } from 'react-native';
 import { api } from '../lib/api';
 import { squareAvatar } from '../lib/avatar';
 import { fonts, space, useTokens } from '../lib/tokens';
@@ -34,7 +34,7 @@ export function AvatarPicker({
   const t = useTokens();
   const [state, setState] = useState<PhotoState>('idle');
   const working = state === 'working';
-  const chooseButton = useRef<View>(null);
+  const chooseButton = useRef<ViewInstance>(null);
 
   useEffect(() => {
     if (state === 'idle') return;

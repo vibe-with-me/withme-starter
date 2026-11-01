@@ -9,8 +9,10 @@ import {
   Text,
   TextInput,
   View,
+  type TextInputInstance,
   type TextInputProps,
   type TextProps,
+  type ViewInstance,
 } from 'react-native';
 import { avatarSrc } from '../lib/avatar';
 import { displaySize, fonts, radius, space, TAP_TARGET, useShadow, useTokens } from '../lib/tokens';
@@ -104,7 +106,7 @@ export function Button({
   /** Size to the label instead of filling the card: for actions inside rows. */
   inline?: boolean;
   /** For moving screen-reader focus here when the control that had it goes away. */
-  ref?: Ref<View>;
+  ref?: Ref<ViewInstance>;
   /** When the label alone is ambiguous in a list ("Turn off" → "Turn off ABC123"). Keep the label's words in it. */
   accessibilityLabel?: string;
   /** For a button that shows and hides something below it. */
@@ -192,7 +194,7 @@ export function Field({
 }: TextInputProps & {
   label: string;
   /** For moving focus into a field that was just added. */
-  ref?: Ref<TextInput>;
+  ref?: Ref<TextInputInstance>;
 }) {
   const t = useTokens();
   return (
