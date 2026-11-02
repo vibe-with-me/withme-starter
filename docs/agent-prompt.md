@@ -77,7 +77,7 @@ colors and fonts below are blank):
 **Accounts and money.** Supabase `[new org "Name" on the free plan /
 existing project ref]`, region `[us-east-1]`. Cloudflare account `[name]`
 (`wrangler whoami`). Expo account `[@owner / none yet: local-only]`,
-EAS project `[new / existing id]`. App domain `[https://app.example.co]`,
+EAS project `[new / existing id / none yet: local-only]`. App domain `[https://app.example.co]`,
 the base URL the tags encode and keep forever; site domain
 `[example.co]`; contact email `[hello@example.co]`. Stop and ask before
 anything that bills, creates a cloud resource, or writes to production,
