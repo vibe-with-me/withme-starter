@@ -158,7 +158,7 @@ and fonts, with your app identity.
 | 2. Fonts | `apps/web/src/fonts/`, the `@font-face` blocks in `apps/web/src/styles/app.css`; `apps/mobile/app/_layout.tsx` and the `fonts` map in `lib/tokens.ts` |
 | 3. Wordmark and copy | The landing page, the shell header, the resolver footer, the login hint, every route's page title, the mobile header, the NFC permission string |
 | 4. App identity | `apps/mobile/app.json`: name, slug, scheme, bundle id, package |
-| 5. EAS ownership | `apps/mobile/app.json` after `eas init` under your Expo account |
+| 5. EAS ownership | `apps/mobile/app.json` after `eas init` under your Expo account; with no Expo account yet, the upstream `owner`, `projectId` and `updates.url` removed (go-live claims the project) |
 | 6. Deploy names | `apps/api/wrangler.jsonc`, `apps/web/wrangler.jsonc` (the web worker's service binding must name the new API worker) |
 | 7. Store pointer | Skipped: no store yet |
 | 8. Icons + gate | `apps/mobile/assets/`, then the gate and the brand sweep |

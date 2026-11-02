@@ -286,7 +286,8 @@ stop and tell the owner — never work around it with the service role.
 ## 4. Mobile (EAS Update)
 
 1. Ensure `expo.owner` in `app.json` is the right account/org BEFORE
-   init, or the project lands under the wrong owner:
+   init, or the project lands under the wrong owner (a fork that took
+   make-it-yours step 5's local-only path has none yet: set it now):
    `bunx eas-cli init --non-interactive --force`, then
    `bunx eas-cli update:configure --non-interactive`.
    A fork reusing an existing EAS project links it instead of creating

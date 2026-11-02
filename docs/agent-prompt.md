@@ -76,13 +76,14 @@ colors and fonts below are blank):
 
 **Accounts and money.** Supabase `[new org "Name" on the free plan /
 existing project ref]`, region `[us-east-1]`. Cloudflare account `[name]`
-(`wrangler whoami`). Expo account `[@owner]`, EAS project `[new /
-existing id]`. App domain `[https://app.example.co]`, the base URL the
-tags encode and keep forever; site domain `[example.co]`; contact email
-`[hello@example.co]`. Stop and ask before anything that bills, creates a
-cloud resource, or writes to production, and before the production tag
-batch. Provision against production only after `go-live` has created the
-database and its keys file, whatever order the walkthrough lists them in.
+(`wrangler whoami`). Expo account `[@owner / none yet: local-only]`,
+EAS project `[new / existing id]`. App domain `[https://app.example.co]`,
+the base URL the tags encode and keep forever; site domain
+`[example.co]`; contact email `[hello@example.co]`. Stop and ask before
+anything that bills, creates a cloud resource, or writes to production,
+and before the production tag batch. Provision against production only
+after `go-live` has created the database and its keys file, whatever
+order the walkthrough lists them in.
 Never read credentials from an old checkout, and never ask for or print
 a secret value in chat. When a skill needs one, the owner puts it where
 that skill says (an env file, a CLI login, a provider dashboard) and

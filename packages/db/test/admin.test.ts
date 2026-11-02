@@ -3,6 +3,7 @@
 // and admin_get_report check that before they read anything, so everyone
 // else (a signed-in person, anon, an operator of another tenant) gets 42501
 // and no data, and public.reports stays unreadable to them.
+import { GatheringSchema } from '@withme/contract';
 import { SQL } from 'bun';
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { getReportForOperator, isOperator, listOpenReports } from '../src/queries/index.ts';
@@ -303,6 +304,16 @@ describe('admin_get_report', () => {
     });
     // Who filed it stays out of the admin API.
     expect(Object.keys((data as { report: object }).report)).not.toContain('reporter_id');
+    // The gathering is the row less the tenant, key for key the contract's
+    // gathering: a column or a schema field added on one side only fails here,
+    // not as a 500 from admin.reports.get on every gathering report.
+    expect(Object.keys((data as { gathering: object }).gathering).toSorted()).toEqual(
+      Object.keys(GatheringSchema.shape).toSorted(),
+    );
+    expect(await getReportForOperator(ops.client, row!.id)).toMatchObject({
+      card: { id: bob.id },
+      gathering: { id: gatheringId },
+    });
   });
 
   it('a gone account and a deleted gathering read as null, the snapshot kept', async () => {

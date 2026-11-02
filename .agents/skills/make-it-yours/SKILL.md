@@ -385,7 +385,7 @@ match your new slug: run no `eas` command between this step and step 5.
 prints the new name/slug/scheme without schema errors (it still prints
 the upstream `owner` and `projectId`; step 5 replaces them).
 
-## 5. EAS re-ownership (requires the fork owner's Expo account)
+## 5. EAS re-ownership (the fork owner's Expo account, or unlink for now)
 
 The starter's EAS project belongs to the upstream org; a fork must claim
 its own:
@@ -410,9 +410,21 @@ its own:
 A fork reusing an EAS project it already has links it instead of
 creating one: see go-live §4, step 1.
 
+**No Expo account yet (a local-only run).** Unlink now, claim later: do
+only the deletions of sub-step 1. Delete `expo.owner`,
+`expo.extra.eas.projectId` and `expo.updates.url`, and the `extra.eas` /
+`updates` objects they leave empty; set no owner and run no `eas`
+command. go-live §4 sets the owner and runs sub-steps 2–3. Until then the
+app has no EAS project: the dev servers, Expo Go and the gate work, but
+turning on push notifications fails, since an Expo push token needs a
+project.
+
 **Checkpoint:** `app.json` carries the fork owner's `owner` and a
 `projectId` ≠ `cf56d2f1-eaec-406b-be9c-972519a6be84`, and `updates.url`
-ends with that new projectId.
+ends with that new projectId. On the local-only path: `app.json` has no
+`owner`, no `projectId` and no `updates.url`, and
+`cd apps/mobile && bunx expo config --type public` prints without schema
+errors.
 
 ## 6. Deploy names and environment
 
@@ -628,7 +640,7 @@ that section.
 Not acceptable: `"owner": "vibe-with-me"` in `apps/mobile/app.json`
 while `extra.eas.projectId` is still `cf56d2f1-…`. It means step 5 is
 undone, so the app still points at the upstream EAS project; the sweep
-stays red until step 5 runs.
+stays red until step 5 runs, in full or on its local-only path.
 
 Finally the visual check. The RLS suite leaves its fixtures behind (test
 users' gatherings fill the Events feed), so after the gate run

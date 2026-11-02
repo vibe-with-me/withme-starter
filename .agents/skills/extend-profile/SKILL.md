@@ -199,8 +199,8 @@ minute (`20261017200000` → `20261017200100`).
 2. **Every function that builds a card** gets the card tier. Find them:
 
    ```sh
-   grep -nE "create (or replace )?function public\.|'display_name', v_[a-z_]+\.display_name" \
-     $(grep -lE "'display_name', v_[a-z_]+\.display_name" supabase/migrations/*.sql)
+   grep -nE "create (or replace )?function public\.|'display_name', [a-z_]+\.display_name" \
+     $(grep -lE "'display_name', [a-z_]+\.display_name" supabase/migrations/*.sql)
    ```
 
    Every `'display_name'` line belongs to the nearest
@@ -208,7 +208,9 @@ minute (`20261017200000` → `20261017200100`).
    starter: `resolve_tag` and `accept_connect_request` (the card as
    `v_profile`), and `report_user`, whose `reports.snapshot` is the card
    as the reporter saw it (`v_target`), so a moderator reads what was on
-   it. For each one, find its **newest** definition:
+   it, and `admin_get_report`, whose `card` is the reported person's card
+   as it is now (`p`), checked against the card schema. For each one,
+   find its **newest** definition:
 
    ```sh
    grep -lE 'create (or replace )?function public\.<name>' supabase/migrations/*.sql | grep -v _extend_profile | sort | tail -1
@@ -230,6 +232,9 @@ minute (`20261017200000` → `20261017200100`).
      `affiliation: null` to the exact snapshot in
      `packages/db/test/reports.test.ts` ("stores the report with a
      snapshot of the card", the `toEqual` that names `'Original bio'`);
+   - in `admin_get_report`, in the `v_card` `jsonb_build_object(…)` add
+     `'affiliation', p.affiliation`, or `admin.reports.get` fails on every
+     report about a person;
    - in `accept_connect_request` only: declare `v_details jsonb := null;`,
      add after the `select * into v_profile …` line
 
