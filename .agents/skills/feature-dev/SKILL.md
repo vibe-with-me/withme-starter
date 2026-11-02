@@ -38,7 +38,7 @@ two failed attempts, stop and tell the owner
 
 <HARD-GATE>
 No implementation code before steps 1–3 pass: an approved design, a
-plan, and a branch with the plan committed. No pull request before
+plan, and a branch cut from the latest base branch. No pull request before
 steps 5–7 pass: every touched layer has its tests, the gate is green,
 the change was seen working in the running app, and the diff was
 reviewed. The owner can waive a gate in words for this feature; say so
@@ -103,7 +103,7 @@ plan, but the design doc still names the tests.
 **Checkpoint:** `YYYY-MM-DD-<slug>.md` in the plans folder, and every
 code task in it names a test file.
 
-## 3. Branch and commit the plan
+## 3. Branch
 
 Start from the latest base branch, never from another feature branch
 unless the owner asks for a stack:
@@ -114,16 +114,13 @@ git fetch origin && git switch --no-track -c <prefix><slug> origin/<base>
 
 Use a worktree named after the slug if your agent works in worktrees
 (`git worktree add --no-track ../<slug> -b <prefix><slug> origin/<base>`). A fresh
-worktree needs its own `bun install`, and the two plan files are still
-untracked in the old checkout: move them into the worktree's plans
-folder. Then commit the plans on their own, before any code:
+worktree needs its own `bun install`, and the plans folder is ignored,
+so the two plan files stay behind in the old checkout: copy them into
+the worktree's plans folder. Plans are never committed (settings.md →
+Plans); the decisions in them reach the pull request in step 8.
 
-```sh
-git add <plans folder> && git commit -m "docs: plan <feature>"
-```
-
-**Checkpoint:** `git log --oneline origin/<base>..HEAD` shows exactly
-the plan commit, and `git status` is clean.
+**Checkpoint:** `git log --oneline origin/<base>..HEAD` prints nothing,
+`git status` is clean, and both plan files are in the plans folder.
 
 ## 4. Build the slice, tests with each layer
 
@@ -232,8 +229,9 @@ repo's template (`.github/PULL_REQUEST_TEMPLATE.md`): the Layers section
 lists each layer's file or "not touched". Add a **Tests** section (each
 layer and its test files, the coverage of new files) and a
 **Verification** section (what was driven on which platform, and the
-screenshot paths). Link the plans and, if settings.md names a tracker,
-the ticket. [reference.md → Pull request](reference.md#pull-request)
+screenshot paths). Add a **Design** section with the decisions a
+reviewer needs from the design doc, since the plans are not committed,
+and, if settings.md names a tracker, link the ticket. [reference.md → Pull request](reference.md#pull-request)
 has a body to start from and how the screenshots get onto the PR.
 
 CI and the PR reviewer from settings.md run after the PR opens. Fix

@@ -32,11 +32,14 @@ server, a CLI) and what to put in the PR (`Closes #12`, `ENG-123`).
 
 ## Plans
 
-Where the design doc and the implementation plan are written and
-committed. Dated names (`2026-10-19-gathering-notes-design.md`) so a
-fork's plans and the starter's never collide on a merge.
+Where the design doc and the implementation plan are written while the
+feature is built. Keep it gitignored: plans are working notes, nothing
+updates them once the feature ships, and an agent that finds a stale plan
+later takes it for current fact. The pull request carries the decisions
+instead. Dated names (`2026-10-19-gathering-notes-design.md`) keep
+several features' notes apart.
 
-→ `docs/plans/`
+→ `.plans/`
 
 ## Verification
 

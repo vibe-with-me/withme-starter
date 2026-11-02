@@ -348,7 +348,11 @@ plus `<the e2e harness>`.
 - Web: drove <flow> on the local stack; `.verify-screenshots/web-<slug>.png`
 - Mobile (iOS simulator, Expo Go): drove <flow>; `.verify-screenshots/mobile-<slug>.png`
 
-Plans: `<plans folder>/<date>-<slug>-design.md`, `<plans folder>/<date>-<slug>.md`
+## Design
+
+<From the design doc: the approach, what was rejected and why, every
+invariant it comes near, and any gate the owner waived. The plans are
+not committed, so this is where the reasoning stays.>
 ```
 
 **Screenshots on the PR.** GitHub has no API for attaching an image to

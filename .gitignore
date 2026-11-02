@@ -8,8 +8,9 @@ build
 # Test coverage
 coverage
 
-# Verification screenshots (the feature-dev skill)
+# Verification screenshots and working plans (the feature-dev skill)
 .verify-screenshots/
+.plans/
 
 # Environment files
 .env

@@ -74,7 +74,7 @@ One skill is a process rather than a recipe, and a fork uses it for
 every feature it builds after the ones above:
 
 - **feature-dev.** Runs a feature from idea to pull request through
-  gates: an approved design, a plan, a branch with the plan committed,
+  gates: an approved design, a plan kept out of git, a fresh branch,
   the slice built with each layer's tests, a test gate (every touched
   layer tested, coverage on new files, every new SQL object named in a
   test), the change seen working in the app, review, and the PR. A
