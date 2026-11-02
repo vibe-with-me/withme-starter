@@ -19,8 +19,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  type TextInputInstance,
+  type ViewInstance,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { api } from '../lib/api';
@@ -125,8 +126,8 @@ export function Links() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const inputs = useRef(new Map<LinkPlatformId, TextInput>());
-  const moves = useRef(new Map<string, View>());
+  const inputs = useRef(new Map<LinkPlatformId, TextInputInstance>());
+  const moves = useRef(new Map<string, ViewInstance>());
   const taken = new Set(rows.map((row) => row.platform));
   const available = LINK_PLATFORM_IDS.filter((platform) => !taken.has(platform));
 
@@ -234,7 +235,7 @@ export function Links() {
         <>
           {rows.map((row, i) => {
             const { label, kind, placeholder } = LINK_PLATFORMS[row.platform];
-            const moveRef = (direction: Direction) => (el: View | null) => {
+            const moveRef = (direction: Direction) => (el: ViewInstance | null) => {
               if (el) moves.current.set(`${row.platform}:${direction}`, el);
               else moves.current.delete(`${row.platform}:${direction}`);
             };
@@ -242,7 +243,7 @@ export function Links() {
               <View key={row.platform} style={styles.row}>
                 <View style={styles.rowField}>
                   <Field
-                    ref={(el: TextInput | null) => {
+                    ref={(el: TextInputInstance | null) => {
                       if (el) inputs.current.set(row.platform, el);
                       else inputs.current.delete(row.platform);
                     }}

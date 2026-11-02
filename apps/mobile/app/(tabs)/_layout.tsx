@@ -15,8 +15,10 @@ type FeatherName = ComponentProps<typeof Feather>['name'];
 const STORE_URL = process.env.EXPO_PUBLIC_STORE_URL;
 
 function icon(name: FeatherName) {
+  // TabBar passes a token string; @expo/vector-icons types `color` as
+  // string | OpaqueColorValue, narrower than React Native 0.88's ColorValue.
   return ({ color, size }: { color: ColorValue; size: number }) => (
-    <Feather name={name} color={color} size={size} />
+    <Feather name={name} color={color as string} size={size} />
   );
 }
 

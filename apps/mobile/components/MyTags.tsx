@@ -2,7 +2,15 @@ import { Feather } from '@expo/vector-icons';
 import type { Destination, Gathering, Tag } from '@withme/contract';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewInstance,
+} from 'react-native';
 import { api } from '../lib/api';
 import {
   describeTag,
@@ -147,7 +155,7 @@ function TagRow({
 }) {
   const t = useTokens();
   const [choosing, setChoosing] = useState(false);
-  const toggle = useRef<View>(null);
+  const toggle = useRef<ViewInstance>(null);
   const refocus = useRef(false);
   const current = destinationKey(tag.destination);
   const off = tag.status === 'disabled';
