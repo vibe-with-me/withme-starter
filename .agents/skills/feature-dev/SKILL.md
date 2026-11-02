@@ -240,7 +240,8 @@ answer every reviewer finding in its thread (fixed, or why not). Then
 follow the merge line in settings.md.
 
 **Checkpoint:** the PR is open, CI is green, every reviewer finding is
-fixed or answered, and the Tests and Verification sections are filled in.
+fixed or answered, and the Design, Tests and Verification sections are
+filled in.
 
 ## Red flags: stop and go back
 
