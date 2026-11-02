@@ -546,7 +546,8 @@ and `cd apps/web && bun run test:e2e` reports every spec passed.
    the mobile difference is deliberate (§7).
 8. The new table carries the tenant seam, and every policy predicates on it.
 9. Any later migration that redefines `resolve_tag`,
-   `accept_connect_request` or `report_user` copies the newest definition
+   `accept_connect_request`, `report_user` or `admin_get_report` copies
+   the newest definition
    (this migration once it exists). An older body silently drops the card
    tier, the `details` hand-off, and accept's `links`.
 10. Every new free-text column carries the plain-text CHECK, and its zod
