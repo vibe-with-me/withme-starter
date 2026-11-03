@@ -31,9 +31,11 @@ deployment step left to the consumer.
 
 The committed `app.json` carries this repo's Expo project (`owner`,
 `extra.eas.projectId`, `updates.url`). **Forks: run `npx eas-cli init` once**
-to replace those with your own project (no Expo account yet? remove the
-three and leave this to `go-live`: `make-it-yours` step 5), then publish a shareable Expo Go
-build with your deployed endpoints baked in:
+to replace those with your own project. No Expo account yet? Remove the
+three, stop here, and pick this up in `go-live` (`make-it-yours` step 5).
+
+With your own project, publish a shareable Expo Go build with your
+deployed endpoints baked in:
 
 ```sh
 EXPO_PUBLIC_API_URL=https://<your-api> \
