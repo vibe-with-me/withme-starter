@@ -14,19 +14,19 @@
   },
   "dependencies": {
     "@logtape/logtape": "^2.4.2",
-    "@orpc/server": "^1.15.5",
+    "@orpc/server": "^1.16.1",
     "@withme/contract": "workspace:*",
     "@withme/db": "workspace:*",
-    "hono": "^4.13.13",
-    "jose": "^6.2.13"
+    "hono": "^4.13.14",
+    "jose": "^6.2.14"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261019.1",
+    "@cloudflare/workers-types": "^5.20261101.1",
     "@orpc/client": "^1.15.5",
-    "@orpc/contract": "^1.15.5",
-    "@types/bun": "^1.4.2",
+    "@orpc/contract": "^1.16.1",
+    "@types/bun": "^1.4.4",
     "@vibewithme/nfc": "workspace:*",
     "typescript": "~5.9.3",
-    "wrangler": "^4.151.3"
+    "wrangler": "^4.156.0"
   }
 }
