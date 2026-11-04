@@ -128,6 +128,9 @@ demo logins (`ada@` and `lin@demo.withme.local`):
 
 - **A public demo** (nobody signs up for real): the seed stays, and the
   landing page may show a demo login (`VITE_DEMO_CREDENTIALS`, section 3).
+  Visitors change what they sign in to: `bun run demo:reseed install`
+  (macOS) reseeds it hourly from the keys file below, and the script's
+  header says what it needs.
 - **An app for real users**: the seed is only for the checks in sections
   2 and 3, and section 5 removes it before anyone is told about the app.
   Never publish a demo login next to real users. Whoever holds it can sign
