@@ -38,6 +38,24 @@ export interface StickerStatus {
   capacity: number;
 }
 
+const ANDROID_NDEF = 'android.nfc.tech.Ndef';
+
+/**
+ * True when an 'unsupported' status can't be trusted. On Android,
+ * react-native-nfc-manager answers every failed status query with
+ * NotSupported, including one on a tag that moved away and came back. A chip
+ * whose tech list names Ndef does have NDEF, so there the query failed and the
+ * hold should count as lost, not as a chip to route by its UID or refuse. A
+ * chip with only NdefFormatable really has no NDEF yet. iOS reports no tech
+ * list, and its failed queries reject instead.
+ */
+export function statusQueryFailed(
+  status: StickerStatus,
+  techTypes: readonly string[] | undefined,
+): boolean {
+  return status.state === 'unsupported' && (techTypes?.includes(ANDROID_NDEF) ?? false);
+}
+
 export type RefusalReason = 'in-use' | 'unsupported' | 'too-small';
 
 type Decision =
