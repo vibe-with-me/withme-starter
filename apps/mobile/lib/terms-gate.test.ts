@@ -23,6 +23,9 @@ mock.module('react-native', () => ({
       return { remove: () => (appStateListener = null) };
     },
   },
+  // Module mocks are process-wide in bun: nfc.test.ts loads nfc.ts, which needs these.
+  NativeModules: { NfcManager: {} },
+  TurboModuleRegistry: { get: () => null },
 }));
 mock.module('./api', () => ({ api: { app: { profile: { get: () => answer() } } } }));
 

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   decideSticker,
   locksTags,
+  statusQueryFailed,
   stickerContent,
   tagFromHold,
   uriFromRecord,
@@ -410,5 +411,32 @@ describe('tagFromHold: what the in-app reader opens', () => {
 
   test('no NDEF and no chip UID: nothing', () => {
     expect(read(undefined, undefined)).toEqual({ kind: 'nothing' });
+  });
+});
+
+describe('statusQueryFailed: Android reports a failed query as NotSupported', () => {
+  const NDEF = 'android.nfc.tech.Ndef';
+  const NFC_A = 'android.nfc.tech.NfcA';
+  const unsupported: StickerStatus = { state: 'unsupported', capacity: 0 };
+
+  test('a stale-tag NotSupported on a chip whose tech list has Ndef is a failed query', () => {
+    expect(statusQueryFailed(unsupported, [NFC_A, 'android.nfc.tech.MifareUltralight', NDEF])).toBe(
+      true,
+    );
+  });
+
+  test('a chip with no Ndef in its tech list really is unsupported', () => {
+    expect(statusQueryFailed(unsupported, [NFC_A])).toBe(false);
+    // Unformatted: it can be given NDEF, but has none, so it still routes by chip UID.
+    expect(statusQueryFailed(unsupported, [NFC_A, 'android.nfc.tech.NdefFormatable'])).toBe(false);
+  });
+
+  test('no tech list (iOS) trusts the status', () => {
+    expect(statusQueryFailed(unsupported, undefined)).toBe(false);
+  });
+
+  test('a writable or locked status is never second-guessed', () => {
+    expect(statusQueryFailed({ state: 'writable', capacity: 137 }, [NDEF])).toBe(false);
+    expect(statusQueryFailed({ state: 'locked', capacity: 137 }, [NDEF])).toBe(false);
   });
 });

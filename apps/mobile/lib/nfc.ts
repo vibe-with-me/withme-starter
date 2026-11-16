@@ -6,6 +6,7 @@
  */
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 import {
+  statusQueryFailed,
   tagFromHold,
   writeSticker,
   type HeldTag,
@@ -21,7 +22,8 @@ interface NfcModule {
   isEnabled(): Promise<boolean>;
   start(): Promise<void>;
   requestTechnology(tech: unknown, options?: { alertMessage?: string }): Promise<unknown>;
-  getTag(): Promise<{ id?: string } | null>;
+  /** `techTypes` is Android only: the chip's tech list, e.g. android.nfc.tech.Ndef. */
+  getTag(): Promise<{ id?: string; techTypes?: string[] } | null>;
   cancelTechnologyRequest(): Promise<void>;
   ndefHandler: {
     getNdefStatus(): Promise<{ status: number; capacity: number }>;
@@ -135,7 +137,14 @@ function stickerSession(nfc: NfcLibrary): StickerSession {
       const { status, capacity } = await manager.ndefHandler.getNdefStatus();
       if (status === statusOf.readWrite) return { state: 'writable', capacity };
       if (status === statusOf.readOnly) return { state: 'locked', capacity };
-      return { state: 'unsupported', capacity: 0 };
+      const unsupported: StickerStatus = { state: 'unsupported', capacity: 0 };
+      // Android reports a failed query as NotSupported too; the tech list
+      // tells the two apart, and a failed query rejects like any lost hold.
+      const tag = await manager.getTag();
+      if (statusQueryFailed(unsupported, tag?.techTypes)) {
+        throw new Error('NDEF status query failed on an NDEF chip');
+      }
+      return unsupported;
     },
     read,
     urlBytes: (url) => nfc.encodeUrl(url).length,
